@@ -1,5 +1,6 @@
 # Kiro IDE
 .kiro/
 .vscode/
+test/
 input/
 output/
