@@ -422,31 +422,36 @@
 </head>
 <body>
     <div id="app">
-        <h1>Statement Generator <span style="font-size: 0.6em; color: rgba(255,255,255,0.8);">v2.1.0</span></h1>
+        <h1>Statement Generator <span style="font-size: 0.6em; color: rgba(255,255,255,0.8);">v2.2.0</span></h1>
         
         <!-- File Upload Section -->
         <div id="file-upload-section" class="section">
             <h2>Data Files</h2>
             
-            <div class="directory-selection">
-                <button id="select-input-dir" class="btn btn-primary">Select Directory</button>
-                <button id="load-all-files" class="btn btn-secondary" disabled>Load Files</button>
-                <span id="input-dir-status" class="status-text"></span>
-                <div id="loading-status" class="loading-status"></div>
-            </div>
-            
-            <div class="file-status-grid">
-                <div class="file-status-item clickable" data-file="tb2024">
-                    <span class="file-label">TB 2024</span>
-                    <span id="status-tb2024" class="status-indicator">⚪</span>
+            <div style="display: flex; gap: 15px; align-items: flex-start; margin-bottom: 15px;">
+                <!-- Left side: Button and status -->
+                <div style="flex: 1; min-width: 300px;">
+                    <div style="margin-bottom: 8px;">
+                        <button id="select-input-dir" class="btn btn-primary">Select Directory</button>
+                    </div>
+                    <span id="input-dir-status" class="status-text"></span>
+                    <div id="loading-status" class="loading-status"></div>
                 </div>
-                <div class="file-status-item clickable" data-file="tb2025">
-                    <span class="file-label">TB 2025</span>
-                    <span id="status-tb2025" class="status-indicator">⚪</span>
-                </div>
-                <div class="file-status-item clickable" data-file="tb2425">
-                    <span class="file-label">TB 2024+2025</span>
-                    <span id="status-tb2425" class="status-indicator">👁️</span>
+                
+                <!-- Right side: File status indicators -->
+                <div class="file-status-grid" style="flex: 0 0 auto; grid-template-columns: repeat(3, auto); gap: 8px;">
+                    <div class="file-status-item clickable" data-file="tb2024" style="min-width: 180px;">
+                        <span class="file-label">TB 2024</span>
+                        <span id="status-tb2024" class="status-indicator">⚪</span>
+                    </div>
+                    <div class="file-status-item clickable" data-file="tb2025" style="min-width: 180px;">
+                        <span class="file-label">TB 2025</span>
+                        <span id="status-tb2025" class="status-indicator">⚪</span>
+                    </div>
+                    <div class="file-status-item clickable" data-file="tb2425" style="min-width: 200px;">
+                        <span class="file-label">TB 2024+2025</span>
+                        <span id="status-tb2425" class="status-indicator">👁️</span>
+                    </div>
                 </div>
             </div>
             
@@ -476,42 +481,6 @@
                     <button class="tab-btn" data-statement="cash-flow">Cash Flow</button>
                 </div>
                 <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
-                    <label style="font-size: 13px; color: #4a5568;">
-                        Period 2024:
-                        <select id="period-2024" style="margin-left: 5px; padding: 4px; border-radius: 4px; border: 1px solid #ccc;">
-                            <option value="all">All Periods</option>
-                            <option value="1">Period 1</option>
-                            <option value="2">Period 2</option>
-                            <option value="3">Period 3</option>
-                            <option value="4">Period 4</option>
-                            <option value="5">Period 5</option>
-                            <option value="6">Period 6</option>
-                            <option value="7">Period 7</option>
-                            <option value="8">Period 8</option>
-                            <option value="9">Period 9</option>
-                            <option value="10">Period 10</option>
-                            <option value="11">Period 11</option>
-                            <option value="12">Period 12</option>
-                        </select>
-                    </label>
-                    <label style="font-size: 13px; color: #4a5568;">
-                        Period 2025:
-                        <select id="period-2025" style="margin-left: 5px; padding: 4px; border-radius: 4px; border: 1px solid #ccc;">
-                            <option value="all">All Periods</option>
-                            <option value="1">Period 1</option>
-                            <option value="2">Period 2</option>
-                            <option value="3">Period 3</option>
-                            <option value="4">Period 4</option>
-                            <option value="5">Period 5</option>
-                            <option value="6">Period 6</option>
-                            <option value="7">Period 7</option>
-                            <option value="8">Period 8</option>
-                            <option value="9">Period 9</option>
-                            <option value="10">Period 10</option>
-                            <option value="11">Period 11</option>
-                            <option value="12">Period 12</option>
-                        </select>
-                    </label>
                     <label style="font-size: 13px; color: #4a5568;">
                         <input type="checkbox" id="show-variance" checked style="margin-right: 5px;">
                         Show Variance
@@ -945,25 +914,63 @@
                     : config.inputFiles.trialBalance2025;
 
                 try {
+                    // Validate period parameter
+                    if (!period || (period !== '2024' && period !== '2025')) {
+                        throw new Error(`Invalid period: ${period}. Must be '2024' or '2025'.`);
+                    }
+                    
+                    // Read file
                     const file = await this.readFileFromDirectory(filename);
+                    
+                    // Validate file size (warn if > 10MB)
+                    if (file.size > 10 * 1024 * 1024) {
+                        console.warn(`Large file detected: ${filename} (${(file.size / 1024 / 1024).toFixed(2)} MB). Loading may take longer.`);
+                    }
+                    
                     const arrayBuffer = await file.arrayBuffer();
                     const workbook = new ExcelJS.Workbook();
                     await workbook.xlsx.load(arrayBuffer);
 
+                    // Validate workbook has worksheets
+                    if (!workbook.worksheets || workbook.worksheets.length === 0) {
+                        throw new Error(`File ${filename} contains no worksheets`);
+                    }
+                    
                     const worksheet = workbook.worksheets[0];
                     
+                    // Validate worksheet has data
+                    if (!worksheet || worksheet.rowCount < 2) {
+                        throw new Error(`File ${filename} is empty or has insufficient data (needs at least header + 1 data row)`);
+                    }
+                    
                     console.log(`Transforming ${filename} from wide to long format...`);
+                    console.log(`  - Worksheet: ${worksheet.name}`);
+                    console.log(`  - Rows: ${worksheet.rowCount}, Columns: ${worksheet.columnCount}`);
                     
                     // Transform wide format to long format
                     const { movements, balances } = this.transformWideToLong(worksheet, period);
+                    
+                    // Validate transformation results
+                    if (!movements || movements.length === 0) {
+                        console.warn(`No movements found in ${filename}. This may indicate a data issue.`);
+                    }
                     
                     // Convert arrays to Arquero tables
                     const movementsTable = aq.from(movements);
                     const balancesTable = aq.from(balances);
                     
-                    console.log(`Trial Balance ${period} loaded:`);
+                    console.log(`Trial Balance ${period} loaded successfully:`);
                     console.log(`  - Movements: ${movementsTable.numRows()} rows`);
                     console.log(`  - Balances: ${balancesTable.numRows()} rows`);
+                    
+                    // Validate required columns exist
+                    const requiredColumns = ['account_code', 'statement_type', 'level1_code', 'level1_label'];
+                    const movementColumns = movementsTable.columnNames();
+                    const missingColumns = requiredColumns.filter(col => !movementColumns.includes(col));
+                    
+                    if (missingColumns.length > 0) {
+                        throw new Error(`Transformed data missing required columns: ${missingColumns.join(', ')}`);
+                    }
                     
                     return {
                         movements: movementsTable,
@@ -972,7 +979,15 @@
 
                 } catch (error) {
                     console.error(`Error loading trial balance for ${period}:`, error);
-                    throw error;
+                    
+                    // Enhance error message for common issues
+                    if (error.message.includes('getFileHandle')) {
+                        throw new Error(`File not found: ${filename}. Please ensure the file exists in the selected directory.`);
+                    } else if (error.message.includes('xlsx.load')) {
+                        throw new Error(`Failed to parse ${filename}. Please ensure it is a valid Excel file (.xlsx).`);
+                    } else {
+                        throw error;
+                    }
                 }
             }
 
@@ -1099,34 +1114,57 @@
                     let filtered = combinedMovements.params({ statementType }).filter(d => d.statement_type === statementType);
 
                     // Apply period filters if specified
-                    const period2024Value = options.period2024 || 'all';
-                    const period2025Value = options.period2025 || 'all';
+                    // Parse year-period combinations (format: "2024-all", "2024-1", "2025-6", etc.)
+                    const period2024Value = options.period2024 || '2024-all';
+                    const period2025Value = options.period2025 || '2025-all';
                     
-                    if (period2024Value !== 'all' || period2025Value !== 'all') {
-                        const p2024 = period2024Value === 'all' ? 999 : parseInt(period2024Value);
-                        const p2025 = period2025Value === 'all' ? 999 : parseInt(period2025Value);
-                        
+                    // Parse first column selection (year-period)
+                    const [year2024Str, period2024Str] = period2024Value.split('-');
+                    const year2024 = parseInt(year2024Str);
+                    const period2024 = period2024Str === 'all' ? 999 : parseInt(period2024Str);
+                    
+                    // Parse second column selection (year-period)
+                    const [year2025Str, period2025Str] = period2025Value.split('-');
+                    const year2025 = parseInt(year2025Str);
+                    const period2025 = period2025Str === 'all' ? 999 : parseInt(period2025Str);
+                    
+                    // Filter data based on selected year-period combinations
+                    if (period2024Value !== '2024-all' || period2025Value !== '2025-all') {
                         filtered = filtered
-                            .params({ period2024: p2024, period2025: p2025 })
-                            .filter(d => (d.year === 2024 && d.period <= period2024) || (d.year === 2025 && d.period <= period2025));
+                            .params({ 
+                                year2024: year2024, 
+                                period2024: period2024,
+                                year2025: year2025,
+                                period2025: period2025
+                            })
+                            .filter(d => 
+                                (d.year === year2024 && d.period <= period2024) || 
+                                (d.year === year2025 && d.period <= period2025)
+                            );
                     }
 
-                    // Use conditional aggregation to get both years in one pass (no join needed!)
+                    // Use conditional aggregation to get both columns in one pass (no join needed!)
                     // Include level codes for proper sorting
                     // For Income Statement, flip the sign to show revenue as positive
+                    // Note: Column names remain amount_2024 and amount_2025 for compatibility,
+                    // but they now represent the selected year-period combinations
                     const signMultiplier = statementType === STATEMENT_TYPES.INCOME_STATEMENT ? -1 : 1;
                     const aggregated = filtered
-                        .params({ year2024: 2024, year2025: 2025, signMult: signMultiplier })
-                        .groupby('category', 'subcategory', 'level1_code', 'level2_code')
+                        .params({ 
+                            col1Year: year2024, 
+                            col2Year: year2025, 
+                            signMult: signMultiplier 
+                        })
+                        .groupby('category', 'subcategory', 'level1_code', 'level2_code', 'level3_code')
                         .rollup({
-                            amount_2024: d => aq.op.sum(d.year === year2024 ? d.movement_amount * signMult : 0),
-                            amount_2025: d => aq.op.sum(d.year === year2025 ? d.movement_amount * signMult : 0)
+                            amount_2024: d => aq.op.sum(d.year === col1Year ? d.movement_amount * signMult : 0),
+                            amount_2025: d => aq.op.sum(d.year === col2Year ? d.movement_amount * signMult : 0)
                         });
 
                     console.log('Columns after aggregation:', aggregated.columnNames());
 
-                    // Add ordering if specified - sort by level codes for proper order
-                    const ordered = options.orderBy ? aggregated.orderby('level1_code', 'level2_code') : aggregated;
+                    // Add ordering if specified - sort by level codes for proper order (all 3 levels)
+                    const ordered = options.orderBy ? aggregated.orderby('level1_code', 'level2_code', 'level3_code') : aggregated;
                     
                     // Calculate variances
                     const withVariances = this.deriveVarianceColumns(ordered);
@@ -1169,15 +1207,46 @@
                         const totals = categoryTotals.objects();
                         let totalAssets = 0, totalLiabilities = 0, totalEquity = 0;
                         
+                        // Asset categories: Fixed Assets + Current Assets
+                        const assetCategories = [
+                            'immateriële vaste activa',
+                            'materiële vaste activa',
+                            'voorraden',
+                            'vorderingen',
+                            'liquide middelen'
+                        ];
+                        
+                        // Liability categories
+                        const liabilityCategories = [
+                            'schuld',
+                            'voorziening',
+                            'passiva'
+                        ];
+                        
+                        // Equity categories
+                        const equityCategories = [
+                            'eigen vermogen',
+                            'equity'
+                        ];
+                        
                         totals.forEach(row => {
-                            if (row.category === 'Assets') totalAssets = row.amount_2025;
-                            if (row.category === 'Liabilities') totalLiabilities = row.amount_2025;
-                            if (row.category === 'Equity') totalEquity = row.amount_2025;
+                            const categoryLower = row.category.toLowerCase();
+                            
+                            if (assetCategories.some(cat => categoryLower.includes(cat))) {
+                                totalAssets += row.amount_2025 || 0;
+                            } else if (liabilityCategories.some(cat => categoryLower.includes(cat))) {
+                                totalLiabilities += row.amount_2025 || 0;
+                            } else if (equityCategories.some(cat => categoryLower.includes(cat))) {
+                                totalEquity += row.amount_2025 || 0;
+                            }
                         });
 
                         const imbalance = Math.abs(totalAssets - (totalLiabilities + totalEquity));
                         if (imbalance > 0.01) {
                             console.warn(`Balance Sheet imbalance: ${imbalance.toFixed(2)}`);
+                            console.warn(`Total Assets: ${totalAssets.toFixed(2)}`);
+                            console.warn(`Total Liabilities: ${totalLiabilities.toFixed(2)}`);
+                            console.warn(`Total Equity: ${totalEquity.toFixed(2)}`);
                         }
 
                         return {
@@ -1235,8 +1304,8 @@
 
                         const grossProfit2024 = revenue2024 + cogs2024;
                         const grossProfit2025 = revenue2025 + cogs2025;
-                        const operatingIncome2024 = grossProfit2024 - opex2024;
-                        const operatingIncome2025 = grossProfit2025 - opex2025;
+                        const operatingIncome2024 = grossProfit2024 + opex2024;
+                        const operatingIncome2025 = grossProfit2025 + opex2025;
                         const netIncome2024 = operatingIncome2024 + otherIncome2024 - taxes2024;
                         const netIncome2025 = operatingIncome2025 + otherIncome2025 - taxes2025;
 
@@ -1477,6 +1546,38 @@
         class ExportHandler {
             constructor(dataStore) {
                 this.dataStore = dataStore;
+                
+                // Formatting constants
+                this.FORMATS = {
+                    NUMBER: '#,##0',
+                    COLORS: {
+                        HEADER: 'FF007bff',
+                        METRIC_HIGHLIGHT: 'FFFFE599',
+                        WHITE: 'FFFFFFFF'
+                    }
+                };
+            }
+
+            // Helper: Format cells as whole numbers
+            formatCellsAsNumbers(row, startCol, endCol) {
+                for (let i = startCol; i <= endCol; i++) {
+                    if (row.getCell(i).value !== '' && row.getCell(i).value !== null) {
+                        row.getCell(i).numFmt = this.FORMATS.NUMBER;
+                    }
+                }
+            }
+
+            // Helper: Style metric row (bold + highlighted)
+            styleMetricRow(row, startCol, endCol, highlighted = true) {
+                row.font = { bold: true };
+                if (highlighted) {
+                    row.fill = { 
+                        type: 'pattern', 
+                        pattern: 'solid', 
+                        fgColor: { argb: this.FORMATS.COLORS.METRIC_HIGHLIGHT } 
+                    };
+                }
+                this.formatCellsAsNumbers(row, startCol, endCol);
             }
 
             // Convert Arquero table to array of arrays
@@ -1495,167 +1596,245 @@
                 return data;
             }
 
-            // Export single statement to Excel
-            async exportStatement(statementData, statementName) {
-                try {
-                    const workbook = new ExcelJS.Workbook();
-                    const worksheet = workbook.addWorksheet(statementName);
-
-                    // Convert statement data to array format
-                    const headers = ['Line Item', '2024', '2025', 'Variance (€)', 'Variance (%)'];
-                    const rows = [headers];
-
-                    // Add details
-                    const details = statementData.details.objects();
-                    let currentCategory = null;
-
-                    details.forEach(row => {
-                        if (row.category !== currentCategory) {
-                            currentCategory = row.category;
-                            rows.push([currentCategory, '', '', '', '']);
-                        }
-                        rows.push([
-                            '  ' + (row.subcategory || row.category),
-                            row.amount_2024,
-                            row.amount_2025,
-                            row.variance_amount,
-                            row.variance_percent
-                        ]);
-                    });
-
-                    // Add empty row
-                    rows.push(['', '', '', '', '']);
-
-                    // Add totals
-                    rows.push(['Category Totals', '', '', '', '']);
-                    const totals = statementData.totals.objects();
-                    totals.forEach(row => {
-                        rows.push([
-                            'Total ' + row.category,
-                            row.amount_2024,
-                            row.amount_2025,
-                            row.variance_amount,
-                            row.variance_percent
-                        ]);
-                    });
-
-                    // Add rows to worksheet
-                    rows.forEach((row, index) => {
-                        const excelRow = worksheet.addRow(row);
-                        
-                        // Format header row
-                        if (index === 0) {
-                            excelRow.font = { bold: true };
-                            excelRow.fill = {
-                                type: 'pattern',
-                                pattern: 'solid',
-                                fgColor: { argb: 'FF007bff' }
-                            };
-                            excelRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-                        }
-                        
-                        // Format number columns
-                        for (let i = 2; i <= 5; i++) {
-                            if (excelRow.getCell(i).value !== '') {
-                                excelRow.getCell(i).numFmt = '#,##0.00';
-                            }
-                        }
-                    });
-
-                    // Auto-size columns
-                    worksheet.columns.forEach(column => {
-                        column.width = 20;
-                    });
-
-                    // Generate buffer and download
-                    const buffer = await workbook.xlsx.writeBuffer();
-                    const blob = new Blob([buffer], { 
-                        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
-                    });
-                    
-                    const url = window.URL.createObjectURL(blob);
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = `${statementName}.xlsx`;
-                    link.click();
-                    window.URL.revokeObjectURL(url);
-
-                    console.log(`Exported ${statementName} successfully`);
-
-                } catch (error) {
-                    console.error('Error exporting statement:', error);
-                    throw error;
-                }
-            }
-
             // Export all statements to single workbook
             async exportAllStatements(statements) {
+                // Show loading indicator
+                const exportStatus = document.getElementById('export-status');
+                if (exportStatus) {
+                    exportStatus.textContent = '⏳ Generating Excel file...';
+                    exportStatus.style.color = '#007bff';
+                }
+                
                 try {
+                    // Validate input
+                    if (!statements || Object.keys(statements).length === 0) {
+                        throw new Error('No statements available to export');
+                    }
+                    
                     const workbook = new ExcelJS.Workbook();
+
+                    // Add metadata sheet first
+                    const metadataSheet = workbook.addWorksheet('Export Info');
+                    
+                    // Get current date and time
+                    const now = new Date();
+                    const dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                    const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    
+                    // Get username - browsers don't expose system username for security reasons
+                    // We'll use a placeholder that users can customize
+                    const username = 'System User';
+                    
+                    // Get input file names from config
+                    const inputFiles = [
+                        config.inputFiles.trialBalance2024,
+                        config.inputFiles.trialBalance2025,
+                        config.inputFiles.dates
+                    ];
+                    
+                    // Add metadata rows
+                    const metadataRows = [
+                        ['Financial Statements Export Information'],
+                        [''],
+                        ['Export Date:', dateStr],
+                        ['Export Time:', timeStr],
+                        ['Generated By:', username],
+                        [''],
+                        ['Input Files:'],
+                        ['Trial Balance 2024:', config.inputFiles.trialBalance2024],
+                        ['Trial Balance 2025:', config.inputFiles.trialBalance2025],
+                        ['Dates Dimension:', config.inputFiles.dates],
+                        [''],
+                        ['Statements Included:'],
+                        ['- Balance Sheet'],
+                        ['- Income Statement'],
+                        ['- Cash Flow Statement']
+                    ];
+                    
+                    metadataRows.forEach((row, index) => {
+                        const excelRow = metadataSheet.addRow(row);
+                        
+                        // Style the title row
+                        if (index === 0) {
+                            excelRow.font = { bold: true, size: 14, color: { argb: 'FF007bff' } };
+                        }
+                        
+                        // Style section headers
+                        if (row[0] && (row[0].includes(':') || row[0].includes('Files') || row[0].includes('Included'))) {
+                            excelRow.getCell(1).font = { bold: true };
+                        }
+                    });
+                    
+                    // Set column widths
+                    metadataSheet.getColumn(1).width = 25;
+                    metadataSheet.getColumn(2).width = 50;
 
                     // Add each statement as a separate worksheet
                     for (const [name, data] of Object.entries(statements)) {
                         const worksheet = workbook.addWorksheet(name);
 
-                        const headers = ['Line Item', '2024', '2025', 'Variance (€)', 'Variance (%)'];
-                        const rows = [headers];
+                        // Determine if this is Cash Flow (2025 only, no variance)
+                        const isCashFlow = name === 'Cash Flow Statement';
+                        
+                        const headers = isCashFlow 
+                            ? ['Line Item', '2025']
+                            : ['Line Item', '2024', '2025', 'Variance (€)', 'Variance (%)'];
+                        
+                        // Add header row
+                        const headerRow = worksheet.addRow(headers);
+                        headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                        headerRow.fill = {
+                            type: 'pattern',
+                            pattern: 'solid',
+                            fgColor: { argb: 'FF007bff' }
+                        };
+                        
+                        // Center-align all column headers
+                        headerRow.eachCell((cell) => {
+                            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                        });
 
+                        let rowIndex = 2; // Start after header
+                        const categoryStartRows = {}; // Track where each category starts for formulas
+                        const categoryEndRows = {}; // Track where each category ends for formulas
+                        
                         // Add details
                         const details = data.details.objects();
                         let currentCategory = null;
 
                         details.forEach(row => {
                             if (row.category !== currentCategory) {
+                                // Mark end of previous category
+                                if (currentCategory) {
+                                    categoryEndRows[currentCategory] = rowIndex - 1;
+                                }
+                                
                                 currentCategory = row.category;
-                                rows.push([currentCategory, '', '', '', '']);
+                                categoryStartRows[currentCategory] = rowIndex + 1; // +1 because category header is on current row
+                                
+                                // Add category header
+                                const categoryRow = worksheet.addRow([currentCategory, '', '', '', '']);
+                                categoryRow.font = { bold: true };
+                                rowIndex++;
                             }
-                            rows.push([
-                                '  ' + (row.subcategory || row.category),
-                                row.amount_2024,
-                                row.amount_2025,
-                                row.variance_amount,
-                                row.variance_percent
-                            ]);
+                            
+                            // Add detail row
+                            const detailRow = isCashFlow
+                                ? ['  ' + (row.subcategory || row.category), row.amount_2025]
+                                : ['  ' + (row.subcategory || row.category), row.amount_2024, row.amount_2025, row.variance_amount, row.variance_percent];
+                            
+                            const excelRow = worksheet.addRow(detailRow);
+                            
+                            // Format numbers as whole numbers
+                            this.formatCellsAsNumbers(excelRow, 2, isCashFlow ? 2 : 5);
+                            rowIndex++;
                         });
-
-                        rows.push(['', '', '', '', '']);
-                        rows.push(['Category Totals', '', '', '', '']);
                         
-                        const totals = data.totals.objects();
-                        totals.forEach(row => {
-                            rows.push([
-                                'Total ' + row.category,
-                                row.amount_2024,
-                                row.amount_2025,
-                                row.variance_amount,
-                                row.variance_percent
-                            ]);
-                        });
+                        // Mark end of last category
+                        if (currentCategory) {
+                            categoryEndRows[currentCategory] = rowIndex - 1;
+                        }
 
-                        // Add rows to worksheet
-                        rows.forEach((row, index) => {
-                            const excelRow = worksheet.addRow(row);
+                        // Add empty row
+                        worksheet.addRow(['', '', '', '', '']);
+                        rowIndex++;
+
+                        // Add calculated metrics if available
+                        if (data.metrics) {
+                            const metrics = data.metrics;
                             
-                            if (index === 0) {
-                                excelRow.font = { bold: true };
-                                excelRow.fill = {
-                                    type: 'pattern',
-                                    pattern: 'solid',
-                                    fgColor: { argb: 'FF007bff' }
-                                };
-                                excelRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-                            }
-                            
-                            for (let i = 2; i <= 5; i++) {
-                                if (excelRow.getCell(i).value !== '') {
-                                    excelRow.getCell(i).numFmt = '#,##0.00';
+                            // For Income Statement: Add Gross Profit, Operating Income, Net Income
+                            if (name === 'Income Statement') {
+                                if (metrics.grossProfit) {
+                                    const gpRow = worksheet.addRow(['Gross Profit', metrics.grossProfit['2024'], metrics.grossProfit['2025'], '', '']);
+                                    this.styleMetricRow(gpRow, 2, 3);
+                                    rowIndex++;
+                                }
+                                
+                                if (metrics.operatingIncome) {
+                                    const oiRow = worksheet.addRow(['Operating Income', metrics.operatingIncome['2024'], metrics.operatingIncome['2025'], '', '']);
+                                    this.styleMetricRow(oiRow, 2, 3);
+                                    rowIndex++;
+                                }
+                                
+                                if (metrics.netIncome) {
+                                    const niRow = worksheet.addRow(['Net Income', metrics.netIncome['2024'], metrics.netIncome['2025'], '', '']);
+                                    this.styleMetricRow(niRow, 2, 3);
+                                    rowIndex++;
                                 }
                             }
+                            
+                            // For Cash Flow: Add Starting Cash, Changes, Ending Cash
+                            if (name === 'Cash Flow Statement') {
+                                if (metrics.startingCash) {
+                                    const scRow = worksheet.addRow(['Starting Cash', metrics.startingCash['2025']]);
+                                    this.styleMetricRow(scRow, 2, 2, false);
+                                    rowIndex++;
+                                }
+                                
+                                if (metrics.changesInCash) {
+                                    const ccRow = worksheet.addRow(['Changes in Cash', metrics.changesInCash['2025']]);
+                                    this.styleMetricRow(ccRow, 2, 2, false);
+                                    rowIndex++;
+                                }
+                                
+                                if (metrics.endingCash) {
+                                    const ecRow = worksheet.addRow(['Ending Cash', metrics.endingCash['2025']]);
+                                    this.styleMetricRow(ecRow, 2, 2, true);
+                                    rowIndex++;
+                                }
+                            }
+                        }
+
+                        // Add empty row before totals
+                        worksheet.addRow(['', '', '', '', '']);
+                        rowIndex++;
+                        
+                        // Add category totals with Excel formulas
+                        const totals = data.totals.objects();
+                        totals.forEach(row => {
+                            const totalLabel = 'Total ' + row.category;
+                            const startRow = categoryStartRows[row.category];
+                            const endRow = categoryEndRows[row.category];
+                            
+                            const totalRow = isCashFlow 
+                                ? worksheet.addRow([totalLabel, null])
+                                : worksheet.addRow([totalLabel, null, null, null, null]);
+                            
+                            totalRow.font = { bold: true };
+                            
+                            // Add formulas or static values
+                            if (startRow && endRow && startRow <= endRow) {
+                                totalRow.getCell(2).value = { formula: `SUM(B${startRow}:B${endRow})` };
+                                
+                                if (!isCashFlow) {
+                                    totalRow.getCell(3).value = { formula: `SUM(C${startRow}:C${endRow})` };
+                                    totalRow.getCell(4).value = { formula: `C${rowIndex}-B${rowIndex}` };
+                                    totalRow.getCell(5).value = { formula: `IF(B${rowIndex}=0,0,(D${rowIndex}/ABS(B${rowIndex}))*100)` };
+                                }
+                            } else {
+                                // Fallback to static values
+                                totalRow.getCell(2).value = isCashFlow ? row.amount_2025 : row.amount_2024;
+                                if (!isCashFlow) {
+                                    totalRow.getCell(3).value = row.amount_2025;
+                                    totalRow.getCell(4).value = row.variance_amount;
+                                    totalRow.getCell(5).value = row.variance_percent;
+                                }
+                            }
+                            
+                            // Format as whole numbers
+                            this.formatCellsAsNumbers(totalRow, 2, isCashFlow ? 2 : 5);
+                            rowIndex++;
                         });
 
-                        worksheet.columns.forEach(column => {
-                            column.width = 20;
-                        });
+                        // Set column widths
+                        worksheet.getColumn(1).width = 35;
+                        worksheet.getColumn(2).width = 15;
+                        if (!isCashFlow) {
+                            worksheet.getColumn(3).width = 15;
+                            worksheet.getColumn(4).width = 15;
+                            worksheet.getColumn(5).width = 15;
+                        }
                     }
 
                     // Generate buffer and download
@@ -1672,9 +1851,45 @@
                     window.URL.revokeObjectURL(url);
 
                     console.log('Exported all statements successfully');
+                    
+                    // Show success message
+                    if (exportStatus) {
+                        exportStatus.textContent = '✅ Export completed successfully';
+                        exportStatus.style.color = '#28a745';
+                        
+                        // Clear message after 3 seconds
+                        setTimeout(() => {
+                            exportStatus.textContent = '';
+                        }, 3000);
+                    }
 
                 } catch (error) {
                     console.error('Error exporting all statements:', error);
+                    
+                    // Show user-friendly error message
+                    if (exportStatus) {
+                        let errorMessage = '❌ Export failed: ';
+                        
+                        if (error.message.includes('No statements')) {
+                            errorMessage += 'No statements available. Please load data first.';
+                        } else if (error.message.includes('writeBuffer')) {
+                            errorMessage += 'Failed to generate Excel file. Please try again.';
+                        } else if (error.message.includes('Blob')) {
+                            errorMessage += 'Browser does not support file download.';
+                        } else {
+                            errorMessage += error.message || 'Unknown error occurred.';
+                        }
+                        
+                        exportStatus.textContent = errorMessage;
+                        exportStatus.style.color = '#dc3545';
+                        
+                        // Keep error message visible longer
+                        setTimeout(() => {
+                            exportStatus.textContent = '';
+                        }, 5000);
+                    }
+                    
+                    // Re-throw for debugging purposes
                     throw error;
                 }
             }
@@ -1725,11 +1940,19 @@
                 let html = '<table class="financial-table">';
                 
                 // Check which years and variance should be shown
+                // For Cash Flow Statement, only show 2025 (no 2024 column)
                 // Try header checkboxes first, fall back to true if not found (initial render)
                 const header2024Checkbox = document.getElementById('show-2024-header');
                 const header2025Checkbox = document.getElementById('show-2025-header');
-                const show2024 = header2024Checkbox ? header2024Checkbox.checked : true;
-                const show2025 = header2025Checkbox ? header2025Checkbox.checked : true;
+                let show2024 = header2024Checkbox ? header2024Checkbox.checked : true;
+                let show2025 = header2025Checkbox ? header2025Checkbox.checked : true;
+                
+                // Override for Cash Flow: only show 2025
+                if (statementType === 'cash-flow') {
+                    show2024 = false;
+                    show2025 = true;
+                }
+                
                 const showVariance = document.getElementById('show-variance')?.checked !== false && show2024 && show2025;
                 
                 // Calculate column span dynamically
@@ -1739,23 +1962,43 @@
                 if (showVariance) colCount += 2;
                 const colSpan = colCount;
                 
+                // Get current period selections before regenerating (to preserve them)
+                const currentPeriod2024 = document.getElementById('period-2024-header')?.value || '2024-all';
+                const currentPeriod2025 = document.getElementById('period-2025-header')?.value || '2025-all';
+                
                 // Table header
                 html += '<thead><tr>';
                 html += '<th class="col-label">Line Item</th>';
                 if (show2024) {
                     html += '<th class="col-number">';
-                    html += '<label style="cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: center; gap: 5px;">';
-                    html += '<input type="checkbox" id="show-2024-header" checked style="cursor: pointer;">';
-                    html += '<span>2024</span>';
-                    html += '</label>';
+                    html += '<select id="period-2024-header" style="padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; cursor: pointer; font-size: 12px;">';
+                    // Add 2024 options
+                    html += `<option value="2024-all" ${currentPeriod2024 === '2024-all' ? 'selected' : ''}>2024 (All)</option>`;
+                    for (let i = 1; i <= 12; i++) {
+                        html += `<option value="2024-${i}" ${currentPeriod2024 === `2024-${i}` ? 'selected' : ''}>2024 (P${i})</option>`;
+                    }
+                    // Add 2025 options
+                    html += `<option value="2025-all" ${currentPeriod2024 === '2025-all' ? 'selected' : ''}>2025 (All)</option>`;
+                    for (let i = 1; i <= 12; i++) {
+                        html += `<option value="2025-${i}" ${currentPeriod2024 === `2025-${i}` ? 'selected' : ''}>2025 (P${i})</option>`;
+                    }
+                    html += '</select>';
                     html += '</th>';
                 }
                 if (show2025) {
                     html += '<th class="col-number">';
-                    html += '<label style="cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: center; gap: 5px;">';
-                    html += '<input type="checkbox" id="show-2025-header" checked style="cursor: pointer;">';
-                    html += '<span>2025</span>';
-                    html += '</label>';
+                    html += '<select id="period-2025-header" style="padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; cursor: pointer; font-size: 12px;">';
+                    // Add 2024 options
+                    html += `<option value="2024-all" ${currentPeriod2025 === '2024-all' ? 'selected' : ''}>2024 (All)</option>`;
+                    for (let i = 1; i <= 12; i++) {
+                        html += `<option value="2024-${i}" ${currentPeriod2025 === `2024-${i}` ? 'selected' : ''}>2024 (P${i})</option>`;
+                    }
+                    // Add 2025 options
+                    html += `<option value="2025-all" ${currentPeriod2025 === '2025-all' ? 'selected' : ''}>2025 (All)</option>`;
+                    for (let i = 1; i <= 12; i++) {
+                        html += `<option value="2025-${i}" ${currentPeriod2025 === `2025-${i}` ? 'selected' : ''}>2025 (P${i})</option>`;
+                    }
+                    html += '</select>';
                     html += '</th>';
                 }
                 if (showVariance) {
@@ -1771,12 +2014,23 @@
                 const totals = statementData.totals.objects();
                 
                 // Pre-calculate Total Assets for Balance Sheet (to insert in the middle)
+                // Total Assets = Fixed Assets + Current Assets
+                // Fixed Assets = Immateriële vaste activa + Materiële vaste activa
+                // Current Assets = Voorraden + Vorderingen + Liquide Middelen
                 let totalAssets2024 = 0, totalAssets2025 = 0;
                 let totalAssetsInserted = false;
                 if (statementType === 'balance-sheet') {
+                    const assetCategories = [
+                        'immateriële vaste activa',
+                        'materiële vaste activa',
+                        'voorraden',
+                        'vorderingen',
+                        'liquide middelen'
+                    ];
+                    
                     totals.forEach(row => {
                         const categoryLower = row.category.toLowerCase();
-                        if (categoryLower.includes('activa') || categoryLower.includes('asset')) {
+                        if (assetCategories.some(cat => categoryLower.includes(cat))) {
                             totalAssets2024 += row.amount_2024 || 0;
                             totalAssets2025 += row.amount_2025 || 0;
                         }
@@ -1810,32 +2064,6 @@
                         }
                     }
                     
-                    // Insert Operating Income inline before "Financiele baten en lasten" category for Income Statement (only once)
-                    if (statementType === 'income-statement' && 
-                        statementData.metrics && 
-                        !operatingIncomeInserted &&
-                        row.category !== currentCategory &&
-                        (row.category.toLowerCase().includes('financiele') || 
-                         row.category.toLowerCase().includes('financial') ||
-                         row.category.toLowerCase().includes('baten') ||
-                         row.category.toLowerCase().includes('lasten'))) {
-                        
-                        operatingIncomeInserted = true;
-                        
-                        const metrics = statementData.metrics;
-                        const oiVariance = metrics.operatingIncome['2025'] - metrics.operatingIncome['2024'];
-                        const oiVariancePercent = metrics.operatingIncome['2024'] !== 0 ? 
-                            (oiVariance / Math.abs(metrics.operatingIncome['2024'])) * 100 : 0;
-                        
-                        html += '<tr class="metric-row">';
-                        html += '<td><strong>Operating Income</strong></td>';
-                        html += this.renderDataCells(metrics.operatingIncome['2024'], metrics.operatingIncome['2025'], oiVariance, oiVariancePercent, show2024, show2025, showVariance, 'number');
-                        html += '</tr>';
-                        
-                        // Empty line after Operating Income
-                        html += `<tr class="spacer-row"><td colspan="${colSpan}"></td></tr>`;
-                    }
-                    
                     // Add category header if changed
                     if (row.category !== currentCategory) {
                         currentCategory = row.category;
@@ -1867,6 +2095,28 @@
                             html += '</tr>';
                             
                             // Empty line after Gross Profit
+                            html += `<tr class="spacer-row"><td colspan="${colSpan}"></td></tr>`;
+                        }
+                        
+                        // Insert Operating Income inline after "Overige Personeelskosten" for Income Statement (only once)
+                        if (statementType === 'income-statement' && 
+                            statementData.metrics && 
+                            !operatingIncomeInserted &&
+                            row.subcategory && row.subcategory.toLowerCase().includes('overige personeelskosten')) {
+                            
+                            operatingIncomeInserted = true;
+                            
+                            const metrics = statementData.metrics;
+                            const oiVariance = metrics.operatingIncome['2025'] - metrics.operatingIncome['2024'];
+                            const oiVariancePercent = metrics.operatingIncome['2024'] !== 0 ? 
+                                (oiVariance / Math.abs(metrics.operatingIncome['2024'])) * 100 : 0;
+                            
+                            html += '<tr class="metric-row">';
+                            html += '<td><strong>Operating Income</strong></td>';
+                            html += this.renderDataCells(metrics.operatingIncome['2024'], metrics.operatingIncome['2025'], oiVariance, oiVariancePercent, show2024, show2025, showVariance, 'number');
+                            html += '</tr>';
+                            
+                            // Empty line after Operating Income
                             html += `<tr class="spacer-row"><td colspan="${colSpan}"></td></tr>`;
                         }
                     }
@@ -1990,26 +2240,28 @@
                 
                 container.innerHTML = html;
                 
-                // Add event listeners for header checkboxes
-                const show2024HeaderCheckbox = container.querySelector('#show-2024-header');
-                const show2025HeaderCheckbox = container.querySelector('#show-2025-header');
+                // Add event listeners for header period dropdowns
+                const period2024HeaderDropdown = container.querySelector('#period-2024-header');
+                const period2025HeaderDropdown = container.querySelector('#period-2025-header');
                 
-                if (show2024HeaderCheckbox) {
-                    show2024HeaderCheckbox.addEventListener('change', (e) => {
+                if (period2024HeaderDropdown) {
+                    period2024HeaderDropdown.addEventListener('change', (e) => {
                         e.stopPropagation(); // Prevent event bubbling
-                        // Re-render the current statement with year visibility changes
-                        if (this.currentStatementType && this.currentStatement) {
-                            this.renderStatement(this.currentStatement, this.currentStatementType, container.id);
+                        // Re-generate and render the current statement with new period filter
+                        if (this.currentStatementType) {
+                            // Trigger regeneration through the UI controller
+                            window.uiController.generateAndDisplayStatement(this.currentStatementType);
                         }
                     });
                 }
                 
-                if (show2025HeaderCheckbox) {
-                    show2025HeaderCheckbox.addEventListener('change', (e) => {
+                if (period2025HeaderDropdown) {
+                    period2025HeaderDropdown.addEventListener('change', (e) => {
                         e.stopPropagation(); // Prevent event bubbling
-                        // Re-render the current statement with year visibility changes
-                        if (this.currentStatementType && this.currentStatement) {
-                            this.renderStatement(this.currentStatement, this.currentStatementType, container.id);
+                        // Re-generate and render the current statement with new period filter
+                        if (this.currentStatementType) {
+                            // Trigger regeneration through the UI controller
+                            window.uiController.generateAndDisplayStatement(this.currentStatementType);
                         }
                     });
                 }
@@ -2115,31 +2367,33 @@
                 }
             }
 
-            // Show loading message
+            // Unified status message display
+            showStatusMessage(message, type = 'info') {
+                const loadingStatus = document.getElementById('loading-status');
+                if (!loadingStatus) return;
+                
+                const config = {
+                    info: { icon: '', color: '#007bff' },
+                    error: { icon: '❌ ', color: '#dc3545' },
+                    success: { icon: '✅ ', color: '#28a745' }
+                };
+                
+                const { icon, color } = config[type] || config.info;
+                loadingStatus.textContent = icon + message;
+                loadingStatus.style.color = color;
+            }
+
+            // Convenience methods
             showLoadingMessage(message) {
-                const loadingStatus = document.getElementById('loading-status');
-                if (loadingStatus) {
-                    loadingStatus.textContent = message;
-                    loadingStatus.style.color = '#007bff';
-                }
+                this.showStatusMessage(message, 'info');
             }
 
-            // Show error message
             showErrorMessage(message) {
-                const loadingStatus = document.getElementById('loading-status');
-                if (loadingStatus) {
-                    loadingStatus.textContent = '❌ ' + message;
-                    loadingStatus.style.color = '#dc3545';
-                }
+                this.showStatusMessage(message, 'error');
             }
 
-            // Show success message
             showSuccessMessage(message) {
-                const loadingStatus = document.getElementById('loading-status');
-                if (loadingStatus) {
-                    loadingStatus.textContent = '✅ ' + message;
-                    loadingStatus.style.color = '#28a745';
-                }
+                this.showStatusMessage(message, 'success');
             }
 
             // Handle input directory selection
@@ -2147,13 +2401,60 @@
                 try {
                     await this.dataLoader.selectInputDirectory();
                     const statusText = document.getElementById('input-dir-status');
-                    statusText.textContent = `📁 ${this.dataLoader.inputDirHandle.name}`;
+                    const dirName = this.dataLoader.inputDirHandle.name;
+                    statusText.textContent = `📁 ${dirName}`;
                     statusText.style.color = '#28a745';
                     
-                    // Enable load button
-                    document.getElementById('load-all-files').disabled = false;
+                    // Check if directory is named "input"
+                    if (dirName.toLowerCase() !== 'input') {
+                        const errorMsg = `Directory must be named "input" (current: "${dirName}")`;
+                        this.showErrorMessage(errorMsg);
+                        console.error(errorMsg);
+                        return;
+                    }
+                    
+                    console.log('Directory named "input" detected, checking for files...');
+                    
+                    // Check if required files exist
+                    const filesExist = await this.checkRequiredFilesExist();
+                    
+                    if (!filesExist) {
+                        const errorMsg = 'Required files not found in directory. Please ensure the directory contains the trial balance files.';
+                        this.showErrorMessage(errorMsg);
+                        console.error(errorMsg);
+                        return;
+                    }
+                    
+                    console.log('Required files found, loading...');
+                    // Automatically load files
+                    await this.handleLoadAllFiles();
+                    
                 } catch (error) {
                     this.showErrorMessage(error.message);
+                }
+            }
+            
+            // Check if required files exist in the selected directory
+            async checkRequiredFilesExist() {
+                try {
+                    const requiredFiles = [
+                        config.inputFiles.trialBalance2024,
+                        config.inputFiles.trialBalance2025
+                    ];
+                    
+                    for (const filename of requiredFiles) {
+                        try {
+                            await this.dataLoader.inputDirHandle.getFileHandle(filename);
+                        } catch (error) {
+                            console.log(`File not found: ${filename}`);
+                            return false;
+                        }
+                    }
+                    
+                    return true;
+                } catch (error) {
+                    console.error('Error checking files:', error);
+                    return false;
                 }
             }
 
@@ -2193,11 +2494,16 @@
                     // Get loaded years from DataStore
                     const loadedYears = this.dataStore.getAllPeriods();
                     console.log(`Loaded trial balance years: ${loadedYears.join(', ')}`);
-
-                    this.showSuccessMessage('Files loaded');
                     
                     // Validate data and show results
                     this.validateAndDisplayResults();
+                    
+                    // Clear loading message and log success to console
+                    const loadingStatus = document.getElementById('loading-status');
+                    if (loadingStatus) {
+                        loadingStatus.textContent = '';
+                    }
+                    console.log('✅ All files loaded successfully!');
                     
                     // Show statement section
                     document.getElementById('statement-section').style.display = 'block';
@@ -2209,14 +2515,46 @@
                     this.generateAndDisplayStatement('balance-sheet');
 
                 } catch (error) {
-                    this.showErrorMessage(error.message);
                     console.error('File loading error:', error);
                     console.error('Error stack:', error.stack);
+                    
+                    // Provide user-friendly error messages based on error type
+                    let userMessage = 'Failed to load files: ';
+                    
+                    if (error.message.includes('File not found')) {
+                        userMessage += 'One or more required files are missing from the selected directory. Please ensure the directory contains the trial balance files.';
+                    } else if (error.message.includes('Input directory not selected')) {
+                        userMessage += 'Please select an input directory first.';
+                    } else if (error.message.includes('File is empty')) {
+                        userMessage += 'One of the files is empty or invalid. Please check the file format.';
+                    } else if (error.message.includes('missing required columns')) {
+                        userMessage += 'File structure is invalid. ' + error.message;
+                    } else if (error.message.includes('permission')) {
+                        userMessage += 'Permission denied. Please ensure you have access to the selected directory.';
+                    } else if (error.message.includes('ExcelJS')) {
+                        userMessage += 'Failed to parse Excel file. Please ensure the files are valid Excel workbooks.';
+                    } else {
+                        userMessage += error.message || 'Unknown error occurred.';
+                    }
+                    
+                    this.showErrorMessage(userMessage);
                     
                     // Update status indicators to show error
                     this.updateFileStatus('tb2024', 'error');
                     this.updateFileStatus('tb2025', 'error');
-                    this.updateFileStatus('hierarchy', 'error');
+                    
+                    // Show validation container with error
+                    const validationContainer = document.getElementById('validation-messages');
+                    const errorsContainer = document.getElementById('validation-errors');
+                    
+                    if (validationContainer && errorsContainer) {
+                        errorsContainer.innerHTML = '';
+                        const errorDiv = document.createElement('div');
+                        errorDiv.className = 'validation-error-item';
+                        errorDiv.innerHTML = `<strong>Loading Error:</strong> ${userMessage}`;
+                        errorsContainer.appendChild(errorDiv);
+                        validationContainer.style.display = 'block';
+                    }
                 }
             }
 
@@ -2285,36 +2623,74 @@
             // Generate and display statement
             generateAndDisplayStatement(statementType) {
                 try {
-                    // Get period selections
-                    const period2024 = document.getElementById('period-2024')?.value || 'all';
-                    const period2025 = document.getElementById('period-2025')?.value || 'all';
+                    // Validate that data is loaded
+                    if (!this.dataStore.getCombinedMovements()) {
+                        throw new Error('No data loaded. Please load trial balance files first.');
+                    }
+                    
+                    // Get period selections from header dropdowns (fallback to defaults if not found)
+                    const period2024 = document.getElementById('period-2024-header')?.value || '2024-all';
+                    const period2025 = document.getElementById('period-2025-header')?.value || '2025-all';
                     const periodOptions = { period2024, period2025 };
                     
                     let statementData;
+                    let statementName;
                     
                     switch(statementType) {
                         case 'balance-sheet':
+                            statementName = 'Balance Sheet';
                             statementData = this.statementGenerator.generateBalanceSheet(periodOptions);
                             break;
                         case 'income-statement':
+                            statementName = 'Income Statement';
                             statementData = this.statementGenerator.generateIncomeStatement(periodOptions);
                             break;
                         case 'cash-flow':
+                            statementName = 'Cash Flow Statement';
                             statementData = this.statementGenerator.generateCashFlowStatement(periodOptions);
                             break;
                         default:
-                            throw new Error('Unknown statement type');
+                            throw new Error('Unknown statement type: ' + statementType);
+                    }
+                    
+                    // Validate statement data
+                    if (!statementData || !statementData.details) {
+                        throw new Error('Statement generation returned invalid data');
                     }
                     
                     this.interactiveUI.renderStatement(statementData, statementType, 'statement-display');
                     this.currentStatementType = statementType;
                     this.currentStatementData = statementData;
                     
+                    console.log(`${statementName} generated successfully with ${statementData.details.numRows()} detail rows`);
+                    
                 } catch (error) {
                     console.error('Error generating statement:', error);
+                    console.error('Error stack:', error.stack);
+                    
                     const display = document.getElementById('statement-display');
                     if (display) {
-                        display.innerHTML = `<div class="error-message">Error generating statement: ${error.message}</div>`;
+                        let errorMessage = 'Failed to generate statement: ';
+                        
+                        if (error.message.includes('No data loaded')) {
+                            errorMessage += 'Please load trial balance files first using the "Load Files" button.';
+                        } else if (error.message.includes('Required data not loaded')) {
+                            errorMessage += 'Trial balance data is incomplete. Please reload the files.';
+                        } else if (error.message.includes('Unknown statement type')) {
+                            errorMessage += 'Invalid statement type selected.';
+                        } else if (error.message.includes('invalid data')) {
+                            errorMessage += 'Statement generation produced invalid results. Please check the source data.';
+                        } else {
+                            errorMessage += error.message || 'Unknown error occurred.';
+                        }
+                        
+                        display.innerHTML = `
+                            <div style="padding: 20px; background: #f8d7da; border: 1px solid #dc3545; border-radius: 4px; color: #721c24;">
+                                <strong>❌ Error:</strong> ${errorMessage}
+                                <br><br>
+                                <small>Check the browser console for more details.</small>
+                            </div>
+                        `;
                     }
                 }
             }
@@ -2324,9 +2700,9 @@
                 try {
                     this.showExportStatus('Exporting all statements...', 'loading');
                     
-                    // Get period selections
-                    const period2024 = document.getElementById('period-2024')?.value || 'all';
-                    const period2025 = document.getElementById('period-2025')?.value || 'all';
+                    // Get period selections from header dropdowns
+                    const period2024 = document.getElementById('period-2024-header')?.value || '2024-all';
+                    const period2025 = document.getElementById('period-2025-header')?.value || '2025-all';
                     const periodOptions = { period2024, period2025 };
                     
                     const statements = {
@@ -2450,10 +2826,6 @@
                     this.handleSelectInputDirectory();
                 });
 
-                document.getElementById('load-all-files').addEventListener('click', () => {
-                    this.handleLoadAllFiles();
-                });
-
                 // Tab switching
                 document.querySelectorAll('.tab-btn').forEach(btn => {
                     btn.addEventListener('click', () => {
@@ -2494,22 +2866,6 @@
                         this.handleTabSwitch(this.currentStatementType);
                     }
                 });
-                
-                // Period selection dropdowns
-                document.getElementById('period-2024')?.addEventListener('change', () => {
-                    // Re-generate and render the current statement with new period filter
-                    if (this.currentStatementType) {
-                        this.generateAndDisplayStatement(this.currentStatementType);
-                    }
-                });
-                
-                document.getElementById('period-2025')?.addEventListener('change', () => {
-                    // Re-generate and render the current statement with new period filter
-                    if (this.currentStatementType) {
-                        this.generateAndDisplayStatement(this.currentStatementType);
-                    }
-                });
-                
             }
         }
 
