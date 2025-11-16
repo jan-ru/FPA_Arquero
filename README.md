@@ -243,6 +243,13 @@ For issues or questions:
 
 ## Version
 
-**Current Version:** 1.1.0
+**Current Version:** 1.2.0
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed version history and release notes.
+
+### What's New in 1.2.0
+- Enhanced period validation (validates 22 year-month combinations)
+- Reorganized test structure (test/ directory)
+- Comprehensive file naming documentation
+- Dutch month name support in validation
+- Test suite: 1/2 passing (period ✅, account 99.2% coverage)

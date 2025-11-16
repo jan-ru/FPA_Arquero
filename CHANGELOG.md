@@ -67,6 +67,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Arquero for data manipulation
 - Browser compatibility: Chrome 86+, Edge 86+, Opera 72+
 
+## [1.2.0] - 2024-11-16
+
+### Added
+- Enhanced period validation to check year-month combinations (not just years)
+- Dutch month name mapping (januari→1, februari→2, etc.)
+- Validates 22 year-month combinations from source files against DimDates
+- Comprehensive test directory structure (test/scripts/, test/docs/)
+- Convenience test runner script (run_tests.sh)
+- FILE_NAMING_REFERENCE.md for file naming clarity
+- Test README.md with complete testing documentation
+
+### Changed
+- Reorganized all test scripts into test/scripts/ directory
+- Moved all test documentation to test/docs/ directory
+- Updated all documentation to use correct file names (DimAccounts.xlsx, DimDates.xlsx)
+- Enhanced test_period_mapping.ts to validate month-level granularity
+- Updated README.md with new test locations and structure
+- Version display in application header updated to v1.2.0
+
+### Fixed
+- Corrected file name references from hierarchy.xlsx to DimAccounts.xlsx
+- Corrected file name references from dates.xlsx to DimDates.xlsx
+- Updated default config in index.html to use correct file names
+
+### Test Results
+- Period Mapping Validation: ✅ PASSED (2 years, 22 year-month combinations)
+- Account Mapping Validation: 99.2% coverage (251/253 accounts mapped)
+- Known unmapped accounts: 1213, Afrondingsverschil
+
 ## [Unreleased]
 
 ### Planned
