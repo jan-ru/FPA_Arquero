@@ -1,0 +1,2143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Statement Generator</title>
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/arquero@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/exceljs@latest/dist/exceljs.min.js"></script>
+    
+    <style>
+        /* Global Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        #app {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .section {
+            background: white;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.08);
+            transition: box-shadow 0.3s ease;
+        }
+
+        .section:hover {
+            box-shadow: 0 10px 15px rgba(0,0,0,0.15), 0 3px 6px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            margin-bottom: 20px;
+            color: #2d3748;
+            font-size: 1.5em;
+            font-weight: 600;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .directory-selection {
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            margin-right: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(245, 87, 108, 0.4);
+        }
+
+        .btn:disabled {
+            background: #e2e8f0;
+            color: #a0aec0;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .status-text {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .file-loading {
+            margin-bottom: 20px;
+        }
+
+        .loading-status {
+            margin-top: 10px;
+            min-height: 20px;
+            color: #666;
+        }
+
+        .file-status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 10px;
+        }
+
+        .file-status-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 6px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+        }
+
+        .file-status-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .file-label {
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .status-indicator {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            border-bottom: 3px solid #e2e8f0;
+            padding-bottom: 5px;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            border: none;
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            border-radius: 8px 8px 0 0;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            color: #4a5568;
+        }
+
+        .tab-btn:hover {
+            background: linear-gradient(135deg, #edf2f7 0%, #e2e8f0 100%);
+            transform: translateY(-2px);
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom-color: #667eea;
+            box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);
+        }
+
+        .statement-display {
+            min-height: 400px;
+            overflow-x: auto;
+        }
+
+        .financial-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .financial-table th {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 8px;
+            text-align: left;
+            font-weight: 500;
+            position: sticky;
+            top: 0;
+        }
+
+        .financial-table th.sortable {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .financial-table th.sortable:hover {
+            background-color: #0056b3;
+        }
+
+        .financial-table th.col-number {
+            text-align: right;
+        }
+
+        .financial-table td {
+            padding: 8px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .financial-table td.number {
+            text-align: right;
+            font-family: 'Courier New', monospace;
+        }
+
+        .financial-table td.indent {
+            padding-left: 30px;
+        }
+
+        .financial-table tr.detail-row:hover {
+            background-color: #f8f9fa;
+        }
+
+        .financial-table tr.category-header td {
+            background-color: #e9ecef;
+            font-weight: 600;
+            padding: 10px 8px;
+            border-top: 2px solid #007bff;
+        }
+
+        .financial-table tr.subtotal-row td {
+            background-color: #f8f9fa;
+            border-top: 2px solid #333;
+            border-bottom: 2px solid #333;
+            padding: 10px 8px;
+        }
+
+        .financial-table tr.total-row td {
+            background-color: #e7f3ff;
+            border-top: 3px double #007bff;
+            border-bottom: 3px double #007bff;
+            padding: 12px 8px;
+            font-size: 15px;
+        }
+
+        .financial-table tr.metric-row td {
+            background-color: #fff3cd;
+            padding: 10px 8px;
+        }
+
+        .financial-table tr.section-header td {
+            background-color: #d1ecf1;
+            font-weight: 600;
+            padding: 10px 8px;
+            border-top: 2px solid #0c5460;
+        }
+
+        .financial-table tr.spacer-row td {
+            padding: 5px;
+            border: none;
+        }
+
+        .financial-table tr.info-row td {
+            padding: 10px 8px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .financial-table .positive {
+            color: #28a745;
+        }
+
+        .financial-table .negative {
+            color: #dc3545;
+        }
+
+        .success-message {
+            color: #28a745;
+            background-color: #d4edda;
+        }
+
+        .warning-message {
+            color: #856404;
+            background-color: #fff3cd;
+        }
+
+        .tooltip {
+            position: absolute;
+            background-color: #333;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            pointer-events: none;
+        }
+
+        .tooltip-content {
+            line-height: 1.5;
+        }
+
+        .export-controls {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #e9ecef;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .validation-messages {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 4px;
+            background-color: #f8f9fa;
+        }
+
+        .validation-errors {
+            margin-bottom: 10px;
+        }
+
+        .validation-errors:empty {
+            display: none;
+        }
+
+        .validation-warnings:empty {
+            display: none;
+        }
+
+        .validation-error-item {
+            padding: 8px;
+            margin-bottom: 5px;
+            background-color: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+            border-radius: 4px;
+        }
+
+        .validation-warning-item {
+            padding: 8px;
+            margin-bottom: 5px;
+            background-color: #fff3cd;
+            color: #856404;
+            border-left: 4px solid #ffc107;
+            border-radius: 4px;
+        }
+
+        .unmapped-accounts-list {
+            max-height: 150px;
+            overflow-y: auto;
+            margin-top: 5px;
+            padding: 8px;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <h1>Financial Statement Generator <span style="font-size: 0.5em; color: rgba(255,255,255,0.8);">v1.1.0</span></h1>
+        
+        <!-- Welcome Message -->
+        <div id="welcome-section" class="section">
+            <h2>Welcome to Financial Statement Generator</h2>
+            <p style="margin-bottom: 15px; color: #4a5568; line-height: 1.6;">
+                This application generates Balance Sheet, Income Statement, and Cash Flow Statement from your trial balance data.
+            </p>
+            <div style="background: #edf2f7; padding: 15px; border-radius: 6px; border-left: 4px solid #667eea;">
+                <strong>Getting Started:</strong>
+                <ol style="margin-left: 20px; margin-top: 10px; color: #4a5568;">
+                    <li>Click "Select Input Directory" to choose the folder containing your Excel files</li>
+                    <li>Click "Load All Files" to import your data</li>
+                    <li>Review the generated financial statements in the tabs below</li>
+                    <li>Export statements to Excel when ready</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- File Upload Section -->
+        <div id="file-upload-section" class="section">
+            <h2>Load Data Files</h2>
+            
+            <div class="directory-selection">
+                <button id="select-input-dir" class="btn btn-primary">Select Input Directory</button>
+                <span id="input-dir-status" class="status-text">No directory selected</span>
+            </div>
+            
+            <div class="file-loading">
+                <button id="load-all-files" class="btn btn-secondary" disabled>Load All Files</button>
+                <div id="loading-status" class="loading-status"></div>
+            </div>
+            
+            <div class="file-status-grid">
+                <div class="file-status-item">
+                    <span class="file-label">Trial Balance 2024:</span>
+                    <span id="status-tb2024" class="status-indicator">⚪ Not loaded</span>
+                </div>
+                <div class="file-status-item">
+                    <span class="file-label">Trial Balance 2025:</span>
+                    <span id="status-tb2025" class="status-indicator">⚪ Not loaded</span>
+                </div>
+                <div class="file-status-item">
+                    <span class="file-label">Hierarchy:</span>
+                    <span id="status-hierarchy" class="status-indicator">⚪ Not loaded</span>
+                </div>
+                <div class="file-status-item">
+                    <span class="file-label">Dates:</span>
+                    <span id="status-dates" class="status-indicator">⚪ Not loaded</span>
+                </div>
+                <div class="file-status-item">
+                    <span class="file-label">Format:</span>
+                    <span id="status-format" class="status-indicator">⚪ Not loaded</span>
+                </div>
+            </div>
+
+            <!-- Validation Messages -->
+            <div id="validation-messages" class="validation-messages" style="display: none;">
+                <div id="validation-errors" class="validation-errors"></div>
+                <div id="validation-warnings" class="validation-warnings"></div>
+            </div>
+        </div>
+
+        <!-- Statement Display Section -->
+        <div id="statement-section" class="section" style="display: none;">
+            <h2>Financial Statements</h2>
+            <div id="statement-tabs" class="tabs">
+                <button class="tab-btn active" data-statement="balance-sheet">Balance Sheet</button>
+                <button class="tab-btn" data-statement="income-statement">Income Statement</button>
+                <button class="tab-btn" data-statement="cash-flow">Cash Flow Statement</button>
+            </div>
+            <div id="statement-display" class="statement-display"></div>
+            
+            <!-- Export Controls -->
+            <div class="export-controls">
+                <button id="export-current" class="btn btn-secondary">Export Current Statement</button>
+                <button id="export-all" class="btn btn-secondary">Export All Statements</button>
+                <span id="export-status" class="status-text"></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        let config = null;
+
+        // DataStore class for state management (Singleton pattern)
+        class DataStore {
+            constructor() {
+                if (DataStore.instance) {
+                    return DataStore.instance;
+                }
+                
+                this.factTables = {}; // Store FactTables by period (2024, 2025)
+                this.hierarchyTable = null;
+                this.datesTable = null;
+                this.formatTable = null;
+                
+                DataStore.instance = this;
+            }
+
+            // Store FactTable for a specific period
+            setFactTable(table, period) {
+                this.factTables[period] = table;
+                console.log(`FactTable for ${period} stored`);
+            }
+
+            // Retrieve FactTable for a specific period
+            getFactTable(period) {
+                return this.factTables[period] || null;
+            }
+
+            // Store Hierarchy Table
+            setHierarchyTable(table) {
+                this.hierarchyTable = table;
+                console.log('Hierarchy Table stored');
+            }
+
+            // Retrieve Hierarchy Table
+            getHierarchyTable() {
+                return this.hierarchyTable;
+            }
+
+            // Store Dates Table
+            setDatesTable(table) {
+                this.datesTable = table;
+                console.log('Dates Table stored');
+            }
+
+            // Retrieve Dates Table
+            getDatesTable() {
+                return this.datesTable;
+            }
+
+            // Store Format Table
+            setFormatTable(table) {
+                this.formatTable = table;
+                console.log('Format Table stored');
+            }
+
+            // Retrieve Format Table
+            getFormatTable() {
+                return this.formatTable;
+            }
+
+            // Get all loaded periods
+            getAllPeriods() {
+                return Object.keys(this.factTables);
+            }
+
+            // Check if all required data is loaded
+            isDataComplete() {
+                const hasBothPeriods = this.factTables['2024'] && this.factTables['2025'];
+                const hasAllTables = this.hierarchyTable && this.datesTable && this.formatTable;
+                return hasBothPeriods && hasAllTables;
+            }
+
+            // Clear all data
+            clear() {
+                this.factTables = {};
+                this.hierarchyTable = null;
+                this.datesTable = null;
+                this.formatTable = null;
+                console.log('DataStore cleared');
+            }
+        }
+        
+        // Load configuration file
+        async function loadConfig() {
+            try {
+                const response = await fetch('config.json');
+                config = await response.json();
+                console.log('Configuration loaded:', config);
+                return config;
+            } catch (error) {
+                console.error('Error loading config:', error);
+                // Use default configuration
+                config = {
+                    inputFiles: {
+                        trialBalance2024: "trial_balance_2024.xlsx",
+                        trialBalance2025: "trial_balance_2025.xlsx",
+                        hierarchy: "hierarchy.xlsx",
+                        dates: "dates.xlsx",
+                        format: "format.xlsx"
+                    },
+                    outputFiles: {
+                        balanceSheet: "balance_sheet.xlsx",
+                        incomeStatement: "income_statement.xlsx",
+                        cashFlowStatement: "cash_flow_statement.xlsx",
+                        allStatements: "financial_statements_all.xlsx"
+                    },
+                    directories: {
+                        input: "input",
+                        output: "output"
+                    }
+                };
+                return config;
+            }
+        }
+
+        // DataLoader class for Excel file parsing with directory access
+        class DataLoader {
+            constructor() {
+                this.inputDirHandle = null;
+                this.outputDirHandle = null;
+            }
+
+            // Request access to input directory
+            async selectInputDirectory() {
+                try {
+                    this.inputDirHandle = await window.showDirectoryPicker({
+                        mode: 'read',
+                        startIn: 'documents'
+                    });
+                    console.log('Input directory selected:', this.inputDirHandle.name);
+                    return this.inputDirHandle;
+                } catch (error) {
+                    console.error('Error selecting input directory:', error);
+                    throw new Error('Failed to select input directory');
+                }
+            }
+
+            // Request access to output directory
+            async selectOutputDirectory() {
+                try {
+                    this.outputDirHandle = await window.showDirectoryPicker({
+                        mode: 'readwrite',
+                        startIn: 'documents'
+                    });
+                    console.log('Output directory selected:', this.outputDirHandle.name);
+                    return this.outputDirHandle;
+                } catch (error) {
+                    console.error('Error selecting output directory:', error);
+                    throw new Error('Failed to select output directory');
+                }
+            }
+
+            // Read file from input directory
+            async readFileFromDirectory(filename) {
+                if (!this.inputDirHandle) {
+                    throw new Error('Input directory not selected. Please select input directory first.');
+                }
+
+                try {
+                    const fileHandle = await this.inputDirHandle.getFileHandle(filename);
+                    const file = await fileHandle.getFile();
+                    return file;
+                } catch (error) {
+                    console.error(`Error reading file ${filename}:`, error);
+                    throw new Error(`File not found: ${filename}`);
+                }
+            }
+
+            // Validate required columns in Excel data
+            validateColumns(data, requiredColumns) {
+                if (!data || data.length === 0) {
+                    throw new Error('File is empty or invalid');
+                }
+
+                const firstRow = data[0];
+                const actualColumns = Object.keys(firstRow);
+                const missingColumns = requiredColumns.filter(col => !actualColumns.includes(col));
+
+                if (missingColumns.length > 0) {
+                    throw new Error(`File missing required columns: ${missingColumns.join(', ')}`);
+                }
+
+                return true;
+            }
+
+            // Load Trial Balance from Excel file
+            async loadTrialBalance(period) {
+                const filename = period === '2024' 
+                    ? config.inputFiles.trialBalance2024 
+                    : config.inputFiles.trialBalance2025;
+
+                try {
+                    const file = await this.readFileFromDirectory(filename);
+                    const arrayBuffer = await file.arrayBuffer();
+                    const workbook = new ExcelJS.Workbook();
+                    await workbook.xlsx.load(arrayBuffer);
+
+                    const worksheet = workbook.worksheets[0];
+                    const data = [];
+
+                    // Convert worksheet to array of objects
+                    const headers = [];
+                    worksheet.getRow(1).eachCell((cell, colNumber) => {
+                        headers[colNumber] = cell.value;
+                    });
+
+                    worksheet.eachRow((row, rowNumber) => {
+                        if (rowNumber === 1) return; // Skip header row
+                        
+                        const rowData = {};
+                        row.eachCell((cell, colNumber) => {
+                            const header = headers[colNumber];
+                            if (header) {
+                                rowData[header] = cell.value;
+                            }
+                        });
+                        
+                        if (Object.keys(rowData).length > 0) {
+                            rowData.period = period;
+                            data.push(rowData);
+                        }
+                    });
+
+                    // Validate required columns
+                    this.validateColumns(data, ['account_code', 'account_description', 'amount']);
+
+                    // Convert to Arquero table
+                    const table = aq.from(data);
+                    console.log(`Trial Balance ${period} loaded:`, table.numRows(), 'rows');
+                    return table;
+
+                } catch (error) {
+                    console.error(`Error loading trial balance for ${period}:`, error);
+                    throw error;
+                }
+            }
+
+            // Load Hierarchy from Excel file
+            async loadHierarchy() {
+                const filename = config.inputFiles.hierarchy;
+
+                try {
+                    const file = await this.readFileFromDirectory(filename);
+                    const arrayBuffer = await file.arrayBuffer();
+                    const workbook = new ExcelJS.Workbook();
+                    await workbook.xlsx.load(arrayBuffer);
+
+                    const worksheet = workbook.worksheets[0];
+                    const data = [];
+
+                    const headers = [];
+                    worksheet.getRow(1).eachCell((cell, colNumber) => {
+                        headers[colNumber] = cell.value;
+                    });
+
+                    worksheet.eachRow((row, rowNumber) => {
+                        if (rowNumber === 1) return;
+                        
+                        const rowData = {};
+                        row.eachCell((cell, colNumber) => {
+                            const header = headers[colNumber];
+                            if (header) {
+                                // Handle formula cells - extract the result value
+                                if (cell.value && typeof cell.value === 'object' && 'result' in cell.value) {
+                                    rowData[header] = cell.value.result;
+                                } else {
+                                    rowData[header] = cell.value;
+                                }
+                            }
+                        });
+                        
+                        if (Object.keys(rowData).length > 0) {
+                            data.push(rowData);
+                        }
+                    });
+
+                    // Transform DimAccounts format to expected hierarchy format
+                    const transformedData = data.map(row => {
+                        // Map Statement to statement_type
+                        let statementType = 'BS'; // Default
+                        if (row.Statement === 'Balans') statementType = 'BS';
+                        else if (row.Statement === 'Omzet') statementType = 'IS';
+                        else if (row.Statement === 'Kosten') statementType = 'IS';
+                        else if (row.Statement === 'Cash Flow') statementType = 'CF';
+
+                        // Map Nivo0 to category (translate Dutch to English)
+                        let category = row.Nivo0 || '';
+                        if (category === 'Activa') category = 'Assets';
+                        else if (category === 'Passiva') category = 'Liabilities';
+                        else if (category === 'Omzet') category = 'Revenue';
+                        else if (category === 'Kosten') category = 'Expenses';
+
+                        return {
+                            account_code: String(row.Rekening || ''),
+                            statement_type: statementType,
+                            category: category,
+                            subcategory: row.Nivo2 || row.Nivo1 || '',
+                            line_order: row.Sort2 || row.Sort1 || 0
+                        };
+                    }).filter(row => row.account_code !== ''); // Filter out empty account codes
+
+                    const table = aq.from(transformedData);
+                    console.log('Hierarchy loaded:', table.numRows(), 'rows');
+                    return table;
+
+                } catch (error) {
+                    console.error('Error loading hierarchy:', error);
+                    throw error;
+                }
+            }
+
+            // Load Dates from Excel file
+            async loadDates() {
+                const filename = config.inputFiles.dates;
+
+                try {
+                    const file = await this.readFileFromDirectory(filename);
+                    const arrayBuffer = await file.arrayBuffer();
+                    const workbook = new ExcelJS.Workbook();
+                    await workbook.xlsx.load(arrayBuffer);
+
+                    const worksheet = workbook.worksheets[0];
+                    const data = [];
+
+                    const headers = [];
+                    worksheet.getRow(1).eachCell((cell, colNumber) => {
+                        headers[colNumber] = cell.value;
+                    });
+
+                    worksheet.eachRow((row, rowNumber) => {
+                        if (rowNumber === 1) return;
+                        
+                        const rowData = {};
+                        row.eachCell((cell, colNumber) => {
+                            const header = headers[colNumber];
+                            if (header) {
+                                rowData[header] = cell.value;
+                            }
+                        });
+                        
+                        if (Object.keys(rowData).length > 0) {
+                            data.push(rowData);
+                        }
+                    });
+
+                    // Transform DimDates format to expected dates format
+                    // Extract unique years and create period records
+                    const years = new Set();
+                    data.forEach(row => {
+                        if (row.Year) {
+                            years.add(row.Year);
+                        }
+                    });
+
+                    const transformedData = Array.from(years).map(year => {
+                        // Find first and last date for this year
+                        const yearRows = data.filter(row => row.Year === year);
+                        const dates = yearRows.map(row => row.Date).filter(d => d);
+                        
+                        // Convert Excel serial dates to JavaScript dates if needed
+                        const convertExcelDate = (serial) => {
+                            if (typeof serial === 'number') {
+                                // Excel serial date (days since 1900-01-01)
+                                const excelEpoch = new Date(1900, 0, 1);
+                                const date = new Date(excelEpoch.getTime() + (serial - 2) * 24 * 60 * 60 * 1000);
+                                return date;
+                            }
+                            return new Date(serial);
+                        };
+
+                        const firstDate = dates.length > 0 ? convertExcelDate(Math.min(...dates)) : new Date(year, 0, 1);
+                        const lastDate = dates.length > 0 ? convertExcelDate(Math.max(...dates)) : new Date(year, 11, 31);
+
+                        return {
+                            period: String(year),
+                            year: year,
+                            period_start: firstDate.toISOString().split('T')[0],
+                            period_end: lastDate.toISOString().split('T')[0]
+                        };
+                    });
+
+                    const table = aq.from(transformedData);
+                    console.log('Dates loaded:', table.numRows(), 'rows');
+                    return table;
+
+                } catch (error) {
+                    console.error('Error loading dates:', error);
+                    throw error;
+                }
+            }
+
+            // Load Format from Excel file
+            async loadFormat() {
+                const filename = config.inputFiles.format;
+
+                try {
+                    const file = await this.readFileFromDirectory(filename);
+                    const arrayBuffer = await file.arrayBuffer();
+                    const workbook = new ExcelJS.Workbook();
+                    await workbook.xlsx.load(arrayBuffer);
+
+                    const worksheet = workbook.worksheets[0];
+                    const data = [];
+
+                    const headers = [];
+                    worksheet.getRow(1).eachCell((cell, colNumber) => {
+                        headers[colNumber] = cell.value;
+                    });
+
+                    worksheet.eachRow((row, rowNumber) => {
+                        if (rowNumber === 1) return;
+                        
+                        const rowData = {};
+                        row.eachCell((cell, colNumber) => {
+                            const header = headers[colNumber];
+                            if (header) {
+                                rowData[header] = cell.value;
+                            }
+                        });
+                        
+                        if (Object.keys(rowData).length > 0) {
+                            data.push(rowData);
+                        }
+                    });
+
+                    this.validateColumns(data, ['statement_type', 'line_number', 'line_type', 'line_label']);
+
+                    const table = aq.from(data);
+                    console.log('Format loaded:', table.numRows(), 'rows');
+                    return table;
+
+                } catch (error) {
+                    console.error('Error loading format:', error);
+                    throw error;
+                }
+            }
+        }
+
+        // StatementGenerator class for generating financial statements
+        class StatementGenerator {
+            constructor(dataStore) {
+                this.dataStore = dataStore;
+                this.unmappedAccounts = [];
+            }
+
+            // Detect unmapped accounts
+            detectUnmappedAccounts() {
+                try {
+                    const factTable2024 = this.dataStore.getFactTable('2024');
+                    const factTable2025 = this.dataStore.getFactTable('2025');
+                    const hierarchyTable = this.dataStore.getHierarchyTable();
+
+                    if (!factTable2024 || !factTable2025 || !hierarchyTable) {
+                        return [];
+                    }
+
+                    // Get all account codes from hierarchy
+                    const hierarchyAccounts = new Set(
+                        hierarchyTable.array('account_code')
+                    );
+
+                    // Check 2024 accounts
+                    const accounts2024 = factTable2024.array('account_code');
+                    const unmapped2024 = accounts2024.filter(code => !hierarchyAccounts.has(code));
+
+                    // Check 2025 accounts
+                    const accounts2025 = factTable2025.array('account_code');
+                    const unmapped2025 = accounts2025.filter(code => !hierarchyAccounts.has(code));
+
+                    // Combine and deduplicate
+                    const allUnmapped = [...new Set([...unmapped2024, ...unmapped2025])];
+                    
+                    this.unmappedAccounts = allUnmapped;
+                    
+                    if (allUnmapped.length > 0) {
+                        console.warn(`Found ${allUnmapped.length} unmapped accounts:`, allUnmapped);
+                    }
+
+                    return allUnmapped;
+
+                } catch (error) {
+                    console.error('Error detecting unmapped accounts:', error);
+                    return [];
+                }
+            }
+
+            // Validate data completeness
+            validateData() {
+                const errors = [];
+                const warnings = [];
+
+                // Check if both periods are loaded
+                const factTable2024 = this.dataStore.getFactTable('2024');
+                const factTable2025 = this.dataStore.getFactTable('2025');
+                
+                if (!factTable2024) {
+                    errors.push('Trial Balance for 2024 is not loaded');
+                }
+                if (!factTable2025) {
+                    errors.push('Trial Balance for 2025 is not loaded');
+                }
+
+                // Check if dimension tables are loaded
+                if (!this.dataStore.getHierarchyTable()) {
+                    errors.push('Hierarchy table is not loaded');
+                }
+                if (!this.dataStore.getDatesTable()) {
+                    warnings.push('Dates table is not loaded (optional)');
+                }
+                if (!this.dataStore.getFormatTable()) {
+                    warnings.push('Format table is not loaded (optional)');
+                }
+
+                // Check for unmapped accounts
+                const unmapped = this.detectUnmappedAccounts();
+                if (unmapped.length > 0) {
+                    warnings.push(`${unmapped.length} accounts are unmapped and will be excluded from statements`);
+                }
+
+                return { errors, warnings, unmappedAccounts: unmapped };
+            }
+
+            // Generate Balance Sheet
+            generateBalanceSheet() {
+                try {
+                    const factTable2024 = this.dataStore.getFactTable('2024');
+                    const factTable2025 = this.dataStore.getFactTable('2025');
+                    const hierarchyTable = this.dataStore.getHierarchyTable();
+                    const formatTable = this.dataStore.getFormatTable();
+
+                    if (!factTable2024 || !factTable2025 || !hierarchyTable || !formatTable) {
+                        throw new Error('Required data not loaded');
+                    }
+
+                    // Join FactTable with Hierarchy for 2024
+                    const joined2024 = factTable2024
+                        .join(hierarchyTable, 'account_code')
+                        .filter(d => d.statement_type === 'BS');
+
+                    // Join FactTable with Hierarchy for 2025
+                    const joined2025 = factTable2025
+                        .join(hierarchyTable, 'account_code')
+                        .filter(d => d.statement_type === 'BS');
+
+                    // Group by category and subcategory for 2024
+                    const grouped2024 = joined2024
+                        .groupby('category', 'subcategory')
+                        .rollup({ amount_2024: d => aq.op.sum(d.amount) })
+                        .orderby('category', 'subcategory');
+
+                    // Group by category and subcategory for 2025
+                    const grouped2025 = joined2025
+                        .groupby('category', 'subcategory')
+                        .rollup({ amount_2025: d => aq.op.sum(d.amount) })
+                        .orderby('category', 'subcategory');
+
+                    // Join 2024 and 2025 data
+                    const combined = grouped2024
+                        .join_full(grouped2025, ['category', 'subcategory'])
+                        .derive({
+                            amount_2024: d => d.amount_2024 || 0,
+                            amount_2025: d => d.amount_2025 || 0,
+                            variance_amount: d => (d.amount_2025 || 0) - (d.amount_2024 || 0),
+                            variance_percent: d => {
+                                const amt2024 = d.amount_2024 || 0;
+                                const amt2025 = d.amount_2025 || 0;
+                                return amt2024 !== 0 ? ((amt2025 - amt2024) / Math.abs(amt2024)) * 100 : 0;
+                            }
+                        });
+
+                    // Calculate totals by category
+                    const categoryTotals = combined
+                        .groupby('category')
+                        .rollup({
+                            amount_2024: d => aq.op.sum(d.amount_2024),
+                            amount_2025: d => aq.op.sum(d.amount_2025),
+                            variance_amount: d => aq.op.sum(d.variance_amount),
+                            variance_percent: d => {
+                                const total2024 = aq.op.sum(d.amount_2024);
+                                const total2025 = aq.op.sum(d.amount_2025);
+                                return total2024 !== 0 ? ((total2025 - total2024) / Math.abs(total2024)) * 100 : 0;
+                            }
+                        });
+
+                    // Verify accounting equation
+                    const totals = categoryTotals.objects();
+                    let totalAssets = 0, totalLiabilities = 0, totalEquity = 0;
+                    
+                    totals.forEach(row => {
+                        if (row.category === 'Assets') totalAssets = row.amount_2025;
+                        if (row.category === 'Liabilities') totalLiabilities = row.amount_2025;
+                        if (row.category === 'Equity') totalEquity = row.amount_2025;
+                    });
+
+                    const imbalance = Math.abs(totalAssets - (totalLiabilities + totalEquity));
+                    if (imbalance > 0.01) {
+                        console.warn(`Balance Sheet imbalance: ${imbalance.toFixed(2)}`);
+                    }
+
+                    return {
+                        details: combined,
+                        totals: categoryTotals,
+                        balanced: imbalance <= 0.01,
+                        imbalance: imbalance
+                    };
+
+                } catch (error) {
+                    console.error('Error generating Balance Sheet:', error);
+                    throw error;
+                }
+            }
+
+            // Generate Income Statement
+            generateIncomeStatement() {
+                try {
+                    const factTable2024 = this.dataStore.getFactTable('2024');
+                    const factTable2025 = this.dataStore.getFactTable('2025');
+                    const hierarchyTable = this.dataStore.getHierarchyTable();
+                    const formatTable = this.dataStore.getFormatTable();
+
+                    if (!factTable2024 || !factTable2025 || !hierarchyTable || !formatTable) {
+                        throw new Error('Required data not loaded');
+                    }
+
+                    // Join FactTable with Hierarchy for 2024
+                    const joined2024 = factTable2024
+                        .join(hierarchyTable, 'account_code')
+                        .filter(d => d.statement_type === 'IS');
+
+                    // Join FactTable with Hierarchy for 2025
+                    const joined2025 = factTable2025
+                        .join(hierarchyTable, 'account_code')
+                        .filter(d => d.statement_type === 'IS');
+
+                    // Group by category and subcategory for 2024
+                    const grouped2024 = joined2024
+                        .groupby('category', 'subcategory')
+                        .rollup({ amount_2024: d => aq.op.sum(d.amount) })
+                        .orderby('category', 'subcategory');
+
+                    // Group by category and subcategory for 2025
+                    const grouped2025 = joined2025
+                        .groupby('category', 'subcategory')
+                        .rollup({ amount_2025: d => aq.op.sum(d.amount) })
+                        .orderby('category', 'subcategory');
+
+                    // Join 2024 and 2025 data
+                    const combined = grouped2024
+                        .join_full(grouped2025, ['category', 'subcategory'])
+                        .derive({
+                            amount_2024: d => d.amount_2024 || 0,
+                            amount_2025: d => d.amount_2025 || 0,
+                            variance_amount: d => (d.amount_2025 || 0) - (d.amount_2024 || 0),
+                            variance_percent: d => {
+                                const amt2024 = d.amount_2024 || 0;
+                                const amt2025 = d.amount_2025 || 0;
+                                return amt2024 !== 0 ? ((amt2025 - amt2024) / Math.abs(amt2024)) * 100 : 0;
+                            }
+                        });
+
+                    // Calculate category totals
+                    const categoryTotals = combined
+                        .groupby('category')
+                        .rollup({
+                            amount_2024: d => aq.op.sum(d.amount_2024),
+                            amount_2025: d => aq.op.sum(d.amount_2025),
+                            variance_amount: d => aq.op.sum(d.variance_amount),
+                            variance_percent: d => {
+                                const total2024 = aq.op.sum(d.amount_2024);
+                                const total2025 = aq.op.sum(d.amount_2025);
+                                return total2024 !== 0 ? ((total2025 - total2024) / Math.abs(total2024)) * 100 : 0;
+                            }
+                        });
+
+                    // Calculate key metrics
+                    const totals = categoryTotals.objects();
+                    let revenue2024 = 0, revenue2025 = 0;
+                    let cogs2024 = 0, cogs2025 = 0;
+                    let opex2024 = 0, opex2025 = 0;
+                    let otherIncome2024 = 0, otherIncome2025 = 0;
+                    let taxes2024 = 0, taxes2025 = 0;
+
+                    totals.forEach(row => {
+                        if (row.category === 'Revenue') {
+                            revenue2024 = row.amount_2024;
+                            revenue2025 = row.amount_2025;
+                        } else if (row.category === 'Cost of Goods Sold') {
+                            cogs2024 = row.amount_2024;
+                            cogs2025 = row.amount_2025;
+                        } else if (row.category === 'Operating Expenses') {
+                            opex2024 = row.amount_2024;
+                            opex2025 = row.amount_2025;
+                        } else if (row.category === 'Other Income') {
+                            otherIncome2024 = row.amount_2024;
+                            otherIncome2025 = row.amount_2025;
+                        } else if (row.category === 'Taxes') {
+                            taxes2024 = row.amount_2024;
+                            taxes2025 = row.amount_2025;
+                        }
+                    });
+
+                    const grossProfit2024 = revenue2024 - cogs2024;
+                    const grossProfit2025 = revenue2025 - cogs2025;
+                    const operatingIncome2024 = grossProfit2024 - opex2024;
+                    const operatingIncome2025 = grossProfit2025 - opex2025;
+                    const netIncome2024 = operatingIncome2024 + otherIncome2024 - taxes2024;
+                    const netIncome2025 = operatingIncome2025 + otherIncome2025 - taxes2025;
+
+                    return {
+                        details: combined,
+                        totals: categoryTotals,
+                        metrics: {
+                            grossProfit: { '2024': grossProfit2024, '2025': grossProfit2025 },
+                            operatingIncome: { '2024': operatingIncome2024, '2025': operatingIncome2025 },
+                            netIncome: { '2024': netIncome2024, '2025': netIncome2025 }
+                        }
+                    };
+
+                } catch (error) {
+                    console.error('Error generating Income Statement:', error);
+                    throw error;
+                }
+            }
+
+            // Generate Cash Flow Statement
+            generateCashFlowStatement() {
+                try {
+                    const factTable2024 = this.dataStore.getFactTable('2024');
+                    const factTable2025 = this.dataStore.getFactTable('2025');
+                    const hierarchyTable = this.dataStore.getHierarchyTable();
+                    const formatTable = this.dataStore.getFormatTable();
+
+                    if (!factTable2024 || !factTable2025 || !hierarchyTable || !formatTable) {
+                        throw new Error('Required data not loaded');
+                    }
+
+                    // Join FactTable with Hierarchy for 2024
+                    const joined2024 = factTable2024
+                        .join(hierarchyTable, 'account_code')
+                        .filter(d => d.statement_type === 'CF');
+
+                    // Join FactTable with Hierarchy for 2025
+                    const joined2025 = factTable2025
+                        .join(hierarchyTable, 'account_code')
+                        .filter(d => d.statement_type === 'CF');
+
+                    // Group by category and subcategory for 2024
+                    const grouped2024 = joined2024
+                        .groupby('category', 'subcategory')
+                        .rollup({ amount_2024: d => aq.op.sum(d.amount) })
+                        .orderby('category', 'subcategory');
+
+                    // Group by category and subcategory for 2025
+                    const grouped2025 = joined2025
+                        .groupby('category', 'subcategory')
+                        .rollup({ amount_2025: d => aq.op.sum(d.amount) })
+                        .orderby('category', 'subcategory');
+
+                    // Join 2024 and 2025 data
+                    const combined = grouped2024
+                        .join_full(grouped2025, ['category', 'subcategory'])
+                        .derive({
+                            amount_2024: d => d.amount_2024 || 0,
+                            amount_2025: d => d.amount_2025 || 0,
+                            variance_amount: d => (d.amount_2025 || 0) - (d.amount_2024 || 0),
+                            variance_percent: d => {
+                                const amt2024 = d.amount_2024 || 0;
+                                const amt2025 = d.amount_2025 || 0;
+                                return amt2024 !== 0 ? ((amt2025 - amt2024) / Math.abs(amt2024)) * 100 : 0;
+                            }
+                        });
+
+                    // Calculate category totals
+                    const categoryTotals = combined
+                        .groupby('category')
+                        .rollup({
+                            amount_2024: d => aq.op.sum(d.amount_2024),
+                            amount_2025: d => aq.op.sum(d.amount_2025),
+                            variance_amount: d => aq.op.sum(d.variance_amount),
+                            variance_percent: d => {
+                                const total2024 = aq.op.sum(d.amount_2024);
+                                const total2025 = aq.op.sum(d.amount_2025);
+                                return total2024 !== 0 ? ((total2025 - total2024) / Math.abs(total2024)) * 100 : 0;
+                            }
+                        });
+
+                    // Calculate net cash flows
+                    const totals = categoryTotals.objects();
+                    let operating2024 = 0, operating2025 = 0;
+                    let investing2024 = 0, investing2025 = 0;
+                    let financing2024 = 0, financing2025 = 0;
+
+                    totals.forEach(row => {
+                        if (row.category === 'Operating Activities') {
+                            operating2024 = row.amount_2024;
+                            operating2025 = row.amount_2025;
+                        } else if (row.category === 'Investing Activities') {
+                            investing2024 = row.amount_2024;
+                            investing2025 = row.amount_2025;
+                        } else if (row.category === 'Financing Activities') {
+                            financing2024 = row.amount_2024;
+                            financing2025 = row.amount_2025;
+                        }
+                    });
+
+                    const netChange2024 = operating2024 + investing2024 + financing2024;
+                    const netChange2025 = operating2025 + investing2025 + financing2025;
+
+                    return {
+                        details: combined,
+                        totals: categoryTotals,
+                        netChange: {
+                            '2024': netChange2024,
+                            '2025': netChange2025,
+                            variance: netChange2025 - netChange2024
+                        }
+                    };
+
+                } catch (error) {
+                    console.error('Error generating Cash Flow Statement:', error);
+                    throw error;
+                }
+            }
+
+            // Calculate variance between two periods
+            calculateVariance(period1, period2) {
+                try {
+                    const factTable1 = this.dataStore.getFactTable(period1);
+                    const factTable2 = this.dataStore.getFactTable(period2);
+
+                    if (!factTable1 || !factTable2) {
+                        throw new Error(`Data for periods ${period1} or ${period2} not loaded`);
+                    }
+
+                    // Rename amount columns to distinguish periods
+                    const table1 = factTable1
+                        .select('account_code', 'account_description', 'amount')
+                        .rename({ amount: `amount_${period1}` });
+
+                    const table2 = factTable2
+                        .select('account_code', 'amount')
+                        .rename({ amount: `amount_${period2}` });
+
+                    // Join tables on account_code
+                    const joined = table1
+                        .join_full(table2, 'account_code')
+                        .derive({
+                            [`amount_${period1}`]: d => d[`amount_${period1}`] || 0,
+                            [`amount_${period2}`]: d => d[`amount_${period2}`] || 0,
+                            variance_amount: d => (d[`amount_${period2}`] || 0) - (d[`amount_${period1}`] || 0),
+                            variance_percent: d => {
+                                const amt1 = d[`amount_${period1}`] || 0;
+                                const amt2 = d[`amount_${period2}`] || 0;
+                                
+                                // Handle division by zero
+                                if (amt1 === 0) {
+                                    return amt2 === 0 ? 0 : null; // Return null for N/A cases
+                                }
+                                
+                                return ((amt2 - amt1) / Math.abs(amt1)) * 100;
+                            }
+                        });
+
+                    return joined;
+
+                } catch (error) {
+                    console.error('Error calculating variance:', error);
+                    throw error;
+                }
+            }
+        }
+
+        // ExportHandler class for Excel export
+        class ExportHandler {
+            constructor(dataStore) {
+                this.dataStore = dataStore;
+            }
+
+            // Convert Arquero table to array of arrays
+            tableToArrays(table, includeHeaders = true) {
+                const data = [];
+                
+                if (includeHeaders) {
+                    data.push(table.columnNames());
+                }
+                
+                table.objects().forEach(row => {
+                    const rowArray = table.columnNames().map(col => row[col]);
+                    data.push(rowArray);
+                });
+                
+                return data;
+            }
+
+            // Export single statement to Excel
+            async exportStatement(statementData, statementName) {
+                try {
+                    const workbook = new ExcelJS.Workbook();
+                    const worksheet = workbook.addWorksheet(statementName);
+
+                    // Convert statement data to array format
+                    const headers = ['Line Item', '2024', '2025', 'Variance ($)', 'Variance (%)'];
+                    const rows = [headers];
+
+                    // Add details
+                    const details = statementData.details.objects();
+                    let currentCategory = null;
+
+                    details.forEach(row => {
+                        if (row.category !== currentCategory) {
+                            currentCategory = row.category;
+                            rows.push([currentCategory, '', '', '', '']);
+                        }
+                        rows.push([
+                            '  ' + (row.subcategory || row.category),
+                            row.amount_2024,
+                            row.amount_2025,
+                            row.variance_amount,
+                            row.variance_percent
+                        ]);
+                    });
+
+                    // Add empty row
+                    rows.push(['', '', '', '', '']);
+
+                    // Add totals
+                    rows.push(['Category Totals', '', '', '', '']);
+                    const totals = statementData.totals.objects();
+                    totals.forEach(row => {
+                        rows.push([
+                            'Total ' + row.category,
+                            row.amount_2024,
+                            row.amount_2025,
+                            row.variance_amount,
+                            row.variance_percent
+                        ]);
+                    });
+
+                    // Add rows to worksheet
+                    rows.forEach((row, index) => {
+                        const excelRow = worksheet.addRow(row);
+                        
+                        // Format header row
+                        if (index === 0) {
+                            excelRow.font = { bold: true };
+                            excelRow.fill = {
+                                type: 'pattern',
+                                pattern: 'solid',
+                                fgColor: { argb: 'FF007bff' }
+                            };
+                            excelRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                        }
+                        
+                        // Format number columns
+                        for (let i = 2; i <= 5; i++) {
+                            if (excelRow.getCell(i).value !== '') {
+                                excelRow.getCell(i).numFmt = '#,##0.00';
+                            }
+                        }
+                    });
+
+                    // Auto-size columns
+                    worksheet.columns.forEach(column => {
+                        column.width = 20;
+                    });
+
+                    // Generate buffer and download
+                    const buffer = await workbook.xlsx.writeBuffer();
+                    const blob = new Blob([buffer], { 
+                        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+                    });
+                    
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `${statementName}.xlsx`;
+                    link.click();
+                    window.URL.revokeObjectURL(url);
+
+                    console.log(`Exported ${statementName} successfully`);
+
+                } catch (error) {
+                    console.error('Error exporting statement:', error);
+                    throw error;
+                }
+            }
+
+            // Export all statements to single workbook
+            async exportAllStatements(statements) {
+                try {
+                    const workbook = new ExcelJS.Workbook();
+
+                    // Add each statement as a separate worksheet
+                    for (const [name, data] of Object.entries(statements)) {
+                        const worksheet = workbook.addWorksheet(name);
+
+                        const headers = ['Line Item', '2024', '2025', 'Variance ($)', 'Variance (%)'];
+                        const rows = [headers];
+
+                        // Add details
+                        const details = data.details.objects();
+                        let currentCategory = null;
+
+                        details.forEach(row => {
+                            if (row.category !== currentCategory) {
+                                currentCategory = row.category;
+                                rows.push([currentCategory, '', '', '', '']);
+                            }
+                            rows.push([
+                                '  ' + (row.subcategory || row.category),
+                                row.amount_2024,
+                                row.amount_2025,
+                                row.variance_amount,
+                                row.variance_percent
+                            ]);
+                        });
+
+                        rows.push(['', '', '', '', '']);
+                        rows.push(['Category Totals', '', '', '', '']);
+                        
+                        const totals = data.totals.objects();
+                        totals.forEach(row => {
+                            rows.push([
+                                'Total ' + row.category,
+                                row.amount_2024,
+                                row.amount_2025,
+                                row.variance_amount,
+                                row.variance_percent
+                            ]);
+                        });
+
+                        // Add rows to worksheet
+                        rows.forEach((row, index) => {
+                            const excelRow = worksheet.addRow(row);
+                            
+                            if (index === 0) {
+                                excelRow.font = { bold: true };
+                                excelRow.fill = {
+                                    type: 'pattern',
+                                    pattern: 'solid',
+                                    fgColor: { argb: 'FF007bff' }
+                                };
+                                excelRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                            }
+                            
+                            for (let i = 2; i <= 5; i++) {
+                                if (excelRow.getCell(i).value !== '') {
+                                    excelRow.getCell(i).numFmt = '#,##0.00';
+                                }
+                            }
+                        });
+
+                        worksheet.columns.forEach(column => {
+                            column.width = 20;
+                        });
+                    }
+
+                    // Generate buffer and download
+                    const buffer = await workbook.xlsx.writeBuffer();
+                    const blob = new Blob([buffer], { 
+                        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+                    });
+                    
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = config.outputFiles.allStatements;
+                    link.click();
+                    window.URL.revokeObjectURL(url);
+
+                    console.log('Exported all statements successfully');
+
+                } catch (error) {
+                    console.error('Error exporting all statements:', error);
+                    throw error;
+                }
+            }
+        }
+
+        // InteractiveUI class for rendering financial statements
+        class InteractiveUI {
+            constructor() {
+                this.currentStatement = null;
+                this.sortColumn = null;
+                this.sortDirection = 'asc';
+            }
+
+            // Format number with thousand separators and 2 decimal places
+            formatNumber(value) {
+                if (value === null || value === undefined) return 'N/A';
+                return new Intl.NumberFormat('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }).format(value);
+            }
+
+            // Render statement table
+            renderStatement(statementData, statementType, containerId) {
+                const container = document.getElementById(containerId);
+                if (!container) return;
+
+                this.currentStatement = statementData;
+                this.currentStatementType = statementType;
+
+                // Create table HTML
+                let html = '<table class="financial-table">';
+                
+                // Table header
+                html += '<thead><tr>';
+                html += '<th class="col-label">Line Item</th>';
+                html += '<th class="col-number sortable" data-col="amount_2024">2024</th>';
+                html += '<th class="col-number sortable" data-col="amount_2025">2025</th>';
+                html += '<th class="col-number sortable" data-col="variance_amount">Variance ($)</th>';
+                html += '<th class="col-number sortable" data-col="variance_percent">Variance (%)</th>';
+                html += '</tr></thead>';
+                
+                html += '<tbody>';
+
+                // Render details grouped by category
+                const details = statementData.details.objects();
+                const totals = statementData.totals.objects();
+                
+                let currentCategory = null;
+                
+                details.forEach(row => {
+                    // Add category header if changed
+                    if (row.category !== currentCategory) {
+                        currentCategory = row.category;
+                        html += `<tr class="category-header"><td colspan="5"><strong>${currentCategory}</strong></td></tr>`;
+                    }
+                    
+                    // Add detail row
+                    html += '<tr class="detail-row">';
+                    html += `<td class="indent">${row.subcategory || row.category}</td>`;
+                    html += `<td class="number">${this.formatNumber(row.amount_2024)}</td>`;
+                    html += `<td class="number">${this.formatNumber(row.amount_2025)}</td>`;
+                    html += `<td class="number ${row.variance_amount >= 0 ? 'positive' : 'negative'}">${this.formatNumber(row.variance_amount)}</td>`;
+                    html += `<td class="number ${row.variance_percent >= 0 ? 'positive' : 'negative'}">${this.formatNumber(row.variance_percent)}%</td>`;
+                    html += '</tr>';
+                });
+
+                // Add category totals
+                html += '<tr class="spacer-row"><td colspan="5"></td></tr>';
+                html += '<tr class="section-header"><td colspan="5"><strong>Category Totals</strong></td></tr>';
+                
+                totals.forEach(row => {
+                    html += '<tr class="subtotal-row">';
+                    html += `<td><strong>Total ${row.category}</strong></td>`;
+                    html += `<td class="number"><strong>${this.formatNumber(row.amount_2024)}</strong></td>`;
+                    html += `<td class="number"><strong>${this.formatNumber(row.amount_2025)}</strong></td>`;
+                    html += `<td class="number ${row.variance_amount >= 0 ? 'positive' : 'negative'}"><strong>${this.formatNumber(row.variance_amount)}</strong></td>`;
+                    html += `<td class="number ${row.variance_percent >= 0 ? 'positive' : 'negative'}"><strong>${this.formatNumber(row.variance_percent)}%</strong></td>`;
+                    html += '</tr>';
+                });
+
+                // Add special metrics for Income Statement
+                if (statementType === 'income-statement' && statementData.metrics) {
+                    html += '<tr class="spacer-row"><td colspan="5"></td></tr>';
+                    html += '<tr class="section-header"><td colspan="5"><strong>Key Metrics</strong></td></tr>';
+                    
+                    const metrics = statementData.metrics;
+                    html += '<tr class="metric-row">';
+                    html += '<td><strong>Gross Profit</strong></td>';
+                    html += `<td class="number"><strong>${this.formatNumber(metrics.grossProfit['2024'])}</strong></td>`;
+                    html += `<td class="number"><strong>${this.formatNumber(metrics.grossProfit['2025'])}</strong></td>`;
+                    html += `<td class="number"><strong>${this.formatNumber(metrics.grossProfit['2025'] - metrics.grossProfit['2024'])}</strong></td>`;
+                    html += `<td class="number"><strong>${this.formatNumber(((metrics.grossProfit['2025'] - metrics.grossProfit['2024']) / Math.abs(metrics.grossProfit['2024'])) * 100)}%</strong></td>`;
+                    html += '</tr>';
+                    
+                    html += '<tr class="metric-row">';
+                    html += '<td><strong>Operating Income</strong></td>';
+                    html += `<td class="number"><strong>${this.formatNumber(metrics.operatingIncome['2024'])}</strong></td>`;
+                    html += `<td class="number"><strong>${this.formatNumber(metrics.operatingIncome['2025'])}</strong></td>`;
+                    html += `<td class="number"><strong>${this.formatNumber(metrics.operatingIncome['2025'] - metrics.operatingIncome['2024'])}</strong></td>`;
+                    html += `<td class="number"><strong>${this.formatNumber(((metrics.operatingIncome['2025'] - metrics.operatingIncome['2024']) / Math.abs(metrics.operatingIncome['2024'])) * 100)}%</strong></td>`;
+                    html += '</tr>';
+                    
+                    html += '<tr class="metric-row">';
+                    html += '<td><strong>Net Income</strong></td>';
+                    html += `<td class="number"><strong>${this.formatNumber(metrics.netIncome['2024'])}</strong></td>`;
+                    html += `<td class="number"><strong>${this.formatNumber(metrics.netIncome['2025'])}</strong></td>`;
+                    html += `<td class="number"><strong>${this.formatNumber(metrics.netIncome['2025'] - metrics.netIncome['2024'])}</strong></td>`;
+                    html += `<td class="number"><strong>${this.formatNumber(((metrics.netIncome['2025'] - metrics.netIncome['2024']) / Math.abs(metrics.netIncome['2024'])) * 100)}%</strong></td>`;
+                    html += '</tr>';
+                }
+
+                // Add net change for Cash Flow Statement
+                if (statementType === 'cash-flow' && statementData.netChange) {
+                    html += '<tr class="spacer-row"><td colspan="5"></td></tr>';
+                    html += '<tr class="total-row">';
+                    html += '<td><strong>Net Change in Cash</strong></td>';
+                    html += `<td class="number"><strong>${this.formatNumber(statementData.netChange['2024'])}</strong></td>`;
+                    html += `<td class="number"><strong>${this.formatNumber(statementData.netChange['2025'])}</strong></td>`;
+                    html += `<td class="number"><strong>${this.formatNumber(statementData.netChange.variance)}</strong></td>`;
+                    html += `<td class="number"><strong>${this.formatNumber((statementData.netChange.variance / Math.abs(statementData.netChange['2024'])) * 100)}%</strong></td>`;
+                    html += '</tr>';
+                }
+
+                // Add balance check for Balance Sheet
+                if (statementType === 'balance-sheet' && statementData.balanced !== undefined) {
+                    html += '<tr class="spacer-row"><td colspan="5"></td></tr>';
+                    if (statementData.balanced) {
+                        html += '<tr class="info-row"><td colspan="5" class="success-message">✅ Balance Sheet is balanced</td></tr>';
+                    } else {
+                        html += `<tr class="info-row"><td colspan="5" class="warning-message">⚠️ Balance Sheet imbalance: ${this.formatNumber(statementData.imbalance)}</td></tr>`;
+                    }
+                }
+
+                html += '</tbody></table>';
+                
+                container.innerHTML = html;
+                
+                // Enable sorting
+                this.enableSorting(container);
+                
+                // Enable tooltips
+                this.enableTooltips(container);
+            }
+
+            // Enable sorting on table columns
+            enableSorting(container) {
+                const sortableHeaders = container.querySelectorAll('th.sortable');
+                
+                sortableHeaders.forEach(header => {
+                    header.addEventListener('click', () => {
+                        const column = header.dataset.col;
+                        
+                        // Toggle sort direction if same column
+                        if (this.sortColumn === column) {
+                            this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+                        } else {
+                            this.sortColumn = column;
+                            this.sortDirection = 'asc';
+                        }
+                        
+                        // Sort the data
+                        const sortedDetails = this.currentStatement.details
+                            .orderby(this.sortDirection === 'asc' ? column : aq.desc(column));
+                        
+                        // Update current statement with sorted data
+                        this.currentStatement.details = sortedDetails;
+                        
+                        // Re-render (we need to pass statement type, so we'll store it)
+                        this.renderStatement(this.currentStatement, this.currentStatementType, container.id);
+                        
+                        // Update header to show sort indicator
+                        sortableHeaders.forEach(h => {
+                            h.textContent = h.textContent.replace(' ▲', '').replace(' ▼', '');
+                        });
+                        header.textContent += this.sortDirection === 'asc' ? ' ▲' : ' ▼';
+                    });
+                });
+            }
+
+            // Enable drill-down on subtotal rows (placeholder for future implementation)
+            enableDrillDown(container) {
+                // This would expand/collapse detail rows under subtotals
+                // Implementation depends on data structure with hierarchical relationships
+                console.log('Drill-down feature: To be implemented with hierarchical data');
+            }
+
+            // Enable filtering (placeholder for future implementation)
+            enableFiltering(container) {
+                // This would add filter controls and apply filters to the data
+                console.log('Filtering feature: To be implemented');
+            }
+
+            // Enable tooltips on amount cells
+            enableTooltips(container) {
+                const numberCells = container.querySelectorAll('td.number');
+                
+                numberCells.forEach(cell => {
+                    cell.addEventListener('mouseenter', (e) => {
+                        this.showTooltip(e.target, {
+                            value: cell.textContent,
+                            info: 'Hover for details'
+                        });
+                    });
+                    
+                    cell.addEventListener('mouseleave', () => {
+                        this.hideTooltip();
+                    });
+                });
+            }
+
+            // Show tooltip
+            showTooltip(element, data) {
+                // Remove existing tooltip
+                this.hideTooltip();
+                
+                // Create tooltip element
+                const tooltip = document.createElement('div');
+                tooltip.className = 'tooltip';
+                tooltip.id = 'financial-tooltip';
+                
+                // Tooltip content
+                tooltip.innerHTML = `
+                    <div class="tooltip-content">
+                        <strong>Value:</strong> ${data.value}<br>
+                        <em>${data.info}</em>
+                    </div>
+                `;
+                
+                document.body.appendChild(tooltip);
+                
+                // Position tooltip near cursor
+                const rect = element.getBoundingClientRect();
+                tooltip.style.left = rect.left + 'px';
+                tooltip.style.top = (rect.bottom + 5) + 'px';
+            }
+
+            // Hide tooltip
+            hideTooltip() {
+                const tooltip = document.getElementById('financial-tooltip');
+                if (tooltip) {
+                    tooltip.remove();
+                }
+            }
+        }
+
+        // UI Controller
+        class UIController {
+            constructor() {
+                this.dataStore = new DataStore();
+                this.dataLoader = new DataLoader();
+                this.statementGenerator = new StatementGenerator(this.dataStore);
+                this.interactiveUI = new InteractiveUI();
+                this.exportHandler = new ExportHandler(this.dataStore);
+                this.currentStatementType = 'balance-sheet';
+                this.currentStatementData = null;
+            }
+
+            // Update file status indicator
+            updateFileStatus(fileId, status, message) {
+                const statusElement = document.getElementById(`status-${fileId}`);
+                if (statusElement) {
+                    if (status === 'success') {
+                        statusElement.textContent = '✅ ' + message;
+                        statusElement.style.color = '#28a745';
+                    } else if (status === 'error') {
+                        statusElement.textContent = '❌ ' + message;
+                        statusElement.style.color = '#dc3545';
+                    } else if (status === 'loading') {
+                        statusElement.textContent = '⏳ ' + message;
+                        statusElement.style.color = '#ffc107';
+                    }
+                }
+            }
+
+            // Show loading message
+            showLoadingMessage(message) {
+                const loadingStatus = document.getElementById('loading-status');
+                if (loadingStatus) {
+                    loadingStatus.textContent = message;
+                    loadingStatus.style.color = '#007bff';
+                }
+            }
+
+            // Show error message
+            showErrorMessage(message) {
+                const loadingStatus = document.getElementById('loading-status');
+                if (loadingStatus) {
+                    loadingStatus.textContent = '❌ ' + message;
+                    loadingStatus.style.color = '#dc3545';
+                }
+            }
+
+            // Show success message
+            showSuccessMessage(message) {
+                const loadingStatus = document.getElementById('loading-status');
+                if (loadingStatus) {
+                    loadingStatus.textContent = '✅ ' + message;
+                    loadingStatus.style.color = '#28a745';
+                }
+            }
+
+            // Handle input directory selection
+            async handleSelectInputDirectory() {
+                try {
+                    await this.dataLoader.selectInputDirectory();
+                    const statusText = document.getElementById('input-dir-status');
+                    statusText.textContent = `Selected: ${this.dataLoader.inputDirHandle.name}`;
+                    statusText.style.color = '#28a745';
+                    
+                    // Enable load button
+                    document.getElementById('load-all-files').disabled = false;
+                } catch (error) {
+                    this.showErrorMessage('Failed to select directory: ' + error.message);
+                }
+            }
+
+            // Load all files
+            async handleLoadAllFiles() {
+                this.showLoadingMessage('Loading files...');
+                
+                try {
+                    // Load Trial Balance 2024
+                    this.updateFileStatus('tb2024', 'loading', 'Loading...');
+                    const tb2024 = await this.dataLoader.loadTrialBalance('2024');
+                    this.dataStore.setFactTable(tb2024, '2024');
+                    this.updateFileStatus('tb2024', 'success', `Loaded (${tb2024.numRows()} rows)`);
+
+                    // Load Trial Balance 2025
+                    this.updateFileStatus('tb2025', 'loading', 'Loading...');
+                    const tb2025 = await this.dataLoader.loadTrialBalance('2025');
+                    this.dataStore.setFactTable(tb2025, '2025');
+                    this.updateFileStatus('tb2025', 'success', `Loaded (${tb2025.numRows()} rows)`);
+
+                    // Load Hierarchy
+                    this.updateFileStatus('hierarchy', 'loading', 'Loading...');
+                    const hierarchy = await this.dataLoader.loadHierarchy();
+                    this.dataStore.setHierarchyTable(hierarchy);
+                    this.updateFileStatus('hierarchy', 'success', `Loaded (${hierarchy.numRows()} rows)`);
+
+                    // Load Dates
+                    this.updateFileStatus('dates', 'loading', 'Loading...');
+                    const dates = await this.dataLoader.loadDates();
+                    this.dataStore.setDatesTable(dates);
+                    this.updateFileStatus('dates', 'success', `Loaded (${dates.numRows()} rows)`);
+
+                    // Load Format
+                    this.updateFileStatus('format', 'loading', 'Loading...');
+                    const format = await this.dataLoader.loadFormat();
+                    this.dataStore.setFormatTable(format);
+                    this.updateFileStatus('format', 'success', `Loaded (${format.numRows()} rows)`);
+
+                    this.showSuccessMessage('All files loaded successfully!');
+                    
+                    // Validate data and show results
+                    this.validateAndDisplayResults();
+                    
+                    // Show statement section
+                    document.getElementById('statement-section').style.display = 'block';
+                    
+                    // Enable export buttons
+                    document.getElementById('export-current').disabled = false;
+                    document.getElementById('export-all').disabled = false;
+                    
+                    // Generate and display default statement (Balance Sheet)
+                    this.generateAndDisplayStatement('balance-sheet');
+
+                } catch (error) {
+                    this.showErrorMessage('Error loading files: ' + error.message);
+                    console.error('File loading error:', error);
+                }
+            }
+
+            // Validate data and display results
+            validateAndDisplayResults() {
+                const validation = this.statementGenerator.validateData();
+                const validationContainer = document.getElementById('validation-messages');
+                const errorsContainer = document.getElementById('validation-errors');
+                const warningsContainer = document.getElementById('validation-warnings');
+
+                // Clear previous messages
+                errorsContainer.innerHTML = '';
+                warningsContainer.innerHTML = '';
+
+                // Display errors
+                if (validation.errors.length > 0) {
+                    validation.errors.forEach(error => {
+                        const errorDiv = document.createElement('div');
+                        errorDiv.className = 'validation-error-item';
+                        errorDiv.textContent = '❌ ' + error;
+                        errorsContainer.appendChild(errorDiv);
+                    });
+                }
+
+                // Display warnings
+                if (validation.warnings.length > 0) {
+                    validation.warnings.forEach(warning => {
+                        const warningDiv = document.createElement('div');
+                        warningDiv.className = 'validation-warning-item';
+                        warningDiv.textContent = '⚠️ ' + warning;
+                        warningsContainer.appendChild(warningDiv);
+                    });
+                }
+
+                // Display unmapped accounts if any
+                if (validation.unmappedAccounts.length > 0) {
+                    const unmappedDiv = document.createElement('div');
+                    unmappedDiv.className = 'validation-warning-item';
+                    unmappedDiv.innerHTML = `
+                        <strong>Unmapped Accounts (${validation.unmappedAccounts.length}):</strong>
+                        <div class="unmapped-accounts-list">
+                            ${validation.unmappedAccounts.join(', ')}
+                        </div>
+                    `;
+                    warningsContainer.appendChild(unmappedDiv);
+                }
+
+                // Show validation container if there are any messages
+                if (validation.errors.length > 0 || validation.warnings.length > 0) {
+                    validationContainer.style.display = 'block';
+                } else {
+                    validationContainer.style.display = 'none';
+                }
+            }
+
+            // Generate and display statement
+            generateAndDisplayStatement(statementType) {
+                try {
+                    let statementData;
+                    
+                    switch(statementType) {
+                        case 'balance-sheet':
+                            statementData = this.statementGenerator.generateBalanceSheet();
+                            break;
+                        case 'income-statement':
+                            statementData = this.statementGenerator.generateIncomeStatement();
+                            break;
+                        case 'cash-flow':
+                            statementData = this.statementGenerator.generateCashFlowStatement();
+                            break;
+                        default:
+                            throw new Error('Unknown statement type');
+                    }
+                    
+                    this.interactiveUI.renderStatement(statementData, statementType, 'statement-display');
+                    this.currentStatementType = statementType;
+                    this.currentStatementData = statementData;
+                    
+                } catch (error) {
+                    console.error('Error generating statement:', error);
+                    const display = document.getElementById('statement-display');
+                    if (display) {
+                        display.innerHTML = `<div class="error-message">Error generating statement: ${error.message}</div>`;
+                    }
+                }
+            }
+
+            // Handle export current statement
+            async handleExportCurrent() {
+                if (!this.currentStatementData) {
+                    this.showExportStatus('No statement to export', 'error');
+                    return;
+                }
+
+                try {
+                    this.showExportStatus('Exporting...', 'loading');
+                    
+                    const statementNames = {
+                        'balance-sheet': config.outputFiles.balanceSheet.replace('.xlsx', ''),
+                        'income-statement': config.outputFiles.incomeStatement.replace('.xlsx', ''),
+                        'cash-flow': config.outputFiles.cashFlowStatement.replace('.xlsx', '')
+                    };
+                    
+                    await this.exportHandler.exportStatement(
+                        this.currentStatementData, 
+                        statementNames[this.currentStatementType]
+                    );
+                    
+                    this.showExportStatus('Export successful!', 'success');
+                    
+                } catch (error) {
+                    this.showExportStatus('Export failed: ' + error.message, 'error');
+                    console.error('Export error:', error);
+                }
+            }
+
+            // Handle export all statements
+            async handleExportAll() {
+                try {
+                    this.showExportStatus('Exporting all statements...', 'loading');
+                    
+                    const statements = {
+                        'Balance Sheet': this.statementGenerator.generateBalanceSheet(),
+                        'Income Statement': this.statementGenerator.generateIncomeStatement(),
+                        'Cash Flow': this.statementGenerator.generateCashFlowStatement()
+                    };
+                    
+                    await this.exportHandler.exportAllStatements(statements);
+                    
+                    this.showExportStatus('All statements exported successfully!', 'success');
+                    
+                } catch (error) {
+                    this.showExportStatus('Export failed: ' + error.message, 'error');
+                    console.error('Export error:', error);
+                }
+            }
+
+            // Show export status message
+            showExportStatus(message, type) {
+                const statusElement = document.getElementById('export-status');
+                if (statusElement) {
+                    statusElement.textContent = message;
+                    
+                    if (type === 'success') {
+                        statusElement.style.color = '#28a745';
+                    } else if (type === 'error') {
+                        statusElement.style.color = '#dc3545';
+                    } else if (type === 'loading') {
+                        statusElement.style.color = '#007bff';
+                    }
+                    
+                    // Clear message after 3 seconds
+                    if (type !== 'loading') {
+                        setTimeout(() => {
+                            statusElement.textContent = '';
+                        }, 3000);
+                    }
+                }
+            }
+
+            // Handle tab switching
+            handleTabSwitch(statementType) {
+                // Update active tab
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                    if (btn.dataset.statement === statementType) {
+                        btn.classList.add('active');
+                    }
+                });
+                
+                // Generate and display the selected statement
+                this.generateAndDisplayStatement(statementType);
+            }
+
+            // Setup event listeners
+            setupEventListeners() {
+                document.getElementById('select-input-dir').addEventListener('click', () => {
+                    this.handleSelectInputDirectory();
+                });
+
+                document.getElementById('load-all-files').addEventListener('click', () => {
+                    this.handleLoadAllFiles();
+                });
+
+                // Tab switching
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        this.handleTabSwitch(btn.dataset.statement);
+                    });
+                });
+
+                // Export buttons
+                document.getElementById('export-current').addEventListener('click', () => {
+                    this.handleExportCurrent();
+                });
+
+                document.getElementById('export-all').addEventListener('click', () => {
+                    this.handleExportAll();
+                });
+            }
+        }
+
+        // Initialize application
+        async function init() {
+            console.log('Financial Statement Generator initialized');
+            console.log('Arquero loaded:', typeof aq !== 'undefined');
+            console.log('ExcelJS loaded:', typeof ExcelJS !== 'undefined');
+            
+            // Check browser compatibility
+            if (!window.showDirectoryPicker) {
+                alert('Your browser does not support the File System Access API. Please use Chrome, Edge, or another compatible browser.');
+                console.error('File System Access API not supported');
+            }
+            
+            // Load configuration
+            await loadConfig();
+            
+            // Initialize UI Controller
+            window.uiController = new UIController();
+            window.uiController.setupEventListeners();
+            
+            // Initial state: disable export buttons until data is loaded
+            document.getElementById('export-current').disabled = true;
+            document.getElementById('export-all').disabled = true;
+            
+            console.log('Application ready');
+            console.log('Configuration:', config);
+        }
+
+        // Run initialization when page loads
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
