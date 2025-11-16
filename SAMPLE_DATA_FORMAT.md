@@ -7,8 +7,8 @@ This document describes the expected format for input Excel files.
 Create an `input` directory with the following files:
 - `trial_balance_2024.xlsx`
 - `trial_balance_2025.xlsx`
-- `hierarchy.xlsx`
-- `dates.xlsx`
+- `DimAccounts.xlsx`
+- `DimDates.xlsx`
 - `format.xlsx`
 
 ## 1. Trial Balance Files (trial_balance_2024.xlsx, trial_balance_2025.xlsx)
@@ -36,7 +36,7 @@ Create an `input` directory with the following files:
 | 6100 | Rent Expense | 24000.00 |
 | 6200 | Utilities Expense | 12000.00 |
 
-## 2. Hierarchy File (hierarchy.xlsx)
+## 2. Hierarchy File (DimAccounts.xlsx)
 
 ### Required Columns:
 - `account_code` (string): Must match account codes in trial balance
@@ -63,7 +63,7 @@ Create an `input` directory with the following files:
 | 6100 | IS | Operating Expenses | Rent | 40 |
 | 6200 | IS | Operating Expenses | Utilities | 50 |
 
-## 3. Dates File (dates.xlsx)
+## 3. Dates File (DimDates.xlsx)
 
 ### Required Columns:
 - `period` (string): Period identifier (e.g., "2024", "2025")

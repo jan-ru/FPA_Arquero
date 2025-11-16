@@ -35,8 +35,8 @@ This application requires a browser that supports the File System Access API:
 Create an `input` directory with the following Excel files:
 - `trial_balance_2024.xlsx` - Trial balance for 2024
 - `trial_balance_2025.xlsx` - Trial balance for 2025
-- `hierarchy.xlsx` - Account categorization and statement mapping
-- `dates.xlsx` - Period definitions
+- `DimAccounts.xlsx` - Account categorization and statement mapping (hierarchy)
+- `DimDates.xlsx` - Period definitions (date dimension)
 - `format.xlsx` - Statement formatting rules
 
 See [SAMPLE_DATA_FORMAT.md](SAMPLE_DATA_FORMAT.md) for detailed file format specifications.
@@ -76,8 +76,8 @@ financial-statement-generator/
 └── input/                      # Your data files (create this)
     ├── trial_balance_2024.xlsx
     ├── trial_balance_2025.xlsx
-    ├── hierarchy.xlsx
-    ├── dates.xlsx
+    ├── DimAccounts.xlsx
+    ├── DimDates.xlsx
     └── format.xlsx
 ```
 
@@ -90,8 +90,8 @@ Edit `config.json` to customize file names and directories:
   "inputFiles": {
     "trialBalance2024": "trial_balance_2024.xlsx",
     "trialBalance2025": "trial_balance_2025.xlsx",
-    "hierarchy": "hierarchy.xlsx",
-    "dates": "dates.xlsx",
+    "hierarchy": "DimAccounts.xlsx",
+    "dates": "DimDates.xlsx",
     "format": "format.xlsx"
   },
   "outputFiles": {
@@ -175,7 +175,7 @@ Edit `config.json` to customize file names and directories:
 
 ### Unmapped accounts warning
 - Review the list of unmapped account codes
-- Add missing accounts to hierarchy.xlsx
+- Add missing accounts to DimAccounts.xlsx
 - Reload the data after updating hierarchy
 
 ## Performance

@@ -157,8 +157,8 @@ deno run --allow-read --allow-write transform_data.ts
 2. Extract account_code, account_description, Saldo
 3. Write to trial_balance_2024.xlsx
 4. Repeat for 2025 file
-5. Transform DimAccounts.xlsx to hierarchy.xlsx
-6. Create simple dates.xlsx
+5. Use DimAccounts.xlsx as-is (no transformation needed)
+6. Use DimDates.xlsx as-is (no transformation needed)
 
 ### Step 2: Update Configuration
 
@@ -213,7 +213,7 @@ The format table needs to be created based on the desired statement layout. This
 Create a simple transformation script that:
 1. Extracts year-end balances (Saldo column) from both files
 2. Creates trial_balance_2024.xlsx and trial_balance_2025.xlsx
-3. Transforms DimAccounts.xlsx to hierarchy.xlsx
-4. Creates a minimal dates.xlsx
+3. Uses DimAccounts.xlsx as-is (application handles the format)
+4. Uses DimDates.xlsx as-is (application handles the format)
 
 This gets the application working quickly, and we can enhance it later with monthly data if needed.
