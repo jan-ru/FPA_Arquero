@@ -422,7 +422,7 @@
 </head>
 <body>
     <div id="app">
-        <h1>Statement Generator <span style="font-size: 0.6em; color: rgba(255,255,255,0.8);">v2.0.0</span></h1>
+        <h1>Statement Generator <span style="font-size: 0.6em; color: rgba(255,255,255,0.8);">v2.1.0</span></h1>
         
         <!-- File Upload Section -->
         <div id="file-upload-section" class="section">
@@ -448,34 +448,6 @@
                     <span class="file-label">TB 2024+2025</span>
                     <span id="status-tb2425" class="status-indicator">👁️</span>
                 </div>
-                <div class="file-status-item clickable" data-file="tb24m">
-                    <span class="file-label">TB24_M (Movements)</span>
-                    <span id="status-tb24m" class="status-indicator">👁️</span>
-                </div>
-                <div class="file-status-item clickable" data-file="tb24b">
-                    <span class="file-label">TB24_B (Balances)</span>
-                    <span id="status-tb24b" class="status-indicator">👁️</span>
-                </div>
-                <div class="file-status-item clickable" data-file="tb25m">
-                    <span class="file-label">TB25_M (Movements)</span>
-                    <span id="status-tb25m" class="status-indicator">👁️</span>
-                </div>
-                <div class="file-status-item clickable" data-file="tb25b">
-                    <span class="file-label">TB25_B (Balances)</span>
-                    <span id="status-tb25b" class="status-indicator">👁️</span>
-                </div>
-                <div class="file-status-item clickable" data-file="hierarchy">
-                    <span class="file-label">Accounts</span>
-                    <span id="status-hierarchy" class="status-indicator">⚪</span>
-                </div>
-                <div class="file-status-item clickable" data-file="dates">
-                    <span class="file-label">Dates</span>
-                    <span id="status-dates" class="status-indicator">⚪</span>
-                </div>
-                <div class="file-status-item clickable" data-file="format">
-                    <span class="file-label">Format</span>
-                    <span id="status-format" class="status-indicator">⚪</span>
-                </div>
             </div>
             
             <!-- Data Preview Section -->
@@ -497,16 +469,63 @@
         <!-- Statement Display Section -->
         <div id="statement-section" class="section" style="display: none;">
             <h2>Statements</h2>
-            <div id="statement-tabs" class="tabs">
-                <button class="tab-btn active" data-statement="balance-sheet">Balance Sheet</button>
-                <button class="tab-btn" data-statement="income-statement">Income Statement</button>
-                <button class="tab-btn" data-statement="cash-flow">Cash Flow</button>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <div id="statement-tabs" class="tabs" style="margin-bottom: 0;">
+                    <button class="tab-btn active" data-statement="balance-sheet">Balance Sheet</button>
+                    <button class="tab-btn" data-statement="income-statement">Income Statement</button>
+                    <button class="tab-btn" data-statement="cash-flow">Cash Flow</button>
+                </div>
+                <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                    <label style="font-size: 13px; color: #4a5568;">
+                        Period 2024:
+                        <select id="period-2024" style="margin-left: 5px; padding: 4px; border-radius: 4px; border: 1px solid #ccc;">
+                            <option value="all">All Periods</option>
+                            <option value="1">Period 1</option>
+                            <option value="2">Period 2</option>
+                            <option value="3">Period 3</option>
+                            <option value="4">Period 4</option>
+                            <option value="5">Period 5</option>
+                            <option value="6">Period 6</option>
+                            <option value="7">Period 7</option>
+                            <option value="8">Period 8</option>
+                            <option value="9">Period 9</option>
+                            <option value="10">Period 10</option>
+                            <option value="11">Period 11</option>
+                            <option value="12">Period 12</option>
+                        </select>
+                    </label>
+                    <label style="font-size: 13px; color: #4a5568;">
+                        Period 2025:
+                        <select id="period-2025" style="margin-left: 5px; padding: 4px; border-radius: 4px; border: 1px solid #ccc;">
+                            <option value="all">All Periods</option>
+                            <option value="1">Period 1</option>
+                            <option value="2">Period 2</option>
+                            <option value="3">Period 3</option>
+                            <option value="4">Period 4</option>
+                            <option value="5">Period 5</option>
+                            <option value="6">Period 6</option>
+                            <option value="7">Period 7</option>
+                            <option value="8">Period 8</option>
+                            <option value="9">Period 9</option>
+                            <option value="10">Period 10</option>
+                            <option value="11">Period 11</option>
+                            <option value="12">Period 12</option>
+                        </select>
+                    </label>
+                    <label style="font-size: 13px; color: #4a5568;">
+                        <input type="checkbox" id="show-variance" checked style="margin-right: 5px;">
+                        Show Variance
+                    </label>
+                    <label style="font-size: 13px; color: #4a5568;">
+                        <input type="checkbox" id="show-category-totals" checked style="margin-right: 5px;">
+                        Show Category Totals
+                    </label>
+                </div>
             </div>
             <div id="statement-display" class="statement-display"></div>
             
             <!-- Export Controls -->
             <div class="export-controls">
-                <button id="export-current" class="btn btn-secondary">Export Current</button>
                 <button id="export-all" class="btn btn-secondary">Export All</button>
                 <span id="export-status" class="status-text"></span>
             </div>
@@ -544,9 +563,7 @@
                 }
                 
                 this.factTables = {}; // Store FactTables by period and type: {2024: {movements: table, balances: table}, 2025: {...}}
-                this.hierarchyTable = null;
-                this.datesTable = null;
-                this.formatTable = null;
+                this.combinedMovements = null; // Combined movements table for both years
                 
                 DataStore.instance = this;
             }
@@ -596,31 +613,22 @@
                 return this.hierarchyTable;
             }
 
-            // Store Dates Table
-            setDatesTable(table) {
-                this.datesTable = table;
-                console.log('Dates Table stored');
-            }
 
-            // Retrieve Dates Table
-            getDatesTable() {
-                return this.datesTable;
-            }
-
-            // Store Format Table
-            setFormatTable(table) {
-                this.formatTable = table;
-                console.log('Format Table stored');
-            }
-
-            // Retrieve Format Table
-            getFormatTable() {
-                return this.formatTable;
-            }
 
             // Get all loaded periods
             getAllPeriods() {
                 return Object.keys(this.factTables);
+            }
+
+            // Store combined movements table
+            setCombinedMovements(table) {
+                this.combinedMovements = table;
+                console.log(`Combined movements table stored (${table.numRows()} rows)`);
+            }
+
+            // Retrieve combined movements table
+            getCombinedMovements() {
+                return this.combinedMovements;
             }
 
             // Check if all required data is loaded
@@ -630,16 +638,13 @@
                 const has2025Movements = this.factTables['2025']?.movements;
                 const has2025Balances = this.factTables['2025']?.balances;
                 const hasBothPeriods = has2024Movements && has2024Balances && has2025Movements && has2025Balances;
-                const hasAllTables = this.hierarchyTable && this.datesTable && this.formatTable;
-                return hasBothPeriods && hasAllTables;
+                return hasBothPeriods && this.combinedMovements;
             }
 
             // Clear all data
             clear() {
                 this.factTables = {};
-                this.hierarchyTable = null;
-                this.datesTable = null;
-                this.formatTable = null;
+                this.combinedMovements = null;
                 console.log('DataStore cleared');
             }
         }
@@ -658,7 +663,6 @@
                     inputFiles: {
                         trialBalance2024: "2024_BalansenWinstverliesperperiode.xlsx",
                         trialBalance2025: "2025_BalansenWinstverliesperperiode.xlsx",
-                        hierarchy: "DimAccounts.xlsx",
                         dates: "DimDates.xlsx",
                         format: "format.xlsx"
                     },
@@ -703,11 +707,21 @@
             // Request access to input directory
             async selectInputDirectory() {
                 try {
+                    // Note: The File System Access API doesn't support relative paths or specific subdirectories
+                    // as starting points. We can only use well-known directories like 'documents', 'desktop', etc.
+                    // The user will need to navigate to the 'input' directory manually.
                     this.inputDirHandle = await window.showDirectoryPicker({
                         mode: 'read',
-                        startIn: 'documents'
+                        startIn: 'documents',
+                        id: 'financial-statement-input' // Helps browser remember the last location
                     });
                     console.log('Input directory selected:', this.inputDirHandle.name);
+                    
+                    // Provide helpful feedback if user didn't select 'input' directory
+                    if (this.inputDirHandle.name.toLowerCase() !== 'input') {
+                        console.warn('Note: Expected directory name is "input". Selected:', this.inputDirHandle.name);
+                    }
+                    
                     return this.inputDirHandle;
                 } catch (error) {
                     console.error('Error selecting input directory:', error);
@@ -962,138 +976,7 @@
                 }
             }
 
-            // Load Dates from Excel file (filtered by loaded years)
-            async loadDates(loadedYears = ['2024', '2025']) {
-                const filename = config.inputFiles.dates;
 
-                try {
-                    const file = await this.readFileFromDirectory(filename);
-                    const arrayBuffer = await file.arrayBuffer();
-                    const workbook = new ExcelJS.Workbook();
-                    await workbook.xlsx.load(arrayBuffer);
-
-                    const worksheet = workbook.worksheets[0];
-                    const data = [];
-
-                    const headers = [];
-                    worksheet.getRow(1).eachCell((cell, colNumber) => {
-                        headers[colNumber] = cell.value;
-                    });
-
-                    worksheet.eachRow((row, rowNumber) => {
-                        if (rowNumber === 1) return;
-                        
-                        const rowData = {};
-                        row.eachCell((cell, colNumber) => {
-                            const header = headers[colNumber];
-                            if (header) {
-                                rowData[header] = cell.value;
-                            }
-                        });
-                        
-                        if (Object.keys(rowData).length > 0) {
-                            data.push(rowData);
-                        }
-                    });
-
-                    // Transform DimDates format to expected dates format
-                    // Extract unique years and filter to only loaded years
-                    const years = new Set();
-                    data.forEach(row => {
-                        if (row.Year) {
-                            const yearStr = String(row.Year);
-                            // Only include years that were loaded in trial balance
-                            if (loadedYears.includes(yearStr)) {
-                                years.add(row.Year);
-                            }
-                        }
-                    });
-
-                    console.log(`Filtering dates to loaded years: ${loadedYears.join(', ')}`);
-                    console.log(`Found ${years.size} matching years in DimDates`);
-
-                    const transformedData = Array.from(years).map(year => {
-                        // Find first and last date for this year
-                        const yearRows = data.filter(row => row.Year === year);
-                        const dates = yearRows.map(row => row.Date).filter(d => d);
-                        
-                        // Convert Excel serial dates to JavaScript dates if needed
-                        const convertExcelDate = (serial) => {
-                            if (typeof serial === 'number') {
-                                // Excel serial date (days since 1900-01-01)
-                                const excelEpoch = new Date(1900, 0, 1);
-                                const date = new Date(excelEpoch.getTime() + (serial - 2) * 24 * 60 * 60 * 1000);
-                                return date;
-                            }
-                            return new Date(serial);
-                        };
-
-                        const firstDate = dates.length > 0 ? convertExcelDate(Math.min(...dates)) : new Date(year, 0, 1);
-                        const lastDate = dates.length > 0 ? convertExcelDate(Math.max(...dates)) : new Date(year, 11, 31);
-
-                        return {
-                            period: String(year),
-                            year: year,
-                            period_start: firstDate.toISOString().split('T')[0],
-                            period_end: lastDate.toISOString().split('T')[0]
-                        };
-                    });
-
-                    const table = aq.from(transformedData);
-                    console.log('Dates loaded:', table.numRows(), 'rows (filtered to loaded years)');
-                    return table;
-
-                } catch (error) {
-                    console.error('Error loading dates:', error);
-                    throw error;
-                }
-            }
-
-            // Load Format from Excel file
-            async loadFormat() {
-                const filename = config.inputFiles.format;
-
-                try {
-                    const file = await this.readFileFromDirectory(filename);
-                    const arrayBuffer = await file.arrayBuffer();
-                    const workbook = new ExcelJS.Workbook();
-                    await workbook.xlsx.load(arrayBuffer);
-
-                    const worksheet = workbook.worksheets[0];
-                    const data = [];
-
-                    const headers = [];
-                    worksheet.getRow(1).eachCell((cell, colNumber) => {
-                        headers[colNumber] = cell.value;
-                    });
-
-                    worksheet.eachRow((row, rowNumber) => {
-                        if (rowNumber === 1) return;
-                        
-                        const rowData = {};
-                        row.eachCell((cell, colNumber) => {
-                            const header = headers[colNumber];
-                            if (header) {
-                                rowData[header] = cell.value;
-                            }
-                        });
-                        
-                        if (Object.keys(rowData).length > 0) {
-                            data.push(rowData);
-                        }
-                    });
-
-                    this.validateColumns(data, ['statement_type', 'line_number', 'line_type', 'line_label']);
-
-                    const table = aq.from(data);
-                    console.log('Format loaded:', table.numRows(), 'rows');
-                    return table;
-
-                } catch (error) {
-                    console.error('Error loading format:', error);
-                    throw error;
-                }
-            }
         }
 
         // StatementGenerator class for generating financial statements
@@ -1110,22 +993,13 @@
 
             // Helper: Validate required data is loaded
             validateRequiredData() {
-                const factTable2024 = this.dataStore.getFactTable('2024');
-                const factTable2025 = this.dataStore.getFactTable('2025');
+                const combinedMovements = this.dataStore.getCombinedMovements();
                 
-                if (!factTable2024 || !factTable2025) {
+                if (!combinedMovements) {
                     throw new Error('Required data not loaded');
                 }
                 
-                return { factTable2024, factTable2025 };
-            }
-
-            // Helper: Group and aggregate data for a period
-            groupByPeriod(table, period, groupColumns = ['category', 'subcategory']) {
-                return table
-                    .groupby(...groupColumns)
-                    .rollup({ [`amount_${period}`]: d => aq.op.sum(d.movement_amount) })
-                    .select(...groupColumns, `amount_${period}`);
+                return combinedMovements;
             }
 
             // Helper: Calculate variance columns
@@ -1134,7 +1008,11 @@
                     amount_2024: d => d.amount_2024 || 0,
                     amount_2025: d => d.amount_2025 || 0,
                     variance_amount: d => (d.amount_2025 || 0) - (d.amount_2024 || 0),
-                    variance_percent: d => this.calculateVariancePercent(d.amount_2024 || 0, d.amount_2025 || 0)
+                    variance_percent: d => {
+                        const amt2024 = d.amount_2024 || 0;
+                        const amt2025 = d.amount_2025 || 0;
+                        return amt2024 !== 0 ? ((amt2025 - amt2024) / Math.abs(amt2024)) * 100 : 0;
+                    }
                 });
             }
 
@@ -1149,7 +1027,7 @@
                         variance_percent: d => {
                             const total2024 = aq.op.sum(d.amount_2024);
                             const total2025 = aq.op.sum(d.amount_2025);
-                            return this.calculateVariancePercent(total2024, total2025);
+                            return total2024 !== 0 ? ((total2025 - total2024) / Math.abs(total2024)) * 100 : 0;
                         }
                     });
             }
@@ -1200,25 +1078,14 @@
                 const errors = [];
                 const warnings = [];
 
-                // Check if both periods are loaded
-                const factTable2024 = this.dataStore.getFactTable('2024');
-                const factTable2025 = this.dataStore.getFactTable('2025');
+                // Check if combined movements table is loaded
+                const combinedMovements = this.dataStore.getCombinedMovements();
                 
-                if (!factTable2024) {
-                    errors.push('Trial Balance for 2024 is not loaded');
-                }
-                if (!factTable2025) {
-                    errors.push('Trial Balance for 2025 is not loaded');
+                if (!combinedMovements) {
+                    errors.push('Trial Balance data is not loaded');
                 }
 
-                // Hierarchy is now embedded in trial balance files
-                // Check if dimension tables are loaded (optional)
-                if (!this.dataStore.getDatesTable()) {
-                    warnings.push('Dates table is not loaded (optional)');
-                }
-                if (!this.dataStore.getFormatTable()) {
-                    warnings.push('Format table is not loaded (optional)');
-                }
+
 
                 return { errors, warnings, unmappedAccounts: [] };
             }
@@ -1226,25 +1093,43 @@
             // Consolidated statement generation method
             generateStatement(statementType, options = {}) {
                 try {
-                    const { factTable2024, factTable2025 } = this.validateRequiredData();
+                    const combinedMovements = this.validateRequiredData();
 
                     // Filter for specific statement type
-                    const filtered2024 = factTable2024.filter(d => d.statement_type === statementType);
-                    const filtered2025 = factTable2025.filter(d => d.statement_type === statementType);
+                    let filtered = combinedMovements.params({ statementType }).filter(d => d.statement_type === statementType);
 
-                    // Group by category and subcategory for both periods
-                    const grouped2024 = this.groupByPeriod(filtered2024, '2024');
-                    const grouped2025 = this.groupByPeriod(filtered2025, '2025');
+                    // Apply period filters if specified
+                    const period2024Value = options.period2024 || 'all';
+                    const period2025Value = options.period2025 || 'all';
+                    
+                    if (period2024Value !== 'all' || period2025Value !== 'all') {
+                        const p2024 = period2024Value === 'all' ? 999 : parseInt(period2024Value);
+                        const p2025 = period2025Value === 'all' ? 999 : parseInt(period2025Value);
+                        
+                        filtered = filtered
+                            .params({ period2024: p2024, period2025: p2025 })
+                            .filter(d => (d.year === 2024 && d.period <= period2024) || (d.year === 2025 && d.period <= period2025));
+                    }
 
-                    // Add ordering if specified
-                    const ordered2024 = options.orderBy ? grouped2024.orderby('category', 'subcategory') : grouped2024;
-                    const ordered2025 = options.orderBy ? grouped2025.orderby('category', 'subcategory') : grouped2025;
+                    // Use conditional aggregation to get both years in one pass (no join needed!)
+                    // Include level codes for proper sorting
+                    // For Income Statement, flip the sign to show revenue as positive
+                    const signMultiplier = statementType === STATEMENT_TYPES.INCOME_STATEMENT ? -1 : 1;
+                    const aggregated = filtered
+                        .params({ year2024: 2024, year2025: 2025, signMult: signMultiplier })
+                        .groupby('category', 'subcategory', 'level1_code', 'level2_code')
+                        .rollup({
+                            amount_2024: d => aq.op.sum(d.year === year2024 ? d.movement_amount * signMult : 0),
+                            amount_2025: d => aq.op.sum(d.year === year2025 ? d.movement_amount * signMult : 0)
+                        });
 
-                    // Join 2024 and 2025 data
-                    const combined = ordered2024.join_full(ordered2025, ['category', 'subcategory']);
+                    console.log('Columns after aggregation:', aggregated.columnNames());
+
+                    // Add ordering if specified - sort by level codes for proper order
+                    const ordered = options.orderBy ? aggregated.orderby('level1_code', 'level2_code') : aggregated;
                     
                     // Calculate variances
-                    const withVariances = this.deriveVarianceColumns(combined);
+                    const withVariances = this.deriveVarianceColumns(ordered);
 
                     // Calculate category totals
                     const categoryTotals = this.calculateCategoryTotals(withVariances);
@@ -1275,9 +1160,11 @@
             }
 
             // Generate Balance Sheet
-            generateBalanceSheet() {
+            generateBalanceSheet(options = {}) {
                 return this.generateStatement(STATEMENT_TYPES.BALANCE_SHEET, {
                     name: 'Balance Sheet',
+                    period2024: options.period2024,
+                    period2025: options.period2025,
                     validateBalance: (categoryTotals) => {
                         const totals = categoryTotals.objects();
                         let totalAssets = 0, totalLiabilities = 0, totalEquity = 0;
@@ -1302,10 +1189,12 @@
             }
 
             // Generate Income Statement
-            generateIncomeStatement() {
+            generateIncomeStatement(options = {}) {
                 return this.generateStatement(STATEMENT_TYPES.INCOME_STATEMENT, {
                     name: 'Income Statement',
                     orderBy: true,
+                    period2024: options.period2024,
+                    period2025: options.period2025,
                     calculateMetrics: (categoryTotals) => {
                         const totals = categoryTotals.objects();
                         let revenue2024 = 0, revenue2025 = 0;
@@ -1315,26 +1204,37 @@
                         let taxes2024 = 0, taxes2025 = 0;
 
                         totals.forEach(row => {
-                            if (row.category === 'Revenue') {
-                                revenue2024 = row.amount_2024;
-                                revenue2025 = row.amount_2025;
-                            } else if (row.category === 'Cost of Goods Sold') {
-                                cogs2024 = row.amount_2024;
-                                cogs2025 = row.amount_2025;
-                            } else if (row.category === 'Operating Expenses') {
-                                opex2024 = row.amount_2024;
-                                opex2025 = row.amount_2025;
-                            } else if (row.category === 'Other Income') {
-                                otherIncome2024 = row.amount_2024;
-                                otherIncome2025 = row.amount_2025;
-                            } else if (row.category === 'Taxes') {
-                                taxes2024 = row.amount_2024;
-                                taxes2025 = row.amount_2025;
+                            const categoryLower = row.category.toLowerCase();
+                            
+                            // Revenue (Netto-omzet, Omzet, etc.)
+                            if (categoryLower.includes('omzet') && !categoryLower.includes('kostprijs')) {
+                                revenue2024 += row.amount_2024 || 0;
+                                revenue2025 += row.amount_2025 || 0;
+                            } 
+                            // Cost of Goods Sold (Kostprijs van de omzet)
+                            else if (categoryLower.includes('kostprijs')) {
+                                cogs2024 += row.amount_2024 || 0;
+                                cogs2025 += row.amount_2025 || 0;
+                            } 
+                            // Operating Expenses (Bedrijfskosten, Kosten, etc.)
+                            else if (categoryLower.includes('kosten') || categoryLower.includes('bedrijf')) {
+                                opex2024 += row.amount_2024 || 0;
+                                opex2025 += row.amount_2025 || 0;
+                            } 
+                            // Other Income (Overige opbrengsten, etc.)
+                            else if (categoryLower.includes('overige') || categoryLower.includes('opbrengst')) {
+                                otherIncome2024 += row.amount_2024 || 0;
+                                otherIncome2025 += row.amount_2025 || 0;
+                            } 
+                            // Taxes (Belastingen)
+                            else if (categoryLower.includes('belasting') || categoryLower.includes('tax')) {
+                                taxes2024 += row.amount_2024 || 0;
+                                taxes2025 += row.amount_2025 || 0;
                             }
                         });
 
-                        const grossProfit2024 = revenue2024 - cogs2024;
-                        const grossProfit2025 = revenue2025 - cogs2025;
+                        const grossProfit2024 = revenue2024 + cogs2024;
+                        const grossProfit2025 = revenue2025 + cogs2025;
                         const operatingIncome2024 = grossProfit2024 - opex2024;
                         const operatingIncome2025 = grossProfit2025 - opex2025;
                         const netIncome2024 = operatingIncome2024 + otherIncome2024 - taxes2024;
@@ -1349,42 +1249,180 @@
                 });
             }
 
-            // Generate Cash Flow Statement
-            generateCashFlowStatement() {
-                return this.generateStatement(STATEMENT_TYPES.CASH_FLOW, {
-                    name: 'Cash Flow Statement',
-                    orderBy: true,
-                    calculateMetrics: (categoryTotals) => {
-                        const totals = categoryTotals.objects();
-                        let operating2024 = 0, operating2025 = 0;
-                        let investing2024 = 0, investing2025 = 0;
-                        let financing2024 = 0, financing2025 = 0;
-
-                        totals.forEach(row => {
-                            if (row.category === 'Operating Activities') {
-                                operating2024 = row.amount_2024;
-                                operating2025 = row.amount_2025;
-                            } else if (row.category === 'Investing Activities') {
-                                investing2024 = row.amount_2024;
-                                investing2025 = row.amount_2025;
-                            } else if (row.category === 'Financing Activities') {
-                                financing2024 = row.amount_2024;
-                                financing2025 = row.amount_2025;
+            // Generate Cash Flow Statement (Indirect Method - Calculated from Balance Sheet and Income Statement)
+            generateCashFlowStatement(options = {}) {
+                try {
+                    // Get Income Statement to extract Net Income
+                    const incomeStatement = this.generateIncomeStatement(options);
+                    const incomeDetails = incomeStatement.details.objects();
+                    
+                    // Get Balance Sheet to calculate changes in working capital
+                    const balanceSheet = this.generateBalanceSheet(options);
+                    const balanceDetails = balanceSheet.details.objects();
+                    
+                    // Get Net Income from Income Statement metrics (to ensure consistency)
+                    const netIncome2024 = incomeStatement.metrics.netIncome['2024'];
+                    const netIncome2025 = incomeStatement.metrics.netIncome['2025'];
+                    
+                    // Calculate changes in Balance Sheet items (working capital changes)
+                    const cashFlowData = [];
+                    
+                    // Operating Activities
+                    cashFlowData.push({
+                        category: 'Operating Activities',
+                        subcategory: 'Net Income',
+                        amount_2024: netIncome2024,
+                        amount_2025: netIncome2025
+                    });
+                    
+                    // Add back non-cash expenses (depreciation, amortization)
+                    balanceDetails.forEach(row => {
+                        if (row.subcategory && (
+                            row.subcategory.toLowerCase().includes('afschrijving') ||
+                            row.subcategory.toLowerCase().includes('depreciation') ||
+                            row.subcategory.toLowerCase().includes('amortization')
+                        )) {
+                            cashFlowData.push({
+                                category: 'Operating Activities',
+                                subcategory: row.subcategory,
+                                amount_2024: Math.abs(row.variance_amount || 0),
+                                amount_2025: Math.abs(row.variance_amount || 0)
+                            });
+                        }
+                    });
+                    
+                    // Changes in working capital (current assets and liabilities)
+                    balanceDetails.forEach(row => {
+                        if (row.category && (
+                            row.category.toLowerCase().includes('vlottende') ||
+                            row.category.toLowerCase().includes('current')
+                        )) {
+                            const change = (row.amount_2025 || 0) - (row.amount_2024 || 0);
+                            if (Math.abs(change) > 0) {
+                                cashFlowData.push({
+                                    category: 'Operating Activities',
+                                    subcategory: `Change in ${row.subcategory}`,
+                                    amount_2024: 0,
+                                    amount_2025: -change // Negative because increase in assets uses cash
+                                });
                             }
-                        });
+                        }
+                    });
+                    
+                    // Investing Activities (changes in fixed assets)
+                    balanceDetails.forEach(row => {
+                        if (row.category && (
+                            row.category.toLowerCase().includes('vaste activa') ||
+                            row.category.toLowerCase().includes('fixed assets')
+                        )) {
+                            const change = (row.amount_2025 || 0) - (row.amount_2024 || 0);
+                            if (Math.abs(change) > 0) {
+                                cashFlowData.push({
+                                    category: 'Investing Activities',
+                                    subcategory: row.subcategory,
+                                    amount_2024: 0,
+                                    amount_2025: -change
+                                });
+                            }
+                        }
+                    });
+                    
+                    // Financing Activities (changes in equity and long-term liabilities)
+                    balanceDetails.forEach(row => {
+                        if (row.category && (
+                            row.category.toLowerCase().includes('eigen vermogen') ||
+                            row.category.toLowerCase().includes('equity') ||
+                            row.category.toLowerCase().includes('langlopend') ||
+                            row.category.toLowerCase().includes('long-term')
+                        )) {
+                            const change = (row.amount_2025 || 0) - (row.amount_2024 || 0);
+                            if (Math.abs(change) > 0) {
+                                cashFlowData.push({
+                                    category: 'Financing Activities',
+                                    subcategory: row.subcategory,
+                                    amount_2024: 0,
+                                    amount_2025: change
+                                });
+                            }
+                        }
+                    });
+                    
+                    // Convert to Arquero table
+                    const cashFlowTable = aq.from(cashFlowData);
+                    
+                    // Calculate variances
+                    const withVariances = this.deriveVarianceColumns(cashFlowTable);
+                    
+                    // Calculate category totals
+                    const categoryTotals = this.calculateCategoryTotals(withVariances);
+                    
+                    // Calculate net change in cash
+                    const totals = categoryTotals.objects();
+                    let operating2024 = 0, operating2025 = 0;
+                    let investing2024 = 0, investing2025 = 0;
+                    let financing2024 = 0, financing2025 = 0;
 
-                        const netChange2024 = operating2024 + investing2024 + financing2024;
-                        const netChange2025 = operating2025 + investing2025 + financing2025;
+                    totals.forEach(row => {
+                        if (row.category === 'Operating Activities') {
+                            operating2024 = row.amount_2024;
+                            operating2025 = row.amount_2025;
+                        } else if (row.category === 'Investing Activities') {
+                            investing2024 = row.amount_2024;
+                            investing2025 = row.amount_2025;
+                        } else if (row.category === 'Financing Activities') {
+                            financing2024 = row.amount_2024;
+                            financing2025 = row.amount_2025;
+                        }
+                    });
 
-                        return {
+                    const netChange2024 = operating2024 + investing2024 + financing2024;
+                    const netChange2025 = operating2025 + investing2025 + financing2025;
+
+                    // Get starting cash from Balance Sheet (cash and cash equivalents)
+                    let startingCash2024 = 0, startingCash2025 = 0;
+                    balanceDetails.forEach(row => {
+                        if (row.subcategory && (
+                            row.subcategory.toLowerCase().includes('liquide middelen') ||
+                            row.subcategory.toLowerCase().includes('cash') ||
+                            row.subcategory.toLowerCase().includes('bank')
+                        )) {
+                            startingCash2024 += row.amount_2024 || 0;
+                            startingCash2025 += row.amount_2025 || 0;
+                        }
+                    });
+
+                    // Calculate ending cash
+                    const endingCash2024 = startingCash2024 + netChange2024;
+                    const endingCash2025 = startingCash2025 + netChange2025;
+
+                    return {
+                        details: withVariances,
+                        totals: categoryTotals,
+                        metrics: {
+                            netIncome: {
+                                '2024': netIncome2024,
+                                '2025': netIncome2025
+                            },
                             netChange: {
                                 '2024': netChange2024,
                                 '2025': netChange2025,
                                 variance: netChange2025 - netChange2024
+                            },
+                            startingCash: {
+                                '2024': startingCash2024,
+                                '2025': startingCash2025
+                            },
+                            endingCash: {
+                                '2024': endingCash2024,
+                                '2025': endingCash2025
                             }
-                        };
-                    }
-                });
+                        }
+                    };
+                    
+                } catch (error) {
+                    console.error('Error generating Cash Flow Statement:', error);
+                    throw error;
+                }
             }
 
             // Calculate variance between two periods
@@ -1464,7 +1502,7 @@
                     const worksheet = workbook.addWorksheet(statementName);
 
                     // Convert statement data to array format
-                    const headers = ['Line Item', '2024', '2025', 'Variance ($)', 'Variance (%)'];
+                    const headers = ['Line Item', '2024', '2025', 'Variance (€)', 'Variance (%)'];
                     const rows = [headers];
 
                     // Add details
@@ -1559,7 +1597,7 @@
                     for (const [name, data] of Object.entries(statements)) {
                         const worksheet = workbook.addWorksheet(name);
 
-                        const headers = ['Line Item', '2024', '2025', 'Variance ($)', 'Variance (%)'];
+                        const headers = ['Line Item', '2024', '2025', 'Variance (€)', 'Variance (%)'];
                         const rows = [headers];
 
                         // Add details
@@ -1650,13 +1688,29 @@
                 this.sortDirection = 'asc';
             }
 
-            // Format number with thousand separators and 2 decimal places
+            // Format number with thousand separators (whole numbers, no decimals)
             formatNumber(value) {
                 if (value === null || value === undefined) return 'N/A';
                 return new Intl.NumberFormat('en-US', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                }).format(value);
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                }).format(Math.round(value));
+            }
+
+            // Helper function to render data cells based on year toggles
+            renderDataCells(amount2024, amount2025, varianceAmount, variancePercent, show2024, show2025, showVariance, cssClass = 'number') {
+                let html = '';
+                if (show2024) {
+                    html += `<td class="${cssClass}">${this.formatNumber(amount2024)}</td>`;
+                }
+                if (show2025) {
+                    html += `<td class="${cssClass}">${this.formatNumber(amount2025)}</td>`;
+                }
+                if (showVariance) {
+                    html += `<td class="${cssClass} ${varianceAmount >= 0 ? 'positive' : 'negative'}">${this.formatNumber(varianceAmount)}</td>`;
+                    html += `<td class="${cssClass} ${variancePercent >= 0 ? 'positive' : 'negative'}">${this.formatNumber(variancePercent)}%</td>`;
+                }
+                return html;
             }
 
             // Render statement table
@@ -1670,13 +1724,44 @@
                 // Create table HTML
                 let html = '<table class="financial-table">';
                 
+                // Check which years and variance should be shown
+                // Try header checkboxes first, fall back to true if not found (initial render)
+                const header2024Checkbox = document.getElementById('show-2024-header');
+                const header2025Checkbox = document.getElementById('show-2025-header');
+                const show2024 = header2024Checkbox ? header2024Checkbox.checked : true;
+                const show2025 = header2025Checkbox ? header2025Checkbox.checked : true;
+                const showVariance = document.getElementById('show-variance')?.checked !== false && show2024 && show2025;
+                
+                // Calculate column span dynamically
+                let colCount = 1; // Line Item column
+                if (show2024) colCount++;
+                if (show2025) colCount++;
+                if (showVariance) colCount += 2;
+                const colSpan = colCount;
+                
                 // Table header
                 html += '<thead><tr>';
                 html += '<th class="col-label">Line Item</th>';
-                html += '<th class="col-number sortable" data-col="amount_2024">2024</th>';
-                html += '<th class="col-number sortable" data-col="amount_2025">2025</th>';
-                html += '<th class="col-number sortable" data-col="variance_amount">Variance ($)</th>';
-                html += '<th class="col-number sortable" data-col="variance_percent">Variance (%)</th>';
+                if (show2024) {
+                    html += '<th class="col-number">';
+                    html += '<label style="cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: center; gap: 5px;">';
+                    html += '<input type="checkbox" id="show-2024-header" checked style="cursor: pointer;">';
+                    html += '<span>2024</span>';
+                    html += '</label>';
+                    html += '</th>';
+                }
+                if (show2025) {
+                    html += '<th class="col-number">';
+                    html += '<label style="cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: center; gap: 5px;">';
+                    html += '<input type="checkbox" id="show-2025-header" checked style="cursor: pointer;">';
+                    html += '<span>2025</span>';
+                    html += '</label>';
+                    html += '</th>';
+                }
+                if (showVariance) {
+                    html += '<th class="col-number">Variance (€)</th>';
+                    html += '<th class="col-number">Variance (%)</th>';
+                }
                 html += '</tr></thead>';
                 
                 html += '<tbody>';
@@ -1685,80 +1770,210 @@
                 const details = statementData.details.objects();
                 const totals = statementData.totals.objects();
                 
+                // Pre-calculate Total Assets for Balance Sheet (to insert in the middle)
+                let totalAssets2024 = 0, totalAssets2025 = 0;
+                let totalAssetsInserted = false;
+                if (statementType === 'balance-sheet') {
+                    totals.forEach(row => {
+                        const categoryLower = row.category.toLowerCase();
+                        if (categoryLower.includes('activa') || categoryLower.includes('asset')) {
+                            totalAssets2024 += row.amount_2024 || 0;
+                            totalAssets2025 += row.amount_2025 || 0;
+                        }
+                    });
+                }
+                
+                // Flag to ensure Operating Income is only inserted once
+                let operatingIncomeInserted = false;
+                
                 let currentCategory = null;
                 
                 details.forEach(row => {
+                    // Insert Total Assets before first Passiva/Eigen vermogen category for Balance Sheet
+                    if (statementType === 'balance-sheet' && 
+                        !totalAssetsInserted &&
+                        row.category !== currentCategory) {
+                        const categoryLower = row.category.toLowerCase();
+                        if (categoryLower.includes('passiva') || categoryLower.includes('vermogen') || 
+                            categoryLower.includes('liabilit') || categoryLower.includes('equity')) {
+                            
+                            totalAssetsInserted = true;
+                            const assetsVariance = totalAssets2025 - totalAssets2024;
+                            const assetsVariancePercent = totalAssets2024 !== 0 ? (assetsVariance / Math.abs(totalAssets2024)) * 100 : 0;
+                            
+                            html += `<tr class="spacer-row"><td colspan="${colSpan}"></td></tr>`;
+                            html += '<tr class="total-row">';
+                            html += '<td><strong>TOTAL ASSETS</strong></td>';
+                            html += this.renderDataCells(totalAssets2024, totalAssets2025, assetsVariance, assetsVariancePercent, show2024, show2025, showVariance, 'number');
+                            html += '</tr>';
+                            html += `<tr class="spacer-row"><td colspan="${colSpan}"></td></tr>`;
+                        }
+                    }
+                    
+                    // Insert Operating Income inline before "Financiele baten en lasten" category for Income Statement (only once)
+                    if (statementType === 'income-statement' && 
+                        statementData.metrics && 
+                        !operatingIncomeInserted &&
+                        row.category !== currentCategory &&
+                        (row.category.toLowerCase().includes('financiele') || 
+                         row.category.toLowerCase().includes('financial') ||
+                         row.category.toLowerCase().includes('baten') ||
+                         row.category.toLowerCase().includes('lasten'))) {
+                        
+                        operatingIncomeInserted = true;
+                        
+                        const metrics = statementData.metrics;
+                        const oiVariance = metrics.operatingIncome['2025'] - metrics.operatingIncome['2024'];
+                        const oiVariancePercent = metrics.operatingIncome['2024'] !== 0 ? 
+                            (oiVariance / Math.abs(metrics.operatingIncome['2024'])) * 100 : 0;
+                        
+                        html += '<tr class="metric-row">';
+                        html += '<td><strong>Operating Income</strong></td>';
+                        html += this.renderDataCells(metrics.operatingIncome['2024'], metrics.operatingIncome['2025'], oiVariance, oiVariancePercent, show2024, show2025, showVariance, 'number');
+                        html += '</tr>';
+                        
+                        // Empty line after Operating Income
+                        html += `<tr class="spacer-row"><td colspan="${colSpan}"></td></tr>`;
+                    }
+                    
                     // Add category header if changed
                     if (row.category !== currentCategory) {
                         currentCategory = row.category;
-                        html += `<tr class="category-header"><td colspan="5"><strong>${currentCategory}</strong></td></tr>`;
+                        html += `<tr class="category-header"><td colspan="${colSpan}"><strong>${currentCategory}</strong></td></tr>`;
                     }
                     
-                    // Add detail row
-                    html += '<tr class="detail-row">';
-                    html += `<td class="indent">${row.subcategory || row.category}</td>`;
-                    html += `<td class="number">${this.formatNumber(row.amount_2024)}</td>`;
-                    html += `<td class="number">${this.formatNumber(row.amount_2025)}</td>`;
-                    html += `<td class="number ${row.variance_amount >= 0 ? 'positive' : 'negative'}">${this.formatNumber(row.variance_amount)}</td>`;
-                    html += `<td class="number ${row.variance_percent >= 0 ? 'positive' : 'negative'}">${this.formatNumber(row.variance_percent)}%</td>`;
-                    html += '</tr>';
+                    // Add detail row - always show if subcategory exists
+                    const shouldShowDetail = row.subcategory;
+                    
+                    if (shouldShowDetail) {
+                        html += '<tr class="detail-row">';
+                        html += `<td class="indent">${row.subcategory}</td>`;
+                        html += this.renderDataCells(row.amount_2024, row.amount_2025, row.variance_amount, row.variance_percent, show2024, show2025, showVariance);
+                        html += '</tr>';
+                        
+                        // Insert Gross Profit inline after "Kostprijs van de omzet" for Income Statement
+                        if (statementType === 'income-statement' && 
+                            statementData.metrics && 
+                            row.subcategory.toLowerCase().includes('kostprijs')) {
+                            
+                            const metrics = statementData.metrics;
+                            const gpVariance = metrics.grossProfit['2025'] - metrics.grossProfit['2024'];
+                            const gpVariancePercent = metrics.grossProfit['2024'] !== 0 ? 
+                                (gpVariance / Math.abs(metrics.grossProfit['2024'])) * 100 : 0;
+                            
+                            html += '<tr class="metric-row">';
+                            html += '<td><strong>Brutowinst (Gross Profit)</strong></td>';
+                            html += this.renderDataCells(metrics.grossProfit['2024'], metrics.grossProfit['2025'], gpVariance, gpVariancePercent, show2024, show2025, showVariance, 'number');
+                            html += '</tr>';
+                            
+                            // Empty line after Gross Profit
+                            html += `<tr class="spacer-row"><td colspan="${colSpan}"></td></tr>`;
+                        }
+                    }
                 });
 
-                // Add category totals
-                html += '<tr class="spacer-row"><td colspan="5"></td></tr>';
-                html += '<tr class="section-header"><td colspan="5"><strong>Category Totals</strong></td></tr>';
+                // Check if category totals should be shown
+                const showCategoryTotals = document.getElementById('show-category-totals')?.checked !== false;
+                
+                // Calculate grand totals for Balance Sheet (Liabilities & Equity only, Assets already shown)
+                let totalLiabilitiesEquity2024 = 0, totalLiabilitiesEquity2025 = 0;
+                
+                // Add category totals (optional)
+                if (showCategoryTotals) {
+                    html += '<tr class="spacer-row"><td colspan="5"></td></tr>';
+                    html += '<tr class="section-header"><td colspan="5"><strong>Category Totals</strong></td></tr>';
+                }
                 
                 totals.forEach(row => {
-                    html += '<tr class="subtotal-row">';
-                    html += `<td><strong>Total ${row.category}</strong></td>`;
-                    html += `<td class="number"><strong>${this.formatNumber(row.amount_2024)}</strong></td>`;
-                    html += `<td class="number"><strong>${this.formatNumber(row.amount_2025)}</strong></td>`;
-                    html += `<td class="number ${row.variance_amount >= 0 ? 'positive' : 'negative'}"><strong>${this.formatNumber(row.variance_amount)}</strong></td>`;
-                    html += `<td class="number ${row.variance_percent >= 0 ? 'positive' : 'negative'}"><strong>${this.formatNumber(row.variance_percent)}%</strong></td>`;
-                    html += '</tr>';
+                    if (showCategoryTotals) {
+                        html += '<tr class="subtotal-row">';
+                        html += `<td><strong>Total ${row.category}</strong></td>`;
+                        html += this.renderDataCells(row.amount_2024, row.amount_2025, row.variance_amount, row.variance_percent, show2024, show2025, showVariance, 'number');
+                        html += '</tr>';
+                    }
+                    
+                    // Accumulate for Balance Sheet Liabilities & Equity total
+                    if (statementType === 'balance-sheet') {
+                        const categoryLower = row.category.toLowerCase();
+                        if (categoryLower.includes('passiva') || categoryLower.includes('liabilit') || 
+                            categoryLower.includes('vermogen') || categoryLower.includes('equity') ||
+                            categoryLower.includes('schuld')) {
+                            totalLiabilitiesEquity2024 += row.amount_2024 || 0;
+                            totalLiabilitiesEquity2025 += row.amount_2025 || 0;
+                        }
+                    }
                 });
-
-                // Add special metrics for Income Statement
-                if (statementType === 'income-statement' && statementData.metrics) {
-                    html += '<tr class="spacer-row"><td colspan="5"></td></tr>';
-                    html += '<tr class="section-header"><td colspan="5"><strong>Key Metrics</strong></td></tr>';
+                
+                // Add Balance Sheet Liabilities & Equity total at the end
+                if (statementType === 'balance-sheet' && (totalLiabilitiesEquity2024 !== 0 || totalLiabilitiesEquity2025 !== 0)) {
+                    const leVariance = totalLiabilitiesEquity2025 - totalLiabilitiesEquity2024;
+                    const leVariancePercent = totalLiabilitiesEquity2024 !== 0 ? (leVariance / Math.abs(totalLiabilitiesEquity2024)) * 100 : 0;
                     
-                    const metrics = statementData.metrics;
-                    html += '<tr class="metric-row">';
-                    html += '<td><strong>Gross Profit</strong></td>';
-                    html += `<td class="number"><strong>${this.formatNumber(metrics.grossProfit['2024'])}</strong></td>`;
-                    html += `<td class="number"><strong>${this.formatNumber(metrics.grossProfit['2025'])}</strong></td>`;
-                    html += `<td class="number"><strong>${this.formatNumber(metrics.grossProfit['2025'] - metrics.grossProfit['2024'])}</strong></td>`;
-                    html += `<td class="number"><strong>${this.formatNumber(((metrics.grossProfit['2025'] - metrics.grossProfit['2024']) / Math.abs(metrics.grossProfit['2024'])) * 100)}%</strong></td>`;
-                    html += '</tr>';
+                    html += `<tr class="spacer-row"><td colspan="${colSpan}"></td></tr>`;
                     
-                    html += '<tr class="metric-row">';
-                    html += '<td><strong>Operating Income</strong></td>';
-                    html += `<td class="number"><strong>${this.formatNumber(metrics.operatingIncome['2024'])}</strong></td>`;
-                    html += `<td class="number"><strong>${this.formatNumber(metrics.operatingIncome['2025'])}</strong></td>`;
-                    html += `<td class="number"><strong>${this.formatNumber(metrics.operatingIncome['2025'] - metrics.operatingIncome['2024'])}</strong></td>`;
-                    html += `<td class="number"><strong>${this.formatNumber(((metrics.operatingIncome['2025'] - metrics.operatingIncome['2024']) / Math.abs(metrics.operatingIncome['2024'])) * 100)}%</strong></td>`;
-                    html += '</tr>';
-                    
-                    html += '<tr class="metric-row">';
-                    html += '<td><strong>Net Income</strong></td>';
-                    html += `<td class="number"><strong>${this.formatNumber(metrics.netIncome['2024'])}</strong></td>`;
-                    html += `<td class="number"><strong>${this.formatNumber(metrics.netIncome['2025'])}</strong></td>`;
-                    html += `<td class="number"><strong>${this.formatNumber(metrics.netIncome['2025'] - metrics.netIncome['2024'])}</strong></td>`;
-                    html += `<td class="number"><strong>${this.formatNumber(((metrics.netIncome['2025'] - metrics.netIncome['2024']) / Math.abs(metrics.netIncome['2024'])) * 100)}%</strong></td>`;
+                    // Total Liabilities & Equity
+                    html += '<tr class="total-row">';
+                    html += '<td><strong>TOTAL LIABILITIES & EQUITY</strong></td>';
+                    html += this.renderDataCells(totalLiabilitiesEquity2024, totalLiabilitiesEquity2025, leVariance, leVariancePercent, show2024, show2025, showVariance, 'number');
                     html += '</tr>';
                 }
 
-                // Add net change for Cash Flow Statement
-                if (statementType === 'cash-flow' && statementData.netChange) {
-                    html += '<tr class="spacer-row"><td colspan="5"></td></tr>';
+                // Add Net Income at the bottom for Income Statement (after all categories, similar to bottom line)
+                if (statementType === 'income-statement' && statementData.metrics) {
+                    const metrics = statementData.metrics;
+                    const niVariance = metrics.netIncome['2025'] - metrics.netIncome['2024'];
+                    const niVariancePercent = metrics.netIncome['2024'] !== 0 ? 
+                        (niVariance / Math.abs(metrics.netIncome['2024'])) * 100 : 0;
+                    
+                    html += `<tr class="spacer-row"><td colspan="${colSpan}"></td></tr>`;
                     html += '<tr class="total-row">';
-                    html += '<td><strong>Net Change in Cash</strong></td>';
-                    html += `<td class="number"><strong>${this.formatNumber(statementData.netChange['2024'])}</strong></td>`;
-                    html += `<td class="number"><strong>${this.formatNumber(statementData.netChange['2025'])}</strong></td>`;
-                    html += `<td class="number"><strong>${this.formatNumber(statementData.netChange.variance)}</strong></td>`;
-                    html += `<td class="number"><strong>${this.formatNumber((statementData.netChange.variance / Math.abs(statementData.netChange['2024'])) * 100)}%</strong></td>`;
+                    html += '<td><strong>Net Income</strong></td>';
+                    html += this.renderDataCells(metrics.netIncome['2024'], metrics.netIncome['2025'], niVariance, niVariancePercent, show2024, show2025, showVariance, 'number');
                     html += '</tr>';
+                }
+
+                // Add cash reconciliation for Cash Flow Statement
+                if (statementType === 'cash-flow' && statementData.metrics) {
+                    const metrics = statementData.metrics;
+                    
+                    html += `<tr class="spacer-row"><td colspan="${colSpan}"></td></tr>`;
+                    html += `<tr class="section-header"><td colspan="${colSpan}"><strong>Cash Reconciliation</strong></td></tr>`;
+                    
+                    // Starting Cash
+                    if (metrics.startingCash) {
+                        const scVariance = metrics.startingCash['2025'] - metrics.startingCash['2024'];
+                        const scVariancePercent = metrics.startingCash['2024'] !== 0 ? 
+                            (scVariance / Math.abs(metrics.startingCash['2024'])) * 100 : 0;
+                        
+                        html += '<tr class="detail-row">';
+                        html += '<td>Starting Cash</td>';
+                        html += this.renderDataCells(metrics.startingCash['2024'], metrics.startingCash['2025'], scVariance, scVariancePercent, show2024, show2025, showVariance);
+                        html += '</tr>';
+                    }
+                    
+                    // Net Change in Cash
+                    if (metrics.netChange) {
+                        const ncVariance = metrics.netChange.variance;
+                        const ncVariancePercent = metrics.netChange['2024'] !== 0 ? 
+                            (ncVariance / Math.abs(metrics.netChange['2024'])) * 100 : 0;
+                        
+                        html += '<tr class="detail-row">';
+                        html += '<td>Changes in Cash</td>';
+                        html += this.renderDataCells(metrics.netChange['2024'], metrics.netChange['2025'], ncVariance, ncVariancePercent, show2024, show2025, showVariance);
+                        html += '</tr>';
+                    }
+                    
+                    // Ending Cash
+                    if (metrics.endingCash) {
+                        const ecVariance = metrics.endingCash['2025'] - metrics.endingCash['2024'];
+                        const ecVariancePercent = metrics.endingCash['2024'] !== 0 ? 
+                            (ecVariance / Math.abs(metrics.endingCash['2024'])) * 100 : 0;
+                        
+                        html += '<tr class="total-row">';
+                        html += '<td><strong>Ending Cash</strong></td>';
+                        html += this.renderDataCells(metrics.endingCash['2024'], metrics.endingCash['2025'], ecVariance, ecVariancePercent, show2024, show2025, showVariance, 'number');
+                        html += '</tr>';
+                    }
                 }
 
                 // Add balance check for Balance Sheet
@@ -1775,47 +1990,35 @@
                 
                 container.innerHTML = html;
                 
-                // Enable sorting
-                this.enableSorting(container);
+                // Add event listeners for header checkboxes
+                const show2024HeaderCheckbox = container.querySelector('#show-2024-header');
+                const show2025HeaderCheckbox = container.querySelector('#show-2025-header');
+                
+                if (show2024HeaderCheckbox) {
+                    show2024HeaderCheckbox.addEventListener('change', (e) => {
+                        e.stopPropagation(); // Prevent event bubbling
+                        // Re-render the current statement with year visibility changes
+                        if (this.currentStatementType && this.currentStatement) {
+                            this.renderStatement(this.currentStatement, this.currentStatementType, container.id);
+                        }
+                    });
+                }
+                
+                if (show2025HeaderCheckbox) {
+                    show2025HeaderCheckbox.addEventListener('change', (e) => {
+                        e.stopPropagation(); // Prevent event bubbling
+                        // Re-render the current statement with year visibility changes
+                        if (this.currentStatementType && this.currentStatement) {
+                            this.renderStatement(this.currentStatement, this.currentStatementType, container.id);
+                        }
+                    });
+                }
                 
                 // Enable tooltips
                 this.enableTooltips(container);
             }
 
-            // Enable sorting on table columns
-            enableSorting(container) {
-                const sortableHeaders = container.querySelectorAll('th.sortable');
-                
-                sortableHeaders.forEach(header => {
-                    header.addEventListener('click', () => {
-                        const column = header.dataset.col;
-                        
-                        // Toggle sort direction if same column
-                        if (this.sortColumn === column) {
-                            this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
-                        } else {
-                            this.sortColumn = column;
-                            this.sortDirection = 'asc';
-                        }
-                        
-                        // Sort the data
-                        const sortedDetails = this.currentStatement.details
-                            .orderby(this.sortDirection === 'asc' ? column : aq.desc(column));
-                        
-                        // Update current statement with sorted data
-                        this.currentStatement.details = sortedDetails;
-                        
-                        // Re-render (we need to pass statement type, so we'll store it)
-                        this.renderStatement(this.currentStatement, this.currentStatementType, container.id);
-                        
-                        // Update header to show sort indicator
-                        sortableHeaders.forEach(h => {
-                            h.textContent = h.textContent.replace(' ▲', '').replace(' ▼', '');
-                        });
-                        header.textContent += this.sortDirection === 'asc' ? ' ▲' : ' ▼';
-                    });
-                });
-            }
+            // Sorting functionality removed - not needed
 
             // Enable drill-down on subtotal rows (placeholder for future implementation)
             enableDrillDown(container) {
@@ -1977,38 +2180,19 @@
                     this.dataStore.setFactTable(balances2025, '2025', 'balances');
                     this.updateFileStatus('tb2025', 'success', `M:${movements2025.numRows()} B:${balances2025.numRows()}`);
                     
+                    // Step 3: Create combined movements table for both years
+                    this.showLoadingMessage('Combining data...');
+                    const combinedMovements = movements2024.concat(movements2025);
+                    this.dataStore.setCombinedMovements(combinedMovements);
+                    console.log(`Combined movements table created: ${combinedMovements.numRows()} rows`);
+                    
                     // Update combined TB count
                     const combinedCount = movements2024.numRows() + balances2024.numRows() + movements2025.numRows() + balances2025.numRows();
                     this.updateFileStatus('tb2425', 'success', `(${combinedCount} total)`);
-                    
-                    // Hierarchy is embedded in trial balance data
-                    this.updateFileStatus('hierarchy', 'success', '(embedded)');
 
                     // Get loaded years from DataStore
                     const loadedYears = this.dataStore.getAllPeriods();
                     console.log(`Loaded trial balance years: ${loadedYears.join(', ')}`);
-
-                    // Load Dates (optional) - filtered to loaded years only
-                    try {
-                        this.updateFileStatus('dates', 'loading');
-                        const dates = await this.dataLoader.loadDates(loadedYears);
-                        this.dataStore.setDatesTable(dates);
-                        this.updateFileStatus('dates', 'success', `(${dates.numRows()}×${dates.numCols()})`);
-                    } catch (error) {
-                        this.updateFileStatus('dates', 'success', '(N/A)');
-                        console.log('Dates file not loaded (optional)');
-                    }
-
-                    // Load Format (optional)
-                    try {
-                        this.updateFileStatus('format', 'loading');
-                        const format = await this.dataLoader.loadFormat();
-                        this.dataStore.setFormatTable(format);
-                        this.updateFileStatus('format', 'success', `(${format.numRows()}×${format.numCols()})`);
-                    } catch (error) {
-                        this.updateFileStatus('format', 'success', '(N/A)');
-                        console.log('Format file not loaded (optional)');
-                    }
 
                     this.showSuccessMessage('Files loaded');
                     
@@ -2018,8 +2202,7 @@
                     // Show statement section
                     document.getElementById('statement-section').style.display = 'block';
                     
-                    // Enable export buttons
-                    document.getElementById('export-current').disabled = false;
+                    // Enable export button
                     document.getElementById('export-all').disabled = false;
                     
                     // Generate and display default statement (Balance Sheet)
@@ -2102,17 +2285,22 @@
             // Generate and display statement
             generateAndDisplayStatement(statementType) {
                 try {
+                    // Get period selections
+                    const period2024 = document.getElementById('period-2024')?.value || 'all';
+                    const period2025 = document.getElementById('period-2025')?.value || 'all';
+                    const periodOptions = { period2024, period2025 };
+                    
                     let statementData;
                     
                     switch(statementType) {
                         case 'balance-sheet':
-                            statementData = this.statementGenerator.generateBalanceSheet();
+                            statementData = this.statementGenerator.generateBalanceSheet(periodOptions);
                             break;
                         case 'income-statement':
-                            statementData = this.statementGenerator.generateIncomeStatement();
+                            statementData = this.statementGenerator.generateIncomeStatement(periodOptions);
                             break;
                         case 'cash-flow':
-                            statementData = this.statementGenerator.generateCashFlowStatement();
+                            statementData = this.statementGenerator.generateCashFlowStatement(periodOptions);
                             break;
                         default:
                             throw new Error('Unknown statement type');
@@ -2131,44 +2319,20 @@
                 }
             }
 
-            // Handle export current statement
-            async handleExportCurrent() {
-                if (!this.currentStatementData) {
-                    this.showExportStatus('No statement to export', 'error');
-                    return;
-                }
-
-                try {
-                    this.showExportStatus('Exporting...', 'loading');
-                    
-                    const statementNames = {
-                        'balance-sheet': config.outputFiles.balanceSheet.replace('.xlsx', ''),
-                        'income-statement': config.outputFiles.incomeStatement.replace('.xlsx', ''),
-                        'cash-flow': config.outputFiles.cashFlowStatement.replace('.xlsx', '')
-                    };
-                    
-                    await this.exportHandler.exportStatement(
-                        this.currentStatementData, 
-                        statementNames[this.currentStatementType]
-                    );
-                    
-                    this.showExportStatus('Export successful!', 'success');
-                    
-                } catch (error) {
-                    this.showExportStatus('Export failed: ' + error.message, 'error');
-                    console.error('Export error:', error);
-                }
-            }
-
             // Handle export all statements
             async handleExportAll() {
                 try {
                     this.showExportStatus('Exporting all statements...', 'loading');
                     
+                    // Get period selections
+                    const period2024 = document.getElementById('period-2024')?.value || 'all';
+                    const period2025 = document.getElementById('period-2025')?.value || 'all';
+                    const periodOptions = { period2024, period2025 };
+                    
                     const statements = {
-                        'Balance Sheet': this.statementGenerator.generateBalanceSheet(),
-                        'Income Statement': this.statementGenerator.generateIncomeStatement(),
-                        'Cash Flow': this.statementGenerator.generateCashFlowStatement()
+                        'Balance Sheet': this.statementGenerator.generateBalanceSheet(periodOptions),
+                        'Income Statement': this.statementGenerator.generateIncomeStatement(periodOptions),
+                        'Cash Flow': this.statementGenerator.generateCashFlowStatement(periodOptions)
                     };
                     
                     await this.exportHandler.exportAllStatements(statements);
@@ -2232,42 +2396,6 @@
                         table = this.dataStore.getMovementsTable('2025');
                         title = 'Trial Balance 2025 Movements - First 20 Rows';
                         break;
-                    case 'tb24m':
-                        table = this.dataStore.getMovementsTable('2024');
-                        if (table) {
-                            // Sort by account_code and period for readability
-                            table = table.orderby('account_code', 'period');
-                            const rowCount = table.numRows();
-                            title = `TB 2024 Movements - ${rowCount.toLocaleString()} rows (showing first 20)`;
-                        }
-                        break;
-                    case 'tb24b':
-                        table = this.dataStore.getBalancesTable('2024');
-                        if (table) {
-                            // Sort by account_code and period for readability
-                            table = table.orderby('account_code', 'period');
-                            const rowCount = table.numRows();
-                            title = `TB 2024 Balances - ${rowCount.toLocaleString()} rows (showing first 20)`;
-                        }
-                        break;
-                    case 'tb25m':
-                        table = this.dataStore.getMovementsTable('2025');
-                        if (table) {
-                            // Sort by account_code and period for readability
-                            table = table.orderby('account_code', 'period');
-                            const rowCount = table.numRows();
-                            title = `TB 2025 Movements - ${rowCount.toLocaleString()} rows (showing first 20)`;
-                        }
-                        break;
-                    case 'tb25b':
-                        table = this.dataStore.getBalancesTable('2025');
-                        if (table) {
-                            // Sort by account_code and period for readability
-                            table = table.orderby('account_code', 'period');
-                            const rowCount = table.numRows();
-                            title = `TB 2025 Balances - ${rowCount.toLocaleString()} rows (showing first 20)`;
-                        }
-                        break;
                     case 'tb2425':
                         // Combine both movements tables
                         const tb2024m = this.dataStore.getMovementsTable('2024');
@@ -2277,18 +2405,6 @@
                             const rowCount = table.numRows();
                             title = `Combined Movements 2024+2025 - ${rowCount.toLocaleString()} rows (showing first 20)`;
                         }
-                        break;
-                    case 'hierarchy':
-                        table = this.dataStore.getHierarchyTable();
-                        title = 'Account Hierarchy - First 20 Rows';
-                        break;
-                    case 'dates':
-                        table = this.dataStore.getDatesTable();
-                        title = 'Dates - All Rows';
-                        break;
-                    case 'format':
-                        table = this.dataStore.getFormatTable();
-                        title = 'Format - First 20 Rows';
                         break;
                 }
                 
@@ -2345,11 +2461,7 @@
                     });
                 });
 
-                // Export buttons
-                document.getElementById('export-current').addEventListener('click', () => {
-                    this.handleExportCurrent();
-                });
-
+                // Export button
                 document.getElementById('export-all').addEventListener('click', () => {
                     this.handleExportAll();
                 });
@@ -2366,6 +2478,38 @@
                 document.getElementById('close-preview').addEventListener('click', () => {
                     document.getElementById('data-preview').style.display = 'none';
                 });
+                
+                // Variance toggle
+                document.getElementById('show-variance')?.addEventListener('change', () => {
+                    // Re-render the current statement
+                    if (this.currentStatementType) {
+                        this.handleTabSwitch(this.currentStatementType);
+                    }
+                });
+                
+                // Category totals toggle
+                document.getElementById('show-category-totals')?.addEventListener('change', () => {
+                    // Re-render the current statement
+                    if (this.currentStatementType) {
+                        this.handleTabSwitch(this.currentStatementType);
+                    }
+                });
+                
+                // Period selection dropdowns
+                document.getElementById('period-2024')?.addEventListener('change', () => {
+                    // Re-generate and render the current statement with new period filter
+                    if (this.currentStatementType) {
+                        this.generateAndDisplayStatement(this.currentStatementType);
+                    }
+                });
+                
+                document.getElementById('period-2025')?.addEventListener('change', () => {
+                    // Re-generate and render the current statement with new period filter
+                    if (this.currentStatementType) {
+                        this.generateAndDisplayStatement(this.currentStatementType);
+                    }
+                });
+                
             }
         }
 
@@ -2388,8 +2532,7 @@
             window.uiController = new UIController();
             window.uiController.setupEventListeners();
             
-            // Initial state: disable export buttons until data is loaded
-            document.getElementById('export-current').disabled = true;
+            // Initial state: disable export button until data is loaded
             document.getElementById('export-all').disabled = true;
             
             console.log('Application ready');

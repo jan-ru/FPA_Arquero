@@ -13,11 +13,6 @@ interface TestSuite {
 
 const tests: TestSuite[] = [
     {
-        name: 'Account Mapping Validation',
-        script: 'test/scripts/test_account_mapping.ts',
-        description: 'Verify all trial balance accounts exist in DimAccounts.xlsx'
-    },
-    {
         name: 'Period Mapping Validation',
         script: 'test/scripts/test_period_mapping.ts',
         description: 'Verify all trial balance periods exist in DimDates.xlsx'
@@ -100,7 +95,6 @@ async function main() {
         console.log('\n❌ SOME TESTS FAILED');
         console.log('\nPlease review the test output above and take corrective action.');
         console.log('Common issues:');
-        console.log('  - Missing accounts in DimAccounts.xlsx');
         console.log('  - Missing periods in DimDates.xlsx');
         console.log('  - Data format inconsistencies\n');
         console.log('After fixing issues, re-run: ./test/scripts/run_all_tests.ts\n');

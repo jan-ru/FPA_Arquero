@@ -33,9 +33,8 @@ This application requires a browser that supports the File System Access API:
 ### 1. Prepare Your Data
 
 Create an `input` directory with the following Excel files:
-- `trial_balance_2024.xlsx` - Trial balance for 2024
-- `trial_balance_2025.xlsx` - Trial balance for 2025
-- `DimAccounts.xlsx` - Account categorization and statement mapping (hierarchy)
+- `trial_balance_2024.xlsx` - Trial balance for 2024 (includes hierarchy columns)
+- `trial_balance_2025.xlsx` - Trial balance for 2025 (includes hierarchy columns)
 - `DimDates.xlsx` - Period definitions (date dimension)
 - `format.xlsx` - Statement formatting rules
 
@@ -76,7 +75,6 @@ financial-statement-generator/
 └── input/                      # Your data files (create this)
     ├── trial_balance_2024.xlsx
     ├── trial_balance_2025.xlsx
-    ├── DimAccounts.xlsx
     ├── DimDates.xlsx
     └── format.xlsx
 ```
@@ -88,9 +86,8 @@ Edit `config.json` to customize file names and directories:
 ```json
 {
   "inputFiles": {
-    "trialBalance2024": "trial_balance_2024.xlsx",
-    "trialBalance2025": "trial_balance_2025.xlsx",
-    "hierarchy": "DimAccounts.xlsx",
+    "trialBalance2024": "2024_BalansenWinstverliesperperiode.xlsx",
+    "trialBalance2025": "2025_BalansenWinstverliesperperiode.xlsx",
     "dates": "DimDates.xlsx",
     "format": "format.xlsx"
   },
@@ -110,14 +107,14 @@ Edit `config.json` to customize file names and directories:
 ## Data Requirements
 
 ### Trial Balance Files
-- **Required columns**: `account_code`, `account_description`, `amount`
-- Must include all accounts for the period
-- Amounts should be in numeric format
-
-### Hierarchy File
-- **Required columns**: `account_code`, `statement_type`, `category`, `subcategory`, `line_order`
-- Maps each account to its financial statement category
-- Statement types: "BS" (Balance Sheet), "IS" (Income Statement), "CF" (Cash Flow)
+- **Required columns**: 
+  - `account_code`, `account_description` - Account identification
+  - Monthly movement columns (e.g., `januari2024`, `februari2024`, etc.)
+  - Balance columns (e.g., `Saldo2024`)
+  - Hierarchy columns: `statement_type`, `level1_code`, `level1_label`, `level2_code`, `level2_label`, `level3_code`, `level3_label`
+- Hierarchy information is embedded directly in the trial balance files
+- Statement types: "Balans" (Balance Sheet), "Winst & verlies" (Income Statement)
+- Supports Dutch month names (januari, februari, maart, etc.)
 
 ### Dates File
 - **Required columns**: `period`, `year`, `period_start`, `period_end`
@@ -175,8 +172,8 @@ Edit `config.json` to customize file names and directories:
 
 ### Unmapped accounts warning
 - Review the list of unmapped account codes
-- Add missing accounts to DimAccounts.xlsx
-- Reload the data after updating hierarchy
+- Add missing accounts to the trial balance files with proper hierarchy columns
+- Reload the data after updating the trial balance files
 
 ## Performance
 
@@ -220,8 +217,8 @@ deno run --allow-read --allow-env --allow-sys --allow-run test/scripts/run_all_t
 ```
 
 **Available Tests:**
-- Account Mapping Validation - Verifies all trial balance accounts exist in DimAccounts.xlsx
 - Period Mapping Validation - Verifies all trial balance periods exist in DimDates.xlsx
+- Data Integrity Validation - Verifies hierarchy columns are properly populated in trial balance files
 
 See [test/docs/TESTING_GUIDE.md](test/docs/TESTING_GUIDE.md) for complete testing documentation.
 
