@@ -1,5 +1,5 @@
 # Kiro IDE
 .kiro/
-
-.input/
-.output/
+.vscode/
+input/
+output/

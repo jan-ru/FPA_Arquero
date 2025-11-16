@@ -14,12 +14,12 @@ interface TestSuite {
 const tests: TestSuite[] = [
     {
         name: 'Account Mapping Validation',
-        script: 'test_account_mapping.ts',
+        script: 'test/scripts/test_account_mapping.ts',
         description: 'Verify all trial balance accounts exist in DimAccounts.xlsx'
     },
     {
         name: 'Period Mapping Validation',
-        script: 'test_period_mapping.ts',
+        script: 'test/scripts/test_period_mapping.ts',
         description: 'Verify all trial balance periods exist in DimDates.xlsx'
     }
 ];
@@ -103,7 +103,7 @@ async function main() {
         console.log('  - Missing accounts in DimAccounts.xlsx');
         console.log('  - Missing periods in DimDates.xlsx');
         console.log('  - Data format inconsistencies\n');
-        console.log('After fixing issues, re-run: deno run --allow-read --allow-env --allow-sys --allow-run run_all_tests.ts\n');
+        console.log('After fixing issues, re-run: ./test/scripts/run_all_tests.ts\n');
         Deno.exit(1);
     }
 }

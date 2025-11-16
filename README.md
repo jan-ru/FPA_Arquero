@@ -69,7 +69,10 @@ financial-statement-generator/
 ├── config.json                 # Configuration (file names, directories)
 ├── README.md                   # This file
 ├── SAMPLE_DATA_FORMAT.md       # Data format specifications
-├── TESTING_CHECKLIST.md        # Testing procedures
+├── run_tests.sh                # Test runner script
+├── test/                       # Testing directory
+│   ├── scripts/                # Test scripts
+│   └── docs/                   # Test documentation
 └── input/                      # Your data files (create this)
     ├── trial_balance_2024.xlsx
     ├── trial_balance_2025.xlsx
@@ -203,7 +206,28 @@ Potential features for future versions:
 
 ## Testing
 
-See [TESTING_CHECKLIST.md](TESTING_CHECKLIST.md) for comprehensive testing procedures.
+### Automated Tests
+
+Run functional tests to validate data integrity:
+
+```bash
+./run_tests.sh
+```
+
+Or directly:
+```bash
+deno run --allow-read --allow-env --allow-sys --allow-run test/scripts/run_all_tests.ts
+```
+
+**Available Tests:**
+- Account Mapping Validation - Verifies all trial balance accounts exist in DimAccounts.xlsx
+- Period Mapping Validation - Verifies all trial balance periods exist in DimDates.xlsx
+
+See [test/docs/TESTING_GUIDE.md](test/docs/TESTING_GUIDE.md) for complete testing documentation.
+
+### Manual Testing
+
+See [test/docs/TESTING_CHECKLIST.md](test/docs/TESTING_CHECKLIST.md) for comprehensive manual testing procedures.
 
 ## License
 
@@ -217,20 +241,8 @@ For issues or questions:
 3. Verify your browser compatibility
 4. Check the browser console for error messages
 
-## Version History
+## Version
 
-### Version 1.1.0 (Current)
-- Added support for DimAccounts.xlsx format (no transformation needed)
-- Added support for DimDates.xlsx format (no transformation needed)
-- Created trial balance transformation script (wide → long format)
-- Automatic Dutch to English translation for categories
-- Enhanced DataLoader to handle formula cells in Excel
-- Added transformation documentation and quick start guide
+**Current Version:** 1.1.0
 
-### Version 1.0.0
-- Initial release
-- Balance Sheet, Income Statement, and Cash Flow Statement generation
-- Excel import/export functionality
-- Interactive table features (sorting, tooltips)
-- Data validation and error handling
-- Professional UI with gradient styling
+See [CHANGELOG.md](CHANGELOG.md) for detailed version history and release notes.
