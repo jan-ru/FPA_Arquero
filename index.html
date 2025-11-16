@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Financial Statement Generator</title>
+    <title>Statement Generator</title>
     
     <!-- External Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/arquero@latest"></script>
@@ -19,9 +19,10 @@
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            padding: 20px;
+            padding: 15px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
+            font-size: 13px;
         }
 
         #app {
@@ -32,16 +33,16 @@
         h1 {
             color: white;
             text-align: center;
-            margin-bottom: 30px;
-            font-size: 2.5em;
+            margin-bottom: 15px;
+            font-size: 1.5em;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
         }
 
         .section {
             background: white;
-            padding: 25px;
-            margin-bottom: 25px;
-            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.08);
             transition: box-shadow 0.3s ease;
         }
@@ -51,12 +52,12 @@
         }
 
         h2 {
-            margin-bottom: 20px;
+            margin-bottom: 12px;
             color: #2d3748;
-            font-size: 1.5em;
+            font-size: 1.1em;
             font-weight: 600;
-            border-bottom: 3px solid #667eea;
-            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 6px;
         }
 
         .directory-selection {
@@ -64,13 +65,13 @@
         }
 
         .btn {
-            padding: 12px 24px;
+            padding: 8px 16px;
             border: none;
-            border-radius: 6px;
+            border-radius: 4px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 500;
-            margin-right: 10px;
+            margin-right: 8px;
             transition: all 0.3s ease;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
@@ -109,38 +110,80 @@
 
         .status-text {
             color: #666;
-            font-size: 14px;
+            font-size: 12px;
         }
 
         .file-loading {
-            margin-bottom: 20px;
+            margin-bottom: 12px;
         }
 
         .loading-status {
-            margin-top: 10px;
-            min-height: 20px;
+            margin-top: 8px;
+            min-height: 18px;
             color: #666;
+            font-size: 12px;
         }
 
         .file-status-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 10px;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
         }
 
         .file-status-item {
             display: flex;
             justify-content: space-between;
-            padding: 12px;
+            padding: 8px 10px;
             background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            border-radius: 6px;
-            border-left: 4px solid #667eea;
+            border-radius: 4px;
+            border-left: 3px solid #667eea;
             transition: all 0.3s ease;
+            font-size: 12px;
         }
 
-        .file-status-item:hover {
-            transform: translateX(5px);
+        .file-status-item.clickable {
+            cursor: pointer;
+        }
+
+        .file-status-item.clickable:hover {
+            transform: translateX(3px);
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+        }
+
+        .file-status-item.clickable.loaded {
+            cursor: pointer;
+        }
+
+        .file-status-item:not(.clickable):hover {
+            transform: translateX(3px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        #data-preview table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            background: white;
+        }
+
+        #data-preview th {
+            background-color: #667eea;
+            color: white;
+            padding: 6px 8px;
+            text-align: left;
+            font-weight: 500;
+            position: sticky;
+            top: 0;
+        }
+
+        #data-preview td {
+            padding: 4px 8px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        #data-preview tr:hover {
+            background-color: #f8f9fa;
         }
 
         .file-label {
@@ -149,41 +192,41 @@
         }
 
         .status-indicator {
-            font-size: 14px;
+            font-size: 12px;
             font-weight: 500;
         }
 
         .tabs {
             display: flex;
-            gap: 10px;
-            margin-bottom: 25px;
-            border-bottom: 3px solid #e2e8f0;
-            padding-bottom: 5px;
+            gap: 8px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 3px;
         }
 
         .tab-btn {
-            padding: 12px 24px;
+            padding: 8px 16px;
             border: none;
             background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 500;
-            border-radius: 8px 8px 0 0;
-            border-bottom: 3px solid transparent;
+            border-radius: 4px 4px 0 0;
+            border-bottom: 2px solid transparent;
             transition: all 0.3s ease;
             color: #4a5568;
         }
 
         .tab-btn:hover {
             background: linear-gradient(135deg, #edf2f7 0%, #e2e8f0 100%);
-            transform: translateY(-2px);
+            transform: translateY(-1px);
         }
 
         .tab-btn.active {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border-bottom-color: #667eea;
-            box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
         }
 
         .statement-display {
@@ -194,13 +237,13 @@
         .financial-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 14px;
+            font-size: 12px;
         }
 
         .financial-table th {
             background-color: #007bff;
             color: white;
-            padding: 12px 8px;
+            padding: 8px 6px;
             text-align: left;
             font-weight: 500;
             position: sticky;
@@ -221,7 +264,7 @@
         }
 
         .financial-table td {
-            padding: 8px;
+            padding: 6px;
             border-bottom: 1px solid #e9ecef;
         }
 
@@ -231,7 +274,7 @@
         }
 
         .financial-table td.indent {
-            padding-left: 30px;
+            padding-left: 24px;
         }
 
         .financial-table tr.detail-row:hover {
@@ -241,7 +284,7 @@
         .financial-table tr.category-header td {
             background-color: #e9ecef;
             font-weight: 600;
-            padding: 10px 8px;
+            padding: 8px 6px;
             border-top: 2px solid #007bff;
         }
 
@@ -249,36 +292,36 @@
             background-color: #f8f9fa;
             border-top: 2px solid #333;
             border-bottom: 2px solid #333;
-            padding: 10px 8px;
+            padding: 8px 6px;
         }
 
         .financial-table tr.total-row td {
             background-color: #e7f3ff;
             border-top: 3px double #007bff;
             border-bottom: 3px double #007bff;
-            padding: 12px 8px;
-            font-size: 15px;
+            padding: 8px 6px;
+            font-size: 13px;
         }
 
         .financial-table tr.metric-row td {
             background-color: #fff3cd;
-            padding: 10px 8px;
+            padding: 8px 6px;
         }
 
         .financial-table tr.section-header td {
             background-color: #d1ecf1;
             font-weight: 600;
-            padding: 10px 8px;
+            padding: 8px 6px;
             border-top: 2px solid #0c5460;
         }
 
         .financial-table tr.spacer-row td {
-            padding: 5px;
+            padding: 3px;
             border: none;
         }
 
         .financial-table tr.info-row td {
-            padding: 10px 8px;
+            padding: 8px 6px;
             text-align: center;
             font-weight: 500;
         }
@@ -318,23 +361,24 @@
         }
 
         .export-controls {
-            margin-top: 20px;
-            padding-top: 20px;
+            margin-top: 12px;
+            padding-top: 12px;
             border-top: 2px solid #e9ecef;
             display: flex;
-            gap: 10px;
+            gap: 8px;
             align-items: center;
         }
 
         .validation-messages {
-            margin-top: 15px;
-            padding: 15px;
+            margin-top: 10px;
+            padding: 10px;
             border-radius: 4px;
             background-color: #f8f9fa;
+            font-size: 12px;
         }
 
         .validation-errors {
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .validation-errors:empty {
@@ -346,21 +390,21 @@
         }
 
         .validation-error-item {
-            padding: 8px;
-            margin-bottom: 5px;
+            padding: 6px 8px;
+            margin-bottom: 4px;
             background-color: #f8d7da;
             color: #721c24;
-            border-left: 4px solid #dc3545;
-            border-radius: 4px;
+            border-left: 3px solid #dc3545;
+            border-radius: 3px;
         }
 
         .validation-warning-item {
-            padding: 8px;
-            margin-bottom: 5px;
+            padding: 6px 8px;
+            margin-bottom: 4px;
             background-color: #fff3cd;
             color: #856404;
-            border-left: 4px solid #ffc107;
-            border-radius: 4px;
+            border-left: 3px solid #ffc107;
+            border-radius: 3px;
         }
 
         .unmapped-accounts-list {
@@ -378,60 +422,69 @@
 </head>
 <body>
     <div id="app">
-        <h1>Financial Statement Generator <span style="font-size: 0.5em; color: rgba(255,255,255,0.8);">v1.2.0</span></h1>
+        <h1>Statement Generator <span style="font-size: 0.6em; color: rgba(255,255,255,0.8);">v2.0.0</span></h1>
         
-        <!-- Welcome Message -->
-        <div id="welcome-section" class="section">
-            <h2>Welcome to Financial Statement Generator</h2>
-            <p style="margin-bottom: 15px; color: #4a5568; line-height: 1.6;">
-                This application generates Balance Sheet, Income Statement, and Cash Flow Statement from your trial balance data.
-            </p>
-            <div style="background: #edf2f7; padding: 15px; border-radius: 6px; border-left: 4px solid #667eea;">
-                <strong>Getting Started:</strong>
-                <ol style="margin-left: 20px; margin-top: 10px; color: #4a5568;">
-                    <li>Click "Select Input Directory" to choose the folder containing your Excel files</li>
-                    <li>Click "Load All Files" to import your data</li>
-                    <li>Review the generated financial statements in the tabs below</li>
-                    <li>Export statements to Excel when ready</li>
-                </ol>
-            </div>
-        </div>
-
         <!-- File Upload Section -->
         <div id="file-upload-section" class="section">
-            <h2>Load Data Files</h2>
+            <h2>Data Files</h2>
             
             <div class="directory-selection">
-                <button id="select-input-dir" class="btn btn-primary">Select Input Directory</button>
-                <span id="input-dir-status" class="status-text">No directory selected</span>
-            </div>
-            
-            <div class="file-loading">
-                <button id="load-all-files" class="btn btn-secondary" disabled>Load All Files</button>
+                <button id="select-input-dir" class="btn btn-primary">Select Directory</button>
+                <button id="load-all-files" class="btn btn-secondary" disabled>Load Files</button>
+                <span id="input-dir-status" class="status-text"></span>
                 <div id="loading-status" class="loading-status"></div>
             </div>
             
             <div class="file-status-grid">
-                <div class="file-status-item">
-                    <span class="file-label">Trial Balance 2024:</span>
-                    <span id="status-tb2024" class="status-indicator">⚪ Not loaded</span>
+                <div class="file-status-item clickable" data-file="tb2024">
+                    <span class="file-label">TB 2024</span>
+                    <span id="status-tb2024" class="status-indicator">⚪</span>
                 </div>
-                <div class="file-status-item">
-                    <span class="file-label">Trial Balance 2025:</span>
-                    <span id="status-tb2025" class="status-indicator">⚪ Not loaded</span>
+                <div class="file-status-item clickable" data-file="tb2025">
+                    <span class="file-label">TB 2025</span>
+                    <span id="status-tb2025" class="status-indicator">⚪</span>
                 </div>
-                <div class="file-status-item">
-                    <span class="file-label">Hierarchy:</span>
-                    <span id="status-hierarchy" class="status-indicator">⚪ Not loaded</span>
+                <div class="file-status-item clickable" data-file="tb2425">
+                    <span class="file-label">TB 2024+2025</span>
+                    <span id="status-tb2425" class="status-indicator">👁️</span>
                 </div>
-                <div class="file-status-item">
-                    <span class="file-label">Dates:</span>
-                    <span id="status-dates" class="status-indicator">⚪ Not loaded</span>
+                <div class="file-status-item clickable" data-file="tb24m">
+                    <span class="file-label">TB24_M (Movements)</span>
+                    <span id="status-tb24m" class="status-indicator">👁️</span>
                 </div>
-                <div class="file-status-item">
-                    <span class="file-label">Format:</span>
-                    <span id="status-format" class="status-indicator">⚪ Not loaded</span>
+                <div class="file-status-item clickable" data-file="tb24b">
+                    <span class="file-label">TB24_B (Balances)</span>
+                    <span id="status-tb24b" class="status-indicator">👁️</span>
                 </div>
+                <div class="file-status-item clickable" data-file="tb25m">
+                    <span class="file-label">TB25_M (Movements)</span>
+                    <span id="status-tb25m" class="status-indicator">👁️</span>
+                </div>
+                <div class="file-status-item clickable" data-file="tb25b">
+                    <span class="file-label">TB25_B (Balances)</span>
+                    <span id="status-tb25b" class="status-indicator">👁️</span>
+                </div>
+                <div class="file-status-item clickable" data-file="hierarchy">
+                    <span class="file-label">Accounts</span>
+                    <span id="status-hierarchy" class="status-indicator">⚪</span>
+                </div>
+                <div class="file-status-item clickable" data-file="dates">
+                    <span class="file-label">Dates</span>
+                    <span id="status-dates" class="status-indicator">⚪</span>
+                </div>
+                <div class="file-status-item clickable" data-file="format">
+                    <span class="file-label">Format</span>
+                    <span id="status-format" class="status-indicator">⚪</span>
+                </div>
+            </div>
+            
+            <!-- Data Preview Section -->
+            <div id="data-preview" style="display: none; margin-top: 15px; padding: 12px; background: #f8f9fa; border-radius: 4px; max-height: 400px; overflow: auto;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <strong id="preview-title" style="font-size: 13px;"></strong>
+                    <button id="close-preview" style="background: none; border: none; cursor: pointer; font-size: 18px; color: #666;">×</button>
+                </div>
+                <div id="preview-content"></div>
             </div>
 
             <!-- Validation Messages -->
@@ -443,24 +496,43 @@
 
         <!-- Statement Display Section -->
         <div id="statement-section" class="section" style="display: none;">
-            <h2>Financial Statements</h2>
+            <h2>Statements</h2>
             <div id="statement-tabs" class="tabs">
                 <button class="tab-btn active" data-statement="balance-sheet">Balance Sheet</button>
                 <button class="tab-btn" data-statement="income-statement">Income Statement</button>
-                <button class="tab-btn" data-statement="cash-flow">Cash Flow Statement</button>
+                <button class="tab-btn" data-statement="cash-flow">Cash Flow</button>
             </div>
             <div id="statement-display" class="statement-display"></div>
             
             <!-- Export Controls -->
             <div class="export-controls">
-                <button id="export-current" class="btn btn-secondary">Export Current Statement</button>
-                <button id="export-all" class="btn btn-secondary">Export All Statements</button>
+                <button id="export-current" class="btn btn-secondary">Export Current</button>
+                <button id="export-all" class="btn btn-secondary">Export All</button>
                 <span id="export-status" class="status-text"></span>
             </div>
         </div>
     </div>
 
     <script>
+        // Constants
+        const STATEMENT_TYPES = {
+            BALANCE_SHEET: 'BS',
+            INCOME_STATEMENT: 'IS',
+            CASH_FLOW: 'CF'
+        };
+
+        const EXCEL_COLUMNS = {
+            STATEMENT_TYPE: 4,
+            LEVEL1_CODE: 5,
+            LEVEL1_LABEL: 6,
+            LEVEL2_CODE: 7,
+            LEVEL2_LABEL: 8,
+            LEVEL3_CODE: 9,
+            LEVEL3_LABEL: 10,
+            ACCOUNT_CODE: 11,
+            ACCOUNT_DESCRIPTION: 12
+        };
+
         // Configuration
         let config = null;
 
@@ -471,7 +543,7 @@
                     return DataStore.instance;
                 }
                 
-                this.factTables = {}; // Store FactTables by period (2024, 2025)
+                this.factTables = {}; // Store FactTables by period and type: {2024: {movements: table, balances: table}, 2025: {...}}
                 this.hierarchyTable = null;
                 this.datesTable = null;
                 this.formatTable = null;
@@ -479,15 +551,38 @@
                 DataStore.instance = this;
             }
 
-            // Store FactTable for a specific period
-            setFactTable(table, period) {
-                this.factTables[period] = table;
-                console.log(`FactTable for ${period} stored`);
+            // Store FactTable for a specific period and type
+            setFactTable(table, period, type = 'movements') {
+                if (!this.factTables[period]) {
+                    this.factTables[period] = {};
+                }
+                this.factTables[period][type] = table;
+                console.log(`FactTable ${type} for ${period} stored (${table.numRows()} rows)`);
             }
 
-            // Retrieve FactTable for a specific period
-            getFactTable(period) {
-                return this.factTables[period] || null;
+            // Retrieve FactTable for a specific period and type
+            getFactTable(period, type = 'movements') {
+                return this.factTables[period]?.[type] || null;
+            }
+
+            // Shorthand: Get movements table for a period
+            getMovementsTable(period) {
+                return this.getFactTable(period, 'movements');
+            }
+
+            // Shorthand: Get balances table for a period
+            getBalancesTable(period) {
+                return this.getFactTable(period, 'balances');
+            }
+
+            // Get row counts for verification
+            getRowCounts(period) {
+                const movements = this.getMovementsTable(period);
+                const balances = this.getBalancesTable(period);
+                return {
+                    movements: movements ? movements.numRows() : 0,
+                    balances: balances ? balances.numRows() : 0
+                };
             }
 
             // Store Hierarchy Table
@@ -530,7 +625,11 @@
 
             // Check if all required data is loaded
             isDataComplete() {
-                const hasBothPeriods = this.factTables['2024'] && this.factTables['2025'];
+                const has2024Movements = this.factTables['2024']?.movements;
+                const has2024Balances = this.factTables['2024']?.balances;
+                const has2025Movements = this.factTables['2025']?.movements;
+                const has2025Balances = this.factTables['2025']?.balances;
+                const hasBothPeriods = has2024Movements && has2024Balances && has2025Movements && has2025Balances;
                 const hasAllTables = this.hierarchyTable && this.datesTable && this.formatTable;
                 return hasBothPeriods && hasAllTables;
             }
@@ -557,8 +656,8 @@
                 // Use default configuration
                 config = {
                     inputFiles: {
-                        trialBalance2024: "trial_balance_2024.xlsx",
-                        trialBalance2025: "trial_balance_2025.xlsx",
+                        trialBalance2024: "2024_BalansenWinstverliesperperiode.xlsx",
+                        trialBalance2025: "2025_BalansenWinstverliesperperiode.xlsx",
                         hierarchy: "DimAccounts.xlsx",
                         dates: "DimDates.xlsx",
                         format: "format.xlsx"
@@ -583,6 +682,22 @@
             constructor() {
                 this.inputDirHandle = null;
                 this.outputDirHandle = null;
+                
+                // Dutch month names to period numbers mapping
+                this.MONTH_MAP = {
+                    'januari': 1,
+                    'februari': 2,
+                    'maart': 3,
+                    'april': 4,
+                    'mei': 5,
+                    'juni': 6,
+                    'juli': 7,
+                    'augustus': 8,
+                    'september': 9,
+                    'oktober': 10,
+                    'november': 11,
+                    'december': 12
+                };
             }
 
             // Request access to input directory
@@ -648,7 +763,168 @@
                 return true;
             }
 
-            // Load Trial Balance from Excel file
+            // Map month name and year to period number
+            mapMonthToPeriod(columnName, year) {
+                const lowerCol = String(columnName).toLowerCase();
+                
+                // Check for "Voorafgaandejournaalposten" - map to period 12 (December)
+                if (lowerCol.includes('voorafgaandejournaalposten') || lowerCol.includes('voorafgaande')) {
+                    if (lowerCol.includes(year)) {
+                        return {
+                            period: 12,
+                            year: parseInt(year),
+                            type: 'movement'
+                        };
+                    }
+                }
+                
+                // Check for month patterns (e.g., "januari2024", "februari2024")
+                for (const [monthName, periodNum] of Object.entries(this.MONTH_MAP)) {
+                    if (lowerCol.includes(monthName) && lowerCol.includes(year)) {
+                        return {
+                            period: periodNum,
+                            year: parseInt(year),
+                            type: 'movement'
+                        };
+                    }
+                }
+                
+                // Check for balance indicators
+                if (lowerCol.includes('saldo') || lowerCol.includes('balance')) {
+                    return {
+                        period: 12, // End of year
+                        year: parseInt(year),
+                        type: 'balance'
+                    };
+                }
+                
+                return null;
+            }
+
+            // Identify period columns from headers
+            identifyPeriodColumns(headers, year) {
+                const movements = [];
+                const balances = [];
+                
+                headers.forEach((header, index) => {
+                    if (!header) return;
+                    
+                    const mapping = this.mapMonthToPeriod(header, year);
+                    if (mapping) {
+                        if (mapping.type === 'movement') {
+                            movements.push({
+                                columnIndex: index,
+                                period: mapping.period,
+                                columnName: header
+                            });
+                        } else if (mapping.type === 'balance') {
+                            balances.push({
+                                columnIndex: index,
+                                period: mapping.period,
+                                columnName: header
+                            });
+                        }
+                    }
+                });
+                
+                return { movements, balances };
+            }
+
+            // Transform wide format data to long format
+            transformWideToLong(worksheet, year) {
+                const movements = [];
+                const balances = [];
+                
+                // Get headers from first row
+                const headers = [];
+                const headerRow = worksheet.getRow(1);
+                headerRow.eachCell((cell, colNumber) => {
+                    headers[colNumber] = cell.value;
+                });
+                
+                // Identify period columns
+                const periodColumns = this.identifyPeriodColumns(headers, year);
+                
+                console.log(`Found ${periodColumns.movements.length} movement columns and ${periodColumns.balances.length} balance columns for ${year}`);
+                
+                // Process each data row
+                worksheet.eachRow((row, rowNumber) => {
+                    if (rowNumber === 1) return; // Skip header row
+                    
+                    const accountCode = row.getCell(EXCEL_COLUMNS.ACCOUNT_CODE).value;
+                    const accountDescription = row.getCell(EXCEL_COLUMNS.ACCOUNT_DESCRIPTION).value;
+                    
+                    if (!accountCode) return;
+                    
+                    // Extract hierarchy columns
+                    const statementType = row.getCell(EXCEL_COLUMNS.STATEMENT_TYPE).value;
+                    const level1Code = row.getCell(EXCEL_COLUMNS.LEVEL1_CODE).value;
+                    const level1Label = row.getCell(EXCEL_COLUMNS.LEVEL1_LABEL).value;
+                    const level2Code = row.getCell(EXCEL_COLUMNS.LEVEL2_CODE).value;
+                    const level2Label = row.getCell(EXCEL_COLUMNS.LEVEL2_LABEL).value;
+                    const level3Code = row.getCell(EXCEL_COLUMNS.LEVEL3_CODE).value;
+                    const level3Label = row.getCell(EXCEL_COLUMNS.LEVEL3_LABEL).value;
+                    
+                    // Determine statement type
+                    let stmtType = STATEMENT_TYPES.INCOME_STATEMENT; // Default
+                    if (statementType === 'Balans') {
+                        stmtType = STATEMENT_TYPES.BALANCE_SHEET;
+                    } else if (statementType === 'Winst & verlies') {
+                        stmtType = STATEMENT_TYPES.INCOME_STATEMENT;
+                    }
+                    
+                    // Create base row with hierarchy
+                    const baseRow = {
+                        account_code: String(accountCode),
+                        account_description: String(accountDescription ?? ''),
+                        statement_type: stmtType,
+                        level1_code: level1Code !== null && level1Code !== undefined ? String(level1Code) : '',
+                        level1_label: level1Label ?? '',
+                        level2_code: level2Code !== null && level2Code !== undefined ? String(level2Code) : '',
+                        level2_label: level2Label ?? '',
+                        level3_code: level3Code !== null && level3Code !== undefined ? String(level3Code) : '',
+                        level3_label: level3Label ?? '',
+                        category: (level1Label ?? '').toString(),
+                        subcategory: (level2Label ?? level1Label ?? '').toString()
+                    };
+                    
+                    // Process movement columns
+                    periodColumns.movements.forEach(col => {
+                        const value = row.getCell(col.columnIndex).value;
+                        
+                        // Only include non-zero and non-null values (sparse representation)
+                        if (value !== null && value !== undefined && value !== 0) {
+                            movements.push({
+                                ...baseRow,
+                                period: col.period,
+                                year: parseInt(year),
+                                movement_amount: Number(value)
+                            });
+                        }
+                    });
+                    
+                    // Process balance columns
+                    periodColumns.balances.forEach(col => {
+                        const value = row.getCell(col.columnIndex).value;
+                        
+                        // Only include non-zero and non-null values (sparse representation)
+                        if (value !== null && value !== undefined && value !== 0) {
+                            balances.push({
+                                ...baseRow,
+                                period: col.period,
+                                year: parseInt(year),
+                                balance_amount: Number(value)
+                            });
+                        }
+                    });
+                });
+                
+                console.log(`Transformed to ${movements.length} movement rows and ${balances.length} balance rows`);
+                
+                return { movements, balances };
+            }
+
+            // Load trial balance amounts for a specific period
             async loadTrialBalance(period) {
                 const filename = period === '2024' 
                     ? config.inputFiles.trialBalance2024 
@@ -661,38 +937,24 @@
                     await workbook.xlsx.load(arrayBuffer);
 
                     const worksheet = workbook.worksheets[0];
-                    const data = [];
-
-                    // Convert worksheet to array of objects
-                    const headers = [];
-                    worksheet.getRow(1).eachCell((cell, colNumber) => {
-                        headers[colNumber] = cell.value;
-                    });
-
-                    worksheet.eachRow((row, rowNumber) => {
-                        if (rowNumber === 1) return; // Skip header row
-                        
-                        const rowData = {};
-                        row.eachCell((cell, colNumber) => {
-                            const header = headers[colNumber];
-                            if (header) {
-                                rowData[header] = cell.value;
-                            }
-                        });
-                        
-                        if (Object.keys(rowData).length > 0) {
-                            rowData.period = period;
-                            data.push(rowData);
-                        }
-                    });
-
-                    // Validate required columns
-                    this.validateColumns(data, ['account_code', 'account_description', 'amount']);
-
-                    // Convert to Arquero table
-                    const table = aq.from(data);
-                    console.log(`Trial Balance ${period} loaded:`, table.numRows(), 'rows');
-                    return table;
+                    
+                    console.log(`Transforming ${filename} from wide to long format...`);
+                    
+                    // Transform wide format to long format
+                    const { movements, balances } = this.transformWideToLong(worksheet, period);
+                    
+                    // Convert arrays to Arquero tables
+                    const movementsTable = aq.from(movements);
+                    const balancesTable = aq.from(balances);
+                    
+                    console.log(`Trial Balance ${period} loaded:`);
+                    console.log(`  - Movements: ${movementsTable.numRows()} rows`);
+                    console.log(`  - Balances: ${balancesTable.numRows()} rows`);
+                    
+                    return {
+                        movements: movementsTable,
+                        balances: balancesTable
+                    };
 
                 } catch (error) {
                     console.error(`Error loading trial balance for ${period}:`, error);
@@ -700,82 +962,8 @@
                 }
             }
 
-            // Load Hierarchy from Excel file
-            async loadHierarchy() {
-                const filename = config.inputFiles.hierarchy;
-
-                try {
-                    const file = await this.readFileFromDirectory(filename);
-                    const arrayBuffer = await file.arrayBuffer();
-                    const workbook = new ExcelJS.Workbook();
-                    await workbook.xlsx.load(arrayBuffer);
-
-                    const worksheet = workbook.worksheets[0];
-                    const data = [];
-
-                    const headers = [];
-                    worksheet.getRow(1).eachCell((cell, colNumber) => {
-                        headers[colNumber] = cell.value;
-                    });
-
-                    worksheet.eachRow((row, rowNumber) => {
-                        if (rowNumber === 1) return;
-                        
-                        const rowData = {};
-                        row.eachCell((cell, colNumber) => {
-                            const header = headers[colNumber];
-                            if (header) {
-                                // Handle formula cells - extract the result value
-                                if (cell.value && typeof cell.value === 'object' && 'result' in cell.value) {
-                                    rowData[header] = cell.value.result;
-                                } else {
-                                    rowData[header] = cell.value;
-                                }
-                            }
-                        });
-                        
-                        if (Object.keys(rowData).length > 0) {
-                            data.push(rowData);
-                        }
-                    });
-
-                    // Transform DimAccounts format to expected hierarchy format
-                    const transformedData = data.map(row => {
-                        // Map Statement to statement_type
-                        let statementType = 'BS'; // Default
-                        if (row.Statement === 'Balans') statementType = 'BS';
-                        else if (row.Statement === 'Omzet') statementType = 'IS';
-                        else if (row.Statement === 'Kosten') statementType = 'IS';
-                        else if (row.Statement === 'Cash Flow') statementType = 'CF';
-
-                        // Map Nivo0 to category (translate Dutch to English)
-                        let category = row.Nivo0 || '';
-                        if (category === 'Activa') category = 'Assets';
-                        else if (category === 'Passiva') category = 'Liabilities';
-                        else if (category === 'Omzet') category = 'Revenue';
-                        else if (category === 'Kosten') category = 'Expenses';
-
-                        return {
-                            account_code: String(row.Rekening || ''),
-                            statement_type: statementType,
-                            category: category,
-                            subcategory: row.Nivo2 || row.Nivo1 || '',
-                            line_order: row.Sort2 || row.Sort1 || 0
-                        };
-                    }).filter(row => row.account_code !== ''); // Filter out empty account codes
-
-                    const table = aq.from(transformedData);
-                    console.log('Hierarchy loaded:', table.numRows(), 'rows');
-                    return table;
-
-                } catch (error) {
-                    console.error('Error loading hierarchy:', error);
-                    throw error;
-                }
-            }
-
-            // Load Dates from Excel file
-            async loadDates() {
+            // Load Dates from Excel file (filtered by loaded years)
+            async loadDates(loadedYears = ['2024', '2025']) {
                 const filename = config.inputFiles.dates;
 
                 try {
@@ -809,13 +997,20 @@
                     });
 
                     // Transform DimDates format to expected dates format
-                    // Extract unique years and create period records
+                    // Extract unique years and filter to only loaded years
                     const years = new Set();
                     data.forEach(row => {
                         if (row.Year) {
-                            years.add(row.Year);
+                            const yearStr = String(row.Year);
+                            // Only include years that were loaded in trial balance
+                            if (loadedYears.includes(yearStr)) {
+                                years.add(row.Year);
+                            }
                         }
                     });
+
+                    console.log(`Filtering dates to loaded years: ${loadedYears.join(', ')}`);
+                    console.log(`Found ${years.size} matching years in DimDates`);
 
                     const transformedData = Array.from(years).map(year => {
                         // Find first and last date for this year
@@ -845,7 +1040,7 @@
                     });
 
                     const table = aq.from(transformedData);
-                    console.log('Dates loaded:', table.numRows(), 'rows');
+                    console.log('Dates loaded:', table.numRows(), 'rows (filtered to loaded years)');
                     return table;
 
                 } catch (error) {
@@ -908,6 +1103,57 @@
                 this.unmappedAccounts = [];
             }
 
+            // Helper: Calculate variance percentage
+            calculateVariancePercent(amt2024, amt2025) {
+                return amt2024 !== 0 ? ((amt2025 - amt2024) / Math.abs(amt2024)) * 100 : 0;
+            }
+
+            // Helper: Validate required data is loaded
+            validateRequiredData() {
+                const factTable2024 = this.dataStore.getFactTable('2024');
+                const factTable2025 = this.dataStore.getFactTable('2025');
+                
+                if (!factTable2024 || !factTable2025) {
+                    throw new Error('Required data not loaded');
+                }
+                
+                return { factTable2024, factTable2025 };
+            }
+
+            // Helper: Group and aggregate data for a period
+            groupByPeriod(table, period, groupColumns = ['category', 'subcategory']) {
+                return table
+                    .groupby(...groupColumns)
+                    .rollup({ [`amount_${period}`]: d => aq.op.sum(d.movement_amount) })
+                    .select(...groupColumns, `amount_${period}`);
+            }
+
+            // Helper: Calculate variance columns
+            deriveVarianceColumns(combined) {
+                return combined.derive({
+                    amount_2024: d => d.amount_2024 || 0,
+                    amount_2025: d => d.amount_2025 || 0,
+                    variance_amount: d => (d.amount_2025 || 0) - (d.amount_2024 || 0),
+                    variance_percent: d => this.calculateVariancePercent(d.amount_2024 || 0, d.amount_2025 || 0)
+                });
+            }
+
+            // Helper: Calculate category totals
+            calculateCategoryTotals(combined) {
+                return combined
+                    .groupby('category')
+                    .rollup({
+                        amount_2024: d => aq.op.sum(d.amount_2024),
+                        amount_2025: d => aq.op.sum(d.amount_2025),
+                        variance_amount: d => aq.op.sum(d.variance_amount),
+                        variance_percent: d => {
+                            const total2024 = aq.op.sum(d.amount_2024);
+                            const total2025 = aq.op.sum(d.amount_2025);
+                            return this.calculateVariancePercent(total2024, total2025);
+                        }
+                    });
+            }
+
             // Detect unmapped accounts
             detectUnmappedAccounts() {
                 try {
@@ -965,10 +1211,8 @@
                     errors.push('Trial Balance for 2025 is not loaded');
                 }
 
-                // Check if dimension tables are loaded
-                if (!this.dataStore.getHierarchyTable()) {
-                    errors.push('Hierarchy table is not loaded');
-                }
+                // Hierarchy is now embedded in trial balance files
+                // Check if dimension tables are loaded (optional)
                 if (!this.dataStore.getDatesTable()) {
                     warnings.push('Dates table is not loaded (optional)');
                 }
@@ -976,315 +1220,171 @@
                     warnings.push('Format table is not loaded (optional)');
                 }
 
-                // Check for unmapped accounts
-                const unmapped = this.detectUnmappedAccounts();
-                if (unmapped.length > 0) {
-                    warnings.push(`${unmapped.length} accounts are unmapped and will be excluded from statements`);
-                }
+                return { errors, warnings, unmappedAccounts: [] };
+            }
 
-                return { errors, warnings, unmappedAccounts: unmapped };
+            // Consolidated statement generation method
+            generateStatement(statementType, options = {}) {
+                try {
+                    const { factTable2024, factTable2025 } = this.validateRequiredData();
+
+                    // Filter for specific statement type
+                    const filtered2024 = factTable2024.filter(d => d.statement_type === statementType);
+                    const filtered2025 = factTable2025.filter(d => d.statement_type === statementType);
+
+                    // Group by category and subcategory for both periods
+                    const grouped2024 = this.groupByPeriod(filtered2024, '2024');
+                    const grouped2025 = this.groupByPeriod(filtered2025, '2025');
+
+                    // Add ordering if specified
+                    const ordered2024 = options.orderBy ? grouped2024.orderby('category', 'subcategory') : grouped2024;
+                    const ordered2025 = options.orderBy ? grouped2025.orderby('category', 'subcategory') : grouped2025;
+
+                    // Join 2024 and 2025 data
+                    const combined = ordered2024.join_full(ordered2025, ['category', 'subcategory']);
+                    
+                    // Calculate variances
+                    const withVariances = this.deriveVarianceColumns(combined);
+
+                    // Calculate category totals
+                    const categoryTotals = this.calculateCategoryTotals(withVariances);
+
+                    // Build result object
+                    const result = {
+                        details: withVariances,
+                        totals: categoryTotals
+                    };
+
+                    // Add statement-specific calculations
+                    if (options.calculateMetrics) {
+                        result.metrics = options.calculateMetrics(categoryTotals);
+                    }
+
+                    if (options.validateBalance) {
+                        const validation = options.validateBalance(categoryTotals);
+                        Object.assign(result, validation);
+                    }
+
+                    return result;
+
+                } catch (error) {
+                    const statementName = options.name || 'Statement';
+                    console.error(`Error generating ${statementName}:`, error);
+                    throw error;
+                }
             }
 
             // Generate Balance Sheet
             generateBalanceSheet() {
-                try {
-                    const factTable2024 = this.dataStore.getFactTable('2024');
-                    const factTable2025 = this.dataStore.getFactTable('2025');
-                    const hierarchyTable = this.dataStore.getHierarchyTable();
-                    const formatTable = this.dataStore.getFormatTable();
-
-                    if (!factTable2024 || !factTable2025 || !hierarchyTable || !formatTable) {
-                        throw new Error('Required data not loaded');
-                    }
-
-                    // Join FactTable with Hierarchy for 2024
-                    const joined2024 = factTable2024
-                        .join(hierarchyTable, 'account_code')
-                        .filter(d => d.statement_type === 'BS');
-
-                    // Join FactTable with Hierarchy for 2025
-                    const joined2025 = factTable2025
-                        .join(hierarchyTable, 'account_code')
-                        .filter(d => d.statement_type === 'BS');
-
-                    // Group by category and subcategory for 2024
-                    const grouped2024 = joined2024
-                        .groupby('category', 'subcategory')
-                        .rollup({ amount_2024: d => aq.op.sum(d.amount) })
-                        .orderby('category', 'subcategory');
-
-                    // Group by category and subcategory for 2025
-                    const grouped2025 = joined2025
-                        .groupby('category', 'subcategory')
-                        .rollup({ amount_2025: d => aq.op.sum(d.amount) })
-                        .orderby('category', 'subcategory');
-
-                    // Join 2024 and 2025 data
-                    const combined = grouped2024
-                        .join_full(grouped2025, ['category', 'subcategory'])
-                        .derive({
-                            amount_2024: d => d.amount_2024 || 0,
-                            amount_2025: d => d.amount_2025 || 0,
-                            variance_amount: d => (d.amount_2025 || 0) - (d.amount_2024 || 0),
-                            variance_percent: d => {
-                                const amt2024 = d.amount_2024 || 0;
-                                const amt2025 = d.amount_2025 || 0;
-                                return amt2024 !== 0 ? ((amt2025 - amt2024) / Math.abs(amt2024)) * 100 : 0;
-                            }
+                return this.generateStatement(STATEMENT_TYPES.BALANCE_SHEET, {
+                    name: 'Balance Sheet',
+                    validateBalance: (categoryTotals) => {
+                        const totals = categoryTotals.objects();
+                        let totalAssets = 0, totalLiabilities = 0, totalEquity = 0;
+                        
+                        totals.forEach(row => {
+                            if (row.category === 'Assets') totalAssets = row.amount_2025;
+                            if (row.category === 'Liabilities') totalLiabilities = row.amount_2025;
+                            if (row.category === 'Equity') totalEquity = row.amount_2025;
                         });
 
-                    // Calculate totals by category
-                    const categoryTotals = combined
-                        .groupby('category')
-                        .rollup({
-                            amount_2024: d => aq.op.sum(d.amount_2024),
-                            amount_2025: d => aq.op.sum(d.amount_2025),
-                            variance_amount: d => aq.op.sum(d.variance_amount),
-                            variance_percent: d => {
-                                const total2024 = aq.op.sum(d.amount_2024);
-                                const total2025 = aq.op.sum(d.amount_2025);
-                                return total2024 !== 0 ? ((total2025 - total2024) / Math.abs(total2024)) * 100 : 0;
-                            }
-                        });
+                        const imbalance = Math.abs(totalAssets - (totalLiabilities + totalEquity));
+                        if (imbalance > 0.01) {
+                            console.warn(`Balance Sheet imbalance: ${imbalance.toFixed(2)}`);
+                        }
 
-                    // Verify accounting equation
-                    const totals = categoryTotals.objects();
-                    let totalAssets = 0, totalLiabilities = 0, totalEquity = 0;
-                    
-                    totals.forEach(row => {
-                        if (row.category === 'Assets') totalAssets = row.amount_2025;
-                        if (row.category === 'Liabilities') totalLiabilities = row.amount_2025;
-                        if (row.category === 'Equity') totalEquity = row.amount_2025;
-                    });
-
-                    const imbalance = Math.abs(totalAssets - (totalLiabilities + totalEquity));
-                    if (imbalance > 0.01) {
-                        console.warn(`Balance Sheet imbalance: ${imbalance.toFixed(2)}`);
+                        return {
+                            balanced: imbalance <= 0.01,
+                            imbalance: imbalance
+                        };
                     }
-
-                    return {
-                        details: combined,
-                        totals: categoryTotals,
-                        balanced: imbalance <= 0.01,
-                        imbalance: imbalance
-                    };
-
-                } catch (error) {
-                    console.error('Error generating Balance Sheet:', error);
-                    throw error;
-                }
+                });
             }
 
             // Generate Income Statement
             generateIncomeStatement() {
-                try {
-                    const factTable2024 = this.dataStore.getFactTable('2024');
-                    const factTable2025 = this.dataStore.getFactTable('2025');
-                    const hierarchyTable = this.dataStore.getHierarchyTable();
-                    const formatTable = this.dataStore.getFormatTable();
+                return this.generateStatement(STATEMENT_TYPES.INCOME_STATEMENT, {
+                    name: 'Income Statement',
+                    orderBy: true,
+                    calculateMetrics: (categoryTotals) => {
+                        const totals = categoryTotals.objects();
+                        let revenue2024 = 0, revenue2025 = 0;
+                        let cogs2024 = 0, cogs2025 = 0;
+                        let opex2024 = 0, opex2025 = 0;
+                        let otherIncome2024 = 0, otherIncome2025 = 0;
+                        let taxes2024 = 0, taxes2025 = 0;
 
-                    if (!factTable2024 || !factTable2025 || !hierarchyTable || !formatTable) {
-                        throw new Error('Required data not loaded');
-                    }
-
-                    // Join FactTable with Hierarchy for 2024
-                    const joined2024 = factTable2024
-                        .join(hierarchyTable, 'account_code')
-                        .filter(d => d.statement_type === 'IS');
-
-                    // Join FactTable with Hierarchy for 2025
-                    const joined2025 = factTable2025
-                        .join(hierarchyTable, 'account_code')
-                        .filter(d => d.statement_type === 'IS');
-
-                    // Group by category and subcategory for 2024
-                    const grouped2024 = joined2024
-                        .groupby('category', 'subcategory')
-                        .rollup({ amount_2024: d => aq.op.sum(d.amount) })
-                        .orderby('category', 'subcategory');
-
-                    // Group by category and subcategory for 2025
-                    const grouped2025 = joined2025
-                        .groupby('category', 'subcategory')
-                        .rollup({ amount_2025: d => aq.op.sum(d.amount) })
-                        .orderby('category', 'subcategory');
-
-                    // Join 2024 and 2025 data
-                    const combined = grouped2024
-                        .join_full(grouped2025, ['category', 'subcategory'])
-                        .derive({
-                            amount_2024: d => d.amount_2024 || 0,
-                            amount_2025: d => d.amount_2025 || 0,
-                            variance_amount: d => (d.amount_2025 || 0) - (d.amount_2024 || 0),
-                            variance_percent: d => {
-                                const amt2024 = d.amount_2024 || 0;
-                                const amt2025 = d.amount_2025 || 0;
-                                return amt2024 !== 0 ? ((amt2025 - amt2024) / Math.abs(amt2024)) * 100 : 0;
+                        totals.forEach(row => {
+                            if (row.category === 'Revenue') {
+                                revenue2024 = row.amount_2024;
+                                revenue2025 = row.amount_2025;
+                            } else if (row.category === 'Cost of Goods Sold') {
+                                cogs2024 = row.amount_2024;
+                                cogs2025 = row.amount_2025;
+                            } else if (row.category === 'Operating Expenses') {
+                                opex2024 = row.amount_2024;
+                                opex2025 = row.amount_2025;
+                            } else if (row.category === 'Other Income') {
+                                otherIncome2024 = row.amount_2024;
+                                otherIncome2025 = row.amount_2025;
+                            } else if (row.category === 'Taxes') {
+                                taxes2024 = row.amount_2024;
+                                taxes2025 = row.amount_2025;
                             }
                         });
 
-                    // Calculate category totals
-                    const categoryTotals = combined
-                        .groupby('category')
-                        .rollup({
-                            amount_2024: d => aq.op.sum(d.amount_2024),
-                            amount_2025: d => aq.op.sum(d.amount_2025),
-                            variance_amount: d => aq.op.sum(d.variance_amount),
-                            variance_percent: d => {
-                                const total2024 = aq.op.sum(d.amount_2024);
-                                const total2025 = aq.op.sum(d.amount_2025);
-                                return total2024 !== 0 ? ((total2025 - total2024) / Math.abs(total2024)) * 100 : 0;
-                            }
-                        });
+                        const grossProfit2024 = revenue2024 - cogs2024;
+                        const grossProfit2025 = revenue2025 - cogs2025;
+                        const operatingIncome2024 = grossProfit2024 - opex2024;
+                        const operatingIncome2025 = grossProfit2025 - opex2025;
+                        const netIncome2024 = operatingIncome2024 + otherIncome2024 - taxes2024;
+                        const netIncome2025 = operatingIncome2025 + otherIncome2025 - taxes2025;
 
-                    // Calculate key metrics
-                    const totals = categoryTotals.objects();
-                    let revenue2024 = 0, revenue2025 = 0;
-                    let cogs2024 = 0, cogs2025 = 0;
-                    let opex2024 = 0, opex2025 = 0;
-                    let otherIncome2024 = 0, otherIncome2025 = 0;
-                    let taxes2024 = 0, taxes2025 = 0;
-
-                    totals.forEach(row => {
-                        if (row.category === 'Revenue') {
-                            revenue2024 = row.amount_2024;
-                            revenue2025 = row.amount_2025;
-                        } else if (row.category === 'Cost of Goods Sold') {
-                            cogs2024 = row.amount_2024;
-                            cogs2025 = row.amount_2025;
-                        } else if (row.category === 'Operating Expenses') {
-                            opex2024 = row.amount_2024;
-                            opex2025 = row.amount_2025;
-                        } else if (row.category === 'Other Income') {
-                            otherIncome2024 = row.amount_2024;
-                            otherIncome2025 = row.amount_2025;
-                        } else if (row.category === 'Taxes') {
-                            taxes2024 = row.amount_2024;
-                            taxes2025 = row.amount_2025;
-                        }
-                    });
-
-                    const grossProfit2024 = revenue2024 - cogs2024;
-                    const grossProfit2025 = revenue2025 - cogs2025;
-                    const operatingIncome2024 = grossProfit2024 - opex2024;
-                    const operatingIncome2025 = grossProfit2025 - opex2025;
-                    const netIncome2024 = operatingIncome2024 + otherIncome2024 - taxes2024;
-                    const netIncome2025 = operatingIncome2025 + otherIncome2025 - taxes2025;
-
-                    return {
-                        details: combined,
-                        totals: categoryTotals,
-                        metrics: {
+                        return {
                             grossProfit: { '2024': grossProfit2024, '2025': grossProfit2025 },
                             operatingIncome: { '2024': operatingIncome2024, '2025': operatingIncome2025 },
                             netIncome: { '2024': netIncome2024, '2025': netIncome2025 }
-                        }
-                    };
-
-                } catch (error) {
-                    console.error('Error generating Income Statement:', error);
-                    throw error;
-                }
+                        };
+                    }
+                });
             }
 
             // Generate Cash Flow Statement
             generateCashFlowStatement() {
-                try {
-                    const factTable2024 = this.dataStore.getFactTable('2024');
-                    const factTable2025 = this.dataStore.getFactTable('2025');
-                    const hierarchyTable = this.dataStore.getHierarchyTable();
-                    const formatTable = this.dataStore.getFormatTable();
+                return this.generateStatement(STATEMENT_TYPES.CASH_FLOW, {
+                    name: 'Cash Flow Statement',
+                    orderBy: true,
+                    calculateMetrics: (categoryTotals) => {
+                        const totals = categoryTotals.objects();
+                        let operating2024 = 0, operating2025 = 0;
+                        let investing2024 = 0, investing2025 = 0;
+                        let financing2024 = 0, financing2025 = 0;
 
-                    if (!factTable2024 || !factTable2025 || !hierarchyTable || !formatTable) {
-                        throw new Error('Required data not loaded');
+                        totals.forEach(row => {
+                            if (row.category === 'Operating Activities') {
+                                operating2024 = row.amount_2024;
+                                operating2025 = row.amount_2025;
+                            } else if (row.category === 'Investing Activities') {
+                                investing2024 = row.amount_2024;
+                                investing2025 = row.amount_2025;
+                            } else if (row.category === 'Financing Activities') {
+                                financing2024 = row.amount_2024;
+                                financing2025 = row.amount_2025;
+                            }
+                        });
+
+                        const netChange2024 = operating2024 + investing2024 + financing2024;
+                        const netChange2025 = operating2025 + investing2025 + financing2025;
+
+                        return {
+                            netChange: {
+                                '2024': netChange2024,
+                                '2025': netChange2025,
+                                variance: netChange2025 - netChange2024
+                            }
+                        };
                     }
-
-                    // Join FactTable with Hierarchy for 2024
-                    const joined2024 = factTable2024
-                        .join(hierarchyTable, 'account_code')
-                        .filter(d => d.statement_type === 'CF');
-
-                    // Join FactTable with Hierarchy for 2025
-                    const joined2025 = factTable2025
-                        .join(hierarchyTable, 'account_code')
-                        .filter(d => d.statement_type === 'CF');
-
-                    // Group by category and subcategory for 2024
-                    const grouped2024 = joined2024
-                        .groupby('category', 'subcategory')
-                        .rollup({ amount_2024: d => aq.op.sum(d.amount) })
-                        .orderby('category', 'subcategory');
-
-                    // Group by category and subcategory for 2025
-                    const grouped2025 = joined2025
-                        .groupby('category', 'subcategory')
-                        .rollup({ amount_2025: d => aq.op.sum(d.amount) })
-                        .orderby('category', 'subcategory');
-
-                    // Join 2024 and 2025 data
-                    const combined = grouped2024
-                        .join_full(grouped2025, ['category', 'subcategory'])
-                        .derive({
-                            amount_2024: d => d.amount_2024 || 0,
-                            amount_2025: d => d.amount_2025 || 0,
-                            variance_amount: d => (d.amount_2025 || 0) - (d.amount_2024 || 0),
-                            variance_percent: d => {
-                                const amt2024 = d.amount_2024 || 0;
-                                const amt2025 = d.amount_2025 || 0;
-                                return amt2024 !== 0 ? ((amt2025 - amt2024) / Math.abs(amt2024)) * 100 : 0;
-                            }
-                        });
-
-                    // Calculate category totals
-                    const categoryTotals = combined
-                        .groupby('category')
-                        .rollup({
-                            amount_2024: d => aq.op.sum(d.amount_2024),
-                            amount_2025: d => aq.op.sum(d.amount_2025),
-                            variance_amount: d => aq.op.sum(d.variance_amount),
-                            variance_percent: d => {
-                                const total2024 = aq.op.sum(d.amount_2024);
-                                const total2025 = aq.op.sum(d.amount_2025);
-                                return total2024 !== 0 ? ((total2025 - total2024) / Math.abs(total2024)) * 100 : 0;
-                            }
-                        });
-
-                    // Calculate net cash flows
-                    const totals = categoryTotals.objects();
-                    let operating2024 = 0, operating2025 = 0;
-                    let investing2024 = 0, investing2025 = 0;
-                    let financing2024 = 0, financing2025 = 0;
-
-                    totals.forEach(row => {
-                        if (row.category === 'Operating Activities') {
-                            operating2024 = row.amount_2024;
-                            operating2025 = row.amount_2025;
-                        } else if (row.category === 'Investing Activities') {
-                            investing2024 = row.amount_2024;
-                            investing2025 = row.amount_2025;
-                        } else if (row.category === 'Financing Activities') {
-                            financing2024 = row.amount_2024;
-                            financing2025 = row.amount_2025;
-                        }
-                    });
-
-                    const netChange2024 = operating2024 + investing2024 + financing2024;
-                    const netChange2025 = operating2025 + investing2025 + financing2025;
-
-                    return {
-                        details: combined,
-                        totals: categoryTotals,
-                        netChange: {
-                            '2024': netChange2024,
-                            '2025': netChange2025,
-                            variance: netChange2025 - netChange2024
-                        }
-                    };
-
-                } catch (error) {
-                    console.error('Error generating Cash Flow Statement:', error);
-                    throw error;
-                }
+                });
             }
 
             // Calculate variance between two periods
@@ -1299,12 +1399,12 @@
 
                     // Rename amount columns to distinguish periods
                     const table1 = factTable1
-                        .select('account_code', 'account_description', 'amount')
-                        .rename({ amount: `amount_${period1}` });
+                        .select('account_code', 'account_description', 'movement_amount')
+                        .rename({ movement_amount: `amount_${period1}` });
 
                     const table2 = factTable2
-                        .select('account_code', 'amount')
-                        .rename({ amount: `amount_${period2}` });
+                        .select('account_code', 'movement_amount')
+                        .rename({ movement_amount: `amount_${period2}` });
 
                     // Join tables on account_code
                     const joined = table1
@@ -1800,13 +1900,13 @@
                 const statusElement = document.getElementById(`status-${fileId}`);
                 if (statusElement) {
                     if (status === 'success') {
-                        statusElement.textContent = '✅ ' + message;
+                        statusElement.textContent = message ? `✅ ${message}` : '✅';
                         statusElement.style.color = '#28a745';
                     } else if (status === 'error') {
-                        statusElement.textContent = '❌ ' + message;
+                        statusElement.textContent = '❌';
                         statusElement.style.color = '#dc3545';
                     } else if (status === 'loading') {
-                        statusElement.textContent = '⏳ ' + message;
+                        statusElement.textContent = '⏳';
                         statusElement.style.color = '#ffc107';
                     }
                 }
@@ -1844,52 +1944,73 @@
                 try {
                     await this.dataLoader.selectInputDirectory();
                     const statusText = document.getElementById('input-dir-status');
-                    statusText.textContent = `Selected: ${this.dataLoader.inputDirHandle.name}`;
+                    statusText.textContent = `📁 ${this.dataLoader.inputDirHandle.name}`;
                     statusText.style.color = '#28a745';
                     
                     // Enable load button
                     document.getElementById('load-all-files').disabled = false;
                 } catch (error) {
-                    this.showErrorMessage('Failed to select directory: ' + error.message);
+                    this.showErrorMessage(error.message);
                 }
             }
 
             // Load all files
             async handleLoadAllFiles() {
-                this.showLoadingMessage('Loading files...');
+                this.showLoadingMessage('Loading trial balance files...');
                 
                 try {
-                    // Load Trial Balance 2024
-                    this.updateFileStatus('tb2024', 'loading', 'Loading...');
-                    const tb2024 = await this.dataLoader.loadTrialBalance('2024');
-                    this.dataStore.setFactTable(tb2024, '2024');
-                    this.updateFileStatus('tb2024', 'success', `Loaded (${tb2024.numRows()} rows)`);
+                    // Step 1: Load trial balance for 2024 (movements and balances with hierarchy included)
+                    this.showLoadingMessage('Loading 2024 trial balance...');
+                    this.updateFileStatus('tb2024', 'loading');
+                    const { movements: movements2024, balances: balances2024 } = await this.dataLoader.loadTrialBalance('2024');
+                    
+                    this.dataStore.setFactTable(movements2024, '2024', 'movements');
+                    this.dataStore.setFactTable(balances2024, '2024', 'balances');
+                    this.updateFileStatus('tb2024', 'success', `M:${movements2024.numRows()} B:${balances2024.numRows()}`);
 
-                    // Load Trial Balance 2025
-                    this.updateFileStatus('tb2025', 'loading', 'Loading...');
-                    const tb2025 = await this.dataLoader.loadTrialBalance('2025');
-                    this.dataStore.setFactTable(tb2025, '2025');
-                    this.updateFileStatus('tb2025', 'success', `Loaded (${tb2025.numRows()} rows)`);
+                    // Step 2: Load trial balance for 2025 (movements and balances with hierarchy included)
+                    this.showLoadingMessage('Loading 2025 trial balance...');
+                    this.updateFileStatus('tb2025', 'loading');
+                    const { movements: movements2025, balances: balances2025 } = await this.dataLoader.loadTrialBalance('2025');
+                    
+                    this.dataStore.setFactTable(movements2025, '2025', 'movements');
+                    this.dataStore.setFactTable(balances2025, '2025', 'balances');
+                    this.updateFileStatus('tb2025', 'success', `M:${movements2025.numRows()} B:${balances2025.numRows()}`);
+                    
+                    // Update combined TB count
+                    const combinedCount = movements2024.numRows() + balances2024.numRows() + movements2025.numRows() + balances2025.numRows();
+                    this.updateFileStatus('tb2425', 'success', `(${combinedCount} total)`);
+                    
+                    // Hierarchy is embedded in trial balance data
+                    this.updateFileStatus('hierarchy', 'success', '(embedded)');
 
-                    // Load Hierarchy
-                    this.updateFileStatus('hierarchy', 'loading', 'Loading...');
-                    const hierarchy = await this.dataLoader.loadHierarchy();
-                    this.dataStore.setHierarchyTable(hierarchy);
-                    this.updateFileStatus('hierarchy', 'success', `Loaded (${hierarchy.numRows()} rows)`);
+                    // Get loaded years from DataStore
+                    const loadedYears = this.dataStore.getAllPeriods();
+                    console.log(`Loaded trial balance years: ${loadedYears.join(', ')}`);
 
-                    // Load Dates
-                    this.updateFileStatus('dates', 'loading', 'Loading...');
-                    const dates = await this.dataLoader.loadDates();
-                    this.dataStore.setDatesTable(dates);
-                    this.updateFileStatus('dates', 'success', `Loaded (${dates.numRows()} rows)`);
+                    // Load Dates (optional) - filtered to loaded years only
+                    try {
+                        this.updateFileStatus('dates', 'loading');
+                        const dates = await this.dataLoader.loadDates(loadedYears);
+                        this.dataStore.setDatesTable(dates);
+                        this.updateFileStatus('dates', 'success', `(${dates.numRows()}×${dates.numCols()})`);
+                    } catch (error) {
+                        this.updateFileStatus('dates', 'success', '(N/A)');
+                        console.log('Dates file not loaded (optional)');
+                    }
 
-                    // Load Format
-                    this.updateFileStatus('format', 'loading', 'Loading...');
-                    const format = await this.dataLoader.loadFormat();
-                    this.dataStore.setFormatTable(format);
-                    this.updateFileStatus('format', 'success', `Loaded (${format.numRows()} rows)`);
+                    // Load Format (optional)
+                    try {
+                        this.updateFileStatus('format', 'loading');
+                        const format = await this.dataLoader.loadFormat();
+                        this.dataStore.setFormatTable(format);
+                        this.updateFileStatus('format', 'success', `(${format.numRows()}×${format.numCols()})`);
+                    } catch (error) {
+                        this.updateFileStatus('format', 'success', '(N/A)');
+                        console.log('Format file not loaded (optional)');
+                    }
 
-                    this.showSuccessMessage('All files loaded successfully!');
+                    this.showSuccessMessage('Files loaded');
                     
                     // Validate data and show results
                     this.validateAndDisplayResults();
@@ -1905,8 +2026,14 @@
                     this.generateAndDisplayStatement('balance-sheet');
 
                 } catch (error) {
-                    this.showErrorMessage('Error loading files: ' + error.message);
+                    this.showErrorMessage(error.message);
                     console.error('File loading error:', error);
+                    console.error('Error stack:', error.stack);
+                    
+                    // Update status indicators to show error
+                    this.updateFileStatus('tb2024', 'error');
+                    this.updateFileStatus('tb2025', 'error');
+                    this.updateFileStatus('hierarchy', 'error');
                 }
             }
 
@@ -1920,6 +2047,16 @@
                 // Clear previous messages
                 errorsContainer.innerHTML = '';
                 warningsContainer.innerHTML = '';
+
+                // Display Afrondingsverschil replacements
+                if (window.afrondingsReplacements && window.afrondingsReplacements.length > 0) {
+                    window.afrondingsReplacements.forEach(replacement => {
+                        const infoDiv = document.createElement('div');
+                        infoDiv.className = 'validation-warning-item';
+                        infoDiv.innerHTML = `ℹ️ <strong>Account replaced:</strong> ${replacement}`;
+                        warningsContainer.appendChild(infoDiv);
+                    });
+                }
 
                 // Display errors
                 if (validation.errors.length > 0) {
@@ -2081,6 +2218,116 @@
                 this.generateAndDisplayStatement(statementType);
             }
 
+            // Show data preview
+            showDataPreview(fileId) {
+                let table = null;
+                let title = '';
+                
+                switch(fileId) {
+                    case 'tb2024':
+                        table = this.dataStore.getMovementsTable('2024');
+                        title = 'Trial Balance 2024 Movements - First 20 Rows';
+                        break;
+                    case 'tb2025':
+                        table = this.dataStore.getMovementsTable('2025');
+                        title = 'Trial Balance 2025 Movements - First 20 Rows';
+                        break;
+                    case 'tb24m':
+                        table = this.dataStore.getMovementsTable('2024');
+                        if (table) {
+                            // Sort by account_code and period for readability
+                            table = table.orderby('account_code', 'period');
+                            const rowCount = table.numRows();
+                            title = `TB 2024 Movements - ${rowCount.toLocaleString()} rows (showing first 20)`;
+                        }
+                        break;
+                    case 'tb24b':
+                        table = this.dataStore.getBalancesTable('2024');
+                        if (table) {
+                            // Sort by account_code and period for readability
+                            table = table.orderby('account_code', 'period');
+                            const rowCount = table.numRows();
+                            title = `TB 2024 Balances - ${rowCount.toLocaleString()} rows (showing first 20)`;
+                        }
+                        break;
+                    case 'tb25m':
+                        table = this.dataStore.getMovementsTable('2025');
+                        if (table) {
+                            // Sort by account_code and period for readability
+                            table = table.orderby('account_code', 'period');
+                            const rowCount = table.numRows();
+                            title = `TB 2025 Movements - ${rowCount.toLocaleString()} rows (showing first 20)`;
+                        }
+                        break;
+                    case 'tb25b':
+                        table = this.dataStore.getBalancesTable('2025');
+                        if (table) {
+                            // Sort by account_code and period for readability
+                            table = table.orderby('account_code', 'period');
+                            const rowCount = table.numRows();
+                            title = `TB 2025 Balances - ${rowCount.toLocaleString()} rows (showing first 20)`;
+                        }
+                        break;
+                    case 'tb2425':
+                        // Combine both movements tables
+                        const tb2024m = this.dataStore.getMovementsTable('2024');
+                        const tb2025m = this.dataStore.getMovementsTable('2025');
+                        if (tb2024m && tb2025m) {
+                            table = tb2024m.concat(tb2025m);
+                            const rowCount = table.numRows();
+                            title = `Combined Movements 2024+2025 - ${rowCount.toLocaleString()} rows (showing first 20)`;
+                        }
+                        break;
+                    case 'hierarchy':
+                        table = this.dataStore.getHierarchyTable();
+                        title = 'Account Hierarchy - First 20 Rows';
+                        break;
+                    case 'dates':
+                        table = this.dataStore.getDatesTable();
+                        title = 'Dates - All Rows';
+                        break;
+                    case 'format':
+                        table = this.dataStore.getFormatTable();
+                        title = 'Format - First 20 Rows';
+                        break;
+                }
+                
+                if (!table) {
+                    return;
+                }
+                
+                const previewDiv = document.getElementById('data-preview');
+                const titleDiv = document.getElementById('preview-title');
+                const contentDiv = document.getElementById('preview-content');
+                
+                titleDiv.textContent = title;
+                
+                // Get first 20 rows
+                const rows = table.slice(0, 20).objects();
+                const columns = table.columnNames();
+                
+                // Build table HTML
+                let html = '<table><thead><tr>';
+                columns.forEach(col => {
+                    html += `<th>${col}</th>`;
+                });
+                html += '</tr></thead><tbody>';
+                
+                rows.forEach(row => {
+                    html += '<tr>';
+                    columns.forEach(col => {
+                        const value = row[col];
+                        const displayValue = value !== null && value !== undefined ? value : '';
+                        html += `<td>${displayValue}</td>`;
+                    });
+                    html += '</tr>';
+                });
+                
+                html += '</tbody></table>';
+                contentDiv.innerHTML = html;
+                previewDiv.style.display = 'block';
+            }
+
             // Setup event listeners
             setupEventListeners() {
                 document.getElementById('select-input-dir').addEventListener('click', () => {
@@ -2105,6 +2352,19 @@
 
                 document.getElementById('export-all').addEventListener('click', () => {
                     this.handleExportAll();
+                });
+                
+                // File preview clicks
+                document.querySelectorAll('.file-status-item.clickable').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const fileId = item.dataset.file;
+                        this.showDataPreview(fileId);
+                    });
+                });
+                
+                // Close preview button
+                document.getElementById('close-preview').addEventListener('click', () => {
+                    document.getElementById('data-preview').style.display = 'none';
                 });
             }
         }

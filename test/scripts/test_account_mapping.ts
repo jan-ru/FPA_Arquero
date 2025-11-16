@@ -27,10 +27,21 @@ async function loadTrialBalanceAccounts(filename: string): Promise<Set<string>> 
     worksheet.eachRow((row, rowNumber) => {
         if (rowNumber === 1) return; // Skip header
         
-        const values = row.values as any[];
-        const accountCode = values[1]; // Column 1: account_code
+        // Column 11 (K): account_code in source files
+        let accountCode = row.getCell(11).value;
+        const accountLabel = row.getCell(12).value; // Column 12 (L): account name
+        const statementType = row.getCell(4).value; // Column 4 (D): Balans/Winst & verlies
         
         if (accountCode && accountCode !== '') {
+            // Handle Afrondingsverschil - replace based on statement type
+            if (String(accountCode).toLowerCase().includes('afrondingsverschil') || 
+                (accountLabel && String(accountLabel).toLowerCase().includes('afrondingsverschil'))) {
+                if (statementType === 'Balans') {
+                    accountCode = '1999';
+                } else if (statementType === 'Winst & verlies') {
+                    accountCode = '9910';
+                }
+            }
             accounts.add(String(accountCode));
         }
     });
@@ -47,7 +58,7 @@ function normalizeAccountCode(code: string | number): string {
     return isNaN(normalized) ? codeStr : String(normalized);
 }
 
-async function loadDimAccountsCodes(filename: string): Promise<Set<string>> {
+async function loadSourceFileAccounts(filename: string): Promise<Set<string>> {
     console.log(`Loading account codes from ${filename}...`);
     
     const workbook = new ExcelJS.Workbook();
@@ -55,26 +66,16 @@ async function loadDimAccountsCodes(filename: string): Promise<Set<string>> {
     
     const worksheet = workbook.worksheets[0];
     const accounts = new Set<string>();
-    const accountsWithLeadingZeros = new Set<string>();
     
     worksheet.eachRow((row, rowNumber) => {
         if (rowNumber === 1) return; // Skip header
         
-        const values = row.values as any[];
-        
-        // Column 6: Rekening (account code)
-        let accountCode = values[6];
-        
-        // Handle formula cells - extract the result value
-        if (accountCode && typeof accountCode === 'object' && 'result' in accountCode) {
-            accountCode = accountCode.result;
-        }
+        // Column 11 (K): account_code
+        let accountCode = row.getCell(11).value;
         
         if (accountCode !== null && accountCode !== undefined && accountCode !== '') {
             const codeStr = String(accountCode);
-            // Store both normalized and original (with leading zeros if present)
             accounts.add(normalizeAccountCode(codeStr));
-            accountsWithLeadingZeros.add(codeStr);
         }
     });
     
