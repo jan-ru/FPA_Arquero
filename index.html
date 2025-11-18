@@ -133,6 +133,7 @@
         .file-status-item {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             padding: 8px 10px;
             background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
             border-radius: 4px;
@@ -418,11 +419,28 @@
             font-family: 'Courier New', monospace;
             font-size: 12px;
         }
+
+        /* Variance column dropdown styling */
+        .variance-dropdown {
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .variance-dropdown option {
+            background: #007bff;
+            color: white;
+        }
     </style>
 </head>
 <body>
     <div id="app">
-        <h1>Statement Generator <span style="font-size: 0.6em; color: rgba(255,255,255,0.8);">v2.2.0</span></h1>
+        <h1>Statement Generator <span style="font-size: 0.6em; color: rgba(255,255,255,0.8);">v2.3.0</span></h1>
         
         <!-- File Upload Section -->
         <div id="file-upload-section" class="section">
@@ -440,15 +458,15 @@
                 
                 <!-- Right side: File status indicators -->
                 <div class="file-status-grid" style="flex: 0 0 auto; grid-template-columns: repeat(3, auto); gap: 8px;">
-                    <div class="file-status-item clickable" data-file="tb2024" style="min-width: 180px;">
+                    <div class="file-status-item clickable" data-file="tb2024" style="min-width: 220px;">
                         <span class="file-label">TB 2024</span>
                         <span id="status-tb2024" class="status-indicator">⚪</span>
                     </div>
-                    <div class="file-status-item clickable" data-file="tb2025" style="min-width: 180px;">
+                    <div class="file-status-item clickable" data-file="tb2025" style="min-width: 220px;">
                         <span class="file-label">TB 2025</span>
                         <span id="status-tb2025" class="status-indicator">⚪</span>
                     </div>
-                    <div class="file-status-item clickable" data-file="tb2425" style="min-width: 200px;">
+                    <div class="file-status-item clickable" data-file="tb2425" style="min-width: 240px;">
                         <span class="file-label">TB 2024+2025</span>
                         <span id="status-tb2425" class="status-indicator">👁️</span>
                     </div>
@@ -482,10 +500,6 @@
                 </div>
                 <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
                     <label style="font-size: 13px; color: #4a5568;">
-                        <input type="checkbox" id="show-variance" checked style="margin-right: 5px;">
-                        Show Variance
-                    </label>
-                    <label style="font-size: 13px; color: #4a5568;">
                         <input type="checkbox" id="show-category-totals" checked style="margin-right: 5px;">
                         Show Category Totals
                     </label>
@@ -502,13 +516,18 @@
     </div>
 
     <script>
-        // Constants
+        // ============================================================================
+        // CONSTANTS AND CONFIGURATION
+        // ============================================================================
+        
+        // Statement Types
         const STATEMENT_TYPES = {
             BALANCE_SHEET: 'BS',
             INCOME_STATEMENT: 'IS',
             CASH_FLOW: 'CF'
         };
 
+        // Excel Column Indices (1-based)
         const EXCEL_COLUMNS = {
             STATEMENT_TYPE: 4,
             LEVEL1_CODE: 5,
@@ -521,7 +540,110 @@
             ACCOUNT_DESCRIPTION: 12
         };
 
-        // Configuration
+        // Export Configuration
+        const EXPORT_CONFIG = {
+            // Excel Colors (ARGB format)
+            COLORS: {
+                HEADER: 'FF007bff',           // Blue header background
+                METRIC_HIGHLIGHT: 'FFFFE599', // Yellow highlight for metrics
+                WHITE: 'FFFFFFFF',            // White text
+                CATEGORY_HEADER: 'FFE9ECEF'   // Light gray for categories
+            },
+            
+            // Number Formats
+            NUMBER_FORMAT: '#,##0',           // Whole numbers with thousand separator
+            
+            // Column Widths (in Excel units)
+            COLUMN_WIDTHS: {
+                LINE_ITEM: 35,                // Width for line item descriptions
+                AMOUNT: 15,                   // Width for amount columns
+                METADATA_LABEL: 25,           // Width for metadata labels
+                METADATA_VALUE: 50            // Width for metadata values
+            },
+            
+            // Font Sizes (in points)
+            FONT_SIZES: {
+                TITLE: 14,                    // Metadata sheet title
+                HEADER: 12,                   // Table headers
+                NORMAL: 11                    // Regular content
+            }
+        };
+
+        // Validation Configuration
+        const VALIDATION_CONFIG = {
+            // Balance Sheet tolerance for accounting equation
+            BALANCE_TOLERANCE: 0.01,          // Maximum acceptable imbalance
+            
+            // File size warning threshold (in bytes)
+            LARGE_FILE_THRESHOLD: 10 * 1024 * 1024, // 10 MB
+            
+            // Required columns for trial balance files
+            REQUIRED_COLUMNS: [
+                'account_code',
+                'account_description',
+                'statement_type',
+                'level1_code',
+                'level1_label'
+            ]
+        };
+
+        // UI Configuration
+        const UI_CONFIG = {
+            // Status Message Colors
+            STATUS_COLORS: {
+                INFO: '#007bff',              // Blue for info messages
+                ERROR: '#dc3545',             // Red for errors
+                SUCCESS: '#28a745'            // Green for success
+            },
+            
+            // Status Message Icons
+            STATUS_ICONS: {
+                INFO: '',                     // No icon for info
+                ERROR: '❌ ',                 // Red X for errors
+                SUCCESS: '✅ '                // Green check for success
+            },
+            
+            // Timing
+            MESSAGE_TIMEOUT: 3000,            // Auto-clear messages after 3 seconds
+            STATEMENT_REGEN_TIMEOUT: 1000,    // Max time for statement regeneration
+            
+            // Preview
+            PREVIEW_ROW_LIMIT: 20             // Number of rows to show in preview
+        };
+
+        // Category Definitions for Financial Statements
+        const CATEGORY_DEFINITIONS = {
+            // Asset Categories (for Total Assets calculation)
+            ASSETS: [
+                'immateriële vaste activa',   // Intangible fixed assets
+                'materiële vaste activa',     // Tangible fixed assets
+                'voorraden',                  // Inventory
+                'vorderingen',                // Receivables
+                'liquide middelen'            // Cash and equivalents
+            ],
+            
+            // Liability Categories
+            LIABILITIES: [
+                'schuld',                     // Debts
+                'voorziening',                // Provisions
+                'passiva'                     // Liabilities
+            ],
+            
+            // Equity Categories
+            EQUITY: [
+                'eigen vermogen',             // Equity
+                'equity'                      // Equity (English)
+            ],
+            
+            // Cash Categories (for Cash Flow Statement)
+            CASH: [
+                'liquide middelen',           // Cash and equivalents
+                'cash',                       // Cash (English)
+                'bank'                        // Bank accounts
+            ]
+        };
+
+        // Configuration (loaded from config.json)
         let config = null;
 
         // DataStore class for state management (Singleton pattern)
@@ -922,8 +1044,8 @@
                     // Read file
                     const file = await this.readFileFromDirectory(filename);
                     
-                    // Validate file size (warn if > 10MB)
-                    if (file.size > 10 * 1024 * 1024) {
+                    // Validate file size (warn if > threshold)
+                    if (file.size > VALIDATION_CONFIG.LARGE_FILE_THRESHOLD) {
                         console.warn(`Large file detected: ${filename} (${(file.size / 1024 / 1024).toFixed(2)} MB). Loading may take longer.`);
                     }
                     
@@ -1207,42 +1329,20 @@
                         const totals = categoryTotals.objects();
                         let totalAssets = 0, totalLiabilities = 0, totalEquity = 0;
                         
-                        // Asset categories: Fixed Assets + Current Assets
-                        const assetCategories = [
-                            'immateriële vaste activa',
-                            'materiële vaste activa',
-                            'voorraden',
-                            'vorderingen',
-                            'liquide middelen'
-                        ];
-                        
-                        // Liability categories
-                        const liabilityCategories = [
-                            'schuld',
-                            'voorziening',
-                            'passiva'
-                        ];
-                        
-                        // Equity categories
-                        const equityCategories = [
-                            'eigen vermogen',
-                            'equity'
-                        ];
-                        
                         totals.forEach(row => {
                             const categoryLower = row.category.toLowerCase();
                             
-                            if (assetCategories.some(cat => categoryLower.includes(cat))) {
+                            if (CATEGORY_DEFINITIONS.ASSETS.some(cat => categoryLower.includes(cat))) {
                                 totalAssets += row.amount_2025 || 0;
-                            } else if (liabilityCategories.some(cat => categoryLower.includes(cat))) {
+                            } else if (CATEGORY_DEFINITIONS.LIABILITIES.some(cat => categoryLower.includes(cat))) {
                                 totalLiabilities += row.amount_2025 || 0;
-                            } else if (equityCategories.some(cat => categoryLower.includes(cat))) {
+                            } else if (CATEGORY_DEFINITIONS.EQUITY.some(cat => categoryLower.includes(cat))) {
                                 totalEquity += row.amount_2025 || 0;
                             }
                         });
 
                         const imbalance = Math.abs(totalAssets - (totalLiabilities + totalEquity));
-                        if (imbalance > 0.01) {
+                        if (imbalance > VALIDATION_CONFIG.BALANCE_TOLERANCE) {
                             console.warn(`Balance Sheet imbalance: ${imbalance.toFixed(2)}`);
                             console.warn(`Total Assets: ${totalAssets.toFixed(2)}`);
                             console.warn(`Total Liabilities: ${totalLiabilities.toFixed(2)}`);
@@ -1250,7 +1350,7 @@
                         }
 
                         return {
-                            balanced: imbalance <= 0.01,
+                            balanced: imbalance <= VALIDATION_CONFIG.BALANCE_TOLERANCE,
                             imbalance: imbalance
                         };
                     }
@@ -1450,13 +1550,12 @@
                     // Get starting cash from Balance Sheet (cash and cash equivalents)
                     let startingCash2024 = 0, startingCash2025 = 0;
                     balanceDetails.forEach(row => {
-                        if (row.subcategory && (
-                            row.subcategory.toLowerCase().includes('liquide middelen') ||
-                            row.subcategory.toLowerCase().includes('cash') ||
-                            row.subcategory.toLowerCase().includes('bank')
-                        )) {
-                            startingCash2024 += row.amount_2024 || 0;
-                            startingCash2025 += row.amount_2025 || 0;
+                        if (row.subcategory) {
+                            const subcategoryLower = row.subcategory.toLowerCase();
+                            if (CATEGORY_DEFINITIONS.CASH.some(cat => subcategoryLower.includes(cat))) {
+                                startingCash2024 += row.amount_2024 || 0;
+                                startingCash2025 += row.amount_2025 || 0;
+                            }
                         }
                     });
 
@@ -1546,23 +1645,14 @@
         class ExportHandler {
             constructor(dataStore) {
                 this.dataStore = dataStore;
-                
-                // Formatting constants
-                this.FORMATS = {
-                    NUMBER: '#,##0',
-                    COLORS: {
-                        HEADER: 'FF007bff',
-                        METRIC_HIGHLIGHT: 'FFFFE599',
-                        WHITE: 'FFFFFFFF'
-                    }
-                };
+                // Use global EXPORT_CONFIG constants
             }
 
             // Helper: Format cells as whole numbers
             formatCellsAsNumbers(row, startCol, endCol) {
                 for (let i = startCol; i <= endCol; i++) {
                     if (row.getCell(i).value !== '' && row.getCell(i).value !== null) {
-                        row.getCell(i).numFmt = this.FORMATS.NUMBER;
+                        row.getCell(i).numFmt = EXPORT_CONFIG.NUMBER_FORMAT;
                     }
                 }
             }
@@ -1574,7 +1664,7 @@
                     row.fill = { 
                         type: 'pattern', 
                         pattern: 'solid', 
-                        fgColor: { argb: this.FORMATS.COLORS.METRIC_HIGHLIGHT } 
+                        fgColor: { argb: EXPORT_CONFIG.COLORS.METRIC_HIGHLIGHT } 
                     };
                 }
                 this.formatCellsAsNumbers(row, startCol, endCol);
@@ -1656,7 +1746,11 @@
                         
                         // Style the title row
                         if (index === 0) {
-                            excelRow.font = { bold: true, size: 14, color: { argb: 'FF007bff' } };
+                            excelRow.font = { 
+                                bold: true, 
+                                size: EXPORT_CONFIG.FONT_SIZES.TITLE, 
+                                color: { argb: EXPORT_CONFIG.COLORS.HEADER } 
+                            };
                         }
                         
                         // Style section headers
@@ -1666,8 +1760,8 @@
                     });
                     
                     // Set column widths
-                    metadataSheet.getColumn(1).width = 25;
-                    metadataSheet.getColumn(2).width = 50;
+                    metadataSheet.getColumn(1).width = EXPORT_CONFIG.COLUMN_WIDTHS.METADATA_LABEL;
+                    metadataSheet.getColumn(2).width = EXPORT_CONFIG.COLUMN_WIDTHS.METADATA_VALUE;
 
                     // Add each statement as a separate worksheet
                     for (const [name, data] of Object.entries(statements)) {
@@ -1682,11 +1776,11 @@
                         
                         // Add header row
                         const headerRow = worksheet.addRow(headers);
-                        headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                        headerRow.font = { bold: true, color: { argb: EXPORT_CONFIG.COLORS.WHITE } };
                         headerRow.fill = {
                             type: 'pattern',
                             pattern: 'solid',
-                            fgColor: { argb: 'FF007bff' }
+                            fgColor: { argb: EXPORT_CONFIG.COLORS.HEADER }
                         };
                         
                         // Center-align all column headers
@@ -1828,12 +1922,12 @@
                         });
 
                         // Set column widths
-                        worksheet.getColumn(1).width = 35;
-                        worksheet.getColumn(2).width = 15;
+                        worksheet.getColumn(1).width = EXPORT_CONFIG.COLUMN_WIDTHS.LINE_ITEM;
+                        worksheet.getColumn(2).width = EXPORT_CONFIG.COLUMN_WIDTHS.AMOUNT;
                         if (!isCashFlow) {
-                            worksheet.getColumn(3).width = 15;
-                            worksheet.getColumn(4).width = 15;
-                            worksheet.getColumn(5).width = 15;
+                            worksheet.getColumn(3).width = EXPORT_CONFIG.COLUMN_WIDTHS.AMOUNT;
+                            worksheet.getColumn(4).width = EXPORT_CONFIG.COLUMN_WIDTHS.AMOUNT;
+                            worksheet.getColumn(5).width = EXPORT_CONFIG.COLUMN_WIDTHS.AMOUNT;
                         }
                     }
 
@@ -1912,8 +2006,8 @@
                 }).format(Math.round(value));
             }
 
-            // Helper function to render data cells based on year toggles
-            renderDataCells(amount2024, amount2025, varianceAmount, variancePercent, show2024, show2025, showVariance, cssClass = 'number') {
+            // Helper function to render data cells based on year toggles and variance column settings
+            renderDataCells(amount2024, amount2025, varianceAmount, variancePercent, show2024, show2025, variance1Mode, variance2Mode, cssClass = 'number') {
                 let html = '';
                 if (show2024) {
                     html += `<td class="${cssClass}">${this.formatNumber(amount2024)}</td>`;
@@ -1921,10 +2015,23 @@
                 if (show2025) {
                     html += `<td class="${cssClass}">${this.formatNumber(amount2025)}</td>`;
                 }
-                if (showVariance) {
+                
+                // Variance Column 1
+                if (variance1Mode === 'amount') {
                     html += `<td class="${cssClass} ${varianceAmount >= 0 ? 'positive' : 'negative'}">${this.formatNumber(varianceAmount)}</td>`;
+                } else if (variance1Mode === 'percent') {
                     html += `<td class="${cssClass} ${variancePercent >= 0 ? 'positive' : 'negative'}">${this.formatNumber(variancePercent)}%</td>`;
                 }
+                // If variance1Mode === 'none', don't add a column
+                
+                // Variance Column 2
+                if (variance2Mode === 'amount') {
+                    html += `<td class="${cssClass} ${varianceAmount >= 0 ? 'positive' : 'negative'}">${this.formatNumber(varianceAmount)}</td>`;
+                } else if (variance2Mode === 'percent') {
+                    html += `<td class="${cssClass} ${variancePercent >= 0 ? 'positive' : 'negative'}">${this.formatNumber(variancePercent)}%</td>`;
+                }
+                // If variance2Mode === 'none', don't add a column
+                
                 return html;
             }
 
@@ -1953,13 +2060,18 @@
                     show2025 = true;
                 }
                 
-                const showVariance = document.getElementById('show-variance')?.checked !== false && show2024 && show2025;
+                // Get variance column settings
+                const variance1Dropdown = document.getElementById('variance-1-header');
+                const variance2Dropdown = document.getElementById('variance-2-header');
+                const variance1Mode = variance1Dropdown ? variance1Dropdown.value : 'none';
+                const variance2Mode = variance2Dropdown ? variance2Dropdown.value : 'none';
                 
                 // Calculate column span dynamically
                 let colCount = 1; // Line Item column
                 if (show2024) colCount++;
                 if (show2025) colCount++;
-                if (showVariance) colCount += 2;
+                if (variance1Mode !== 'none') colCount++;
+                if (variance2Mode !== 'none') colCount++;
                 const colSpan = colCount;
                 
                 // Get current period selections before regenerating (to preserve them)
@@ -2001,10 +2113,23 @@
                     html += '</select>';
                     html += '</th>';
                 }
-                if (showVariance) {
-                    html += '<th class="col-number">Variance (€)</th>';
-                    html += '<th class="col-number">Variance (%)</th>';
-                }
+                // Variance Column 1
+                html += '<th class="col-number">';
+                html += '<select id="variance-1-header" class="variance-dropdown">';
+                html += `<option value="none" ${variance1Mode === 'none' ? 'selected' : ''}>-</option>`;
+                html += `<option value="amount" ${variance1Mode === 'amount' ? 'selected' : ''}>Variance (€)</option>`;
+                html += `<option value="percent" ${variance1Mode === 'percent' ? 'selected' : ''}>Variance (%)</option>`;
+                html += '</select>';
+                html += '</th>';
+                
+                // Variance Column 2
+                html += '<th class="col-number">';
+                html += '<select id="variance-2-header" class="variance-dropdown">';
+                html += `<option value="none" ${variance2Mode === 'none' ? 'selected' : ''}>-</option>`;
+                html += `<option value="amount" ${variance2Mode === 'amount' ? 'selected' : ''}>Variance (€)</option>`;
+                html += `<option value="percent" ${variance2Mode === 'percent' ? 'selected' : ''}>Variance (%)</option>`;
+                html += '</select>';
+                html += '</th>';
                 html += '</tr></thead>';
                 
                 html += '<tbody>';
@@ -2020,17 +2145,9 @@
                 let totalAssets2024 = 0, totalAssets2025 = 0;
                 let totalAssetsInserted = false;
                 if (statementType === 'balance-sheet') {
-                    const assetCategories = [
-                        'immateriële vaste activa',
-                        'materiële vaste activa',
-                        'voorraden',
-                        'vorderingen',
-                        'liquide middelen'
-                    ];
-                    
                     totals.forEach(row => {
                         const categoryLower = row.category.toLowerCase();
-                        if (assetCategories.some(cat => categoryLower.includes(cat))) {
+                        if (CATEGORY_DEFINITIONS.ASSETS.some(cat => categoryLower.includes(cat))) {
                             totalAssets2024 += row.amount_2024 || 0;
                             totalAssets2025 += row.amount_2025 || 0;
                         }
@@ -2058,7 +2175,7 @@
                             html += `<tr class="spacer-row"><td colspan="${colSpan}"></td></tr>`;
                             html += '<tr class="total-row">';
                             html += '<td><strong>TOTAL ASSETS</strong></td>';
-                            html += this.renderDataCells(totalAssets2024, totalAssets2025, assetsVariance, assetsVariancePercent, show2024, show2025, showVariance, 'number');
+                            html += this.renderDataCells(totalAssets2024, totalAssets2025, assetsVariance, assetsVariancePercent, show2024, show2025, variance1Mode, variance2Mode, 'number');
                             html += '</tr>';
                             html += `<tr class="spacer-row"><td colspan="${colSpan}"></td></tr>`;
                         }
@@ -2076,7 +2193,7 @@
                     if (shouldShowDetail) {
                         html += '<tr class="detail-row">';
                         html += `<td class="indent">${row.subcategory}</td>`;
-                        html += this.renderDataCells(row.amount_2024, row.amount_2025, row.variance_amount, row.variance_percent, show2024, show2025, showVariance);
+                        html += this.renderDataCells(row.amount_2024, row.amount_2025, row.variance_amount, row.variance_percent, show2024, show2025, variance1Mode, variance2Mode);
                         html += '</tr>';
                         
                         // Insert Gross Profit inline after "Kostprijs van de omzet" for Income Statement
@@ -2091,7 +2208,7 @@
                             
                             html += '<tr class="metric-row">';
                             html += '<td><strong>Brutowinst (Gross Profit)</strong></td>';
-                            html += this.renderDataCells(metrics.grossProfit['2024'], metrics.grossProfit['2025'], gpVariance, gpVariancePercent, show2024, show2025, showVariance, 'number');
+                            html += this.renderDataCells(metrics.grossProfit['2024'], metrics.grossProfit['2025'], gpVariance, gpVariancePercent, show2024, show2025, variance1Mode, variance2Mode, 'number');
                             html += '</tr>';
                             
                             // Empty line after Gross Profit
@@ -2113,7 +2230,7 @@
                             
                             html += '<tr class="metric-row">';
                             html += '<td><strong>Operating Income</strong></td>';
-                            html += this.renderDataCells(metrics.operatingIncome['2024'], metrics.operatingIncome['2025'], oiVariance, oiVariancePercent, show2024, show2025, showVariance, 'number');
+                            html += this.renderDataCells(metrics.operatingIncome['2024'], metrics.operatingIncome['2025'], oiVariance, oiVariancePercent, show2024, show2025, variance1Mode, variance2Mode, 'number');
                             html += '</tr>';
                             
                             // Empty line after Operating Income
@@ -2138,7 +2255,7 @@
                     if (showCategoryTotals) {
                         html += '<tr class="subtotal-row">';
                         html += `<td><strong>Total ${row.category}</strong></td>`;
-                        html += this.renderDataCells(row.amount_2024, row.amount_2025, row.variance_amount, row.variance_percent, show2024, show2025, showVariance, 'number');
+                        html += this.renderDataCells(row.amount_2024, row.amount_2025, row.variance_amount, row.variance_percent, show2024, show2025, variance1Mode, variance2Mode, 'number');
                         html += '</tr>';
                     }
                     
@@ -2164,7 +2281,7 @@
                     // Total Liabilities & Equity
                     html += '<tr class="total-row">';
                     html += '<td><strong>TOTAL LIABILITIES & EQUITY</strong></td>';
-                    html += this.renderDataCells(totalLiabilitiesEquity2024, totalLiabilitiesEquity2025, leVariance, leVariancePercent, show2024, show2025, showVariance, 'number');
+                    html += this.renderDataCells(totalLiabilitiesEquity2024, totalLiabilitiesEquity2025, leVariance, leVariancePercent, show2024, show2025, variance1Mode, variance2Mode, 'number');
                     html += '</tr>';
                 }
 
@@ -2178,7 +2295,7 @@
                     html += `<tr class="spacer-row"><td colspan="${colSpan}"></td></tr>`;
                     html += '<tr class="total-row">';
                     html += '<td><strong>Net Income</strong></td>';
-                    html += this.renderDataCells(metrics.netIncome['2024'], metrics.netIncome['2025'], niVariance, niVariancePercent, show2024, show2025, showVariance, 'number');
+                    html += this.renderDataCells(metrics.netIncome['2024'], metrics.netIncome['2025'], niVariance, niVariancePercent, show2024, show2025, variance1Mode, variance2Mode, 'number');
                     html += '</tr>';
                 }
 
@@ -2197,7 +2314,7 @@
                         
                         html += '<tr class="detail-row">';
                         html += '<td>Starting Cash</td>';
-                        html += this.renderDataCells(metrics.startingCash['2024'], metrics.startingCash['2025'], scVariance, scVariancePercent, show2024, show2025, showVariance);
+                        html += this.renderDataCells(metrics.startingCash['2024'], metrics.startingCash['2025'], scVariance, scVariancePercent, show2024, show2025, variance1Mode, variance2Mode);
                         html += '</tr>';
                     }
                     
@@ -2209,7 +2326,7 @@
                         
                         html += '<tr class="detail-row">';
                         html += '<td>Changes in Cash</td>';
-                        html += this.renderDataCells(metrics.netChange['2024'], metrics.netChange['2025'], ncVariance, ncVariancePercent, show2024, show2025, showVariance);
+                        html += this.renderDataCells(metrics.netChange['2024'], metrics.netChange['2025'], ncVariance, ncVariancePercent, show2024, show2025, variance1Mode, variance2Mode);
                         html += '</tr>';
                     }
                     
@@ -2221,7 +2338,7 @@
                         
                         html += '<tr class="total-row">';
                         html += '<td><strong>Ending Cash</strong></td>';
-                        html += this.renderDataCells(metrics.endingCash['2024'], metrics.endingCash['2025'], ecVariance, ecVariancePercent, show2024, show2025, showVariance, 'number');
+                        html += this.renderDataCells(metrics.endingCash['2024'], metrics.endingCash['2025'], ecVariance, ecVariancePercent, show2024, show2025, variance1Mode, variance2Mode, 'number');
                         html += '</tr>';
                     }
                 }
@@ -2261,6 +2378,30 @@
                         // Re-generate and render the current statement with new period filter
                         if (this.currentStatementType) {
                             // Trigger regeneration through the UI controller
+                            window.uiController.generateAndDisplayStatement(this.currentStatementType);
+                        }
+                    });
+                }
+                
+                // Add event listeners for variance column dropdowns
+                const variance1HeaderDropdown = container.querySelector('#variance-1-header');
+                const variance2HeaderDropdown = container.querySelector('#variance-2-header');
+                
+                if (variance1HeaderDropdown) {
+                    variance1HeaderDropdown.addEventListener('change', (e) => {
+                        e.stopPropagation(); // Prevent event bubbling
+                        // Re-render the current statement with new variance column setting
+                        if (this.currentStatementType) {
+                            window.uiController.generateAndDisplayStatement(this.currentStatementType);
+                        }
+                    });
+                }
+                
+                if (variance2HeaderDropdown) {
+                    variance2HeaderDropdown.addEventListener('change', (e) => {
+                        e.stopPropagation(); // Prevent event bubbling
+                        // Re-render the current statement with new variance column setting
+                        if (this.currentStatementType) {
                             window.uiController.generateAndDisplayStatement(this.currentStatementType);
                         }
                     });
@@ -2372,13 +2513,22 @@
                 const loadingStatus = document.getElementById('loading-status');
                 if (!loadingStatus) return;
                 
-                const config = {
-                    info: { icon: '', color: '#007bff' },
-                    error: { icon: '❌ ', color: '#dc3545' },
-                    success: { icon: '✅ ', color: '#28a745' }
+                const statusConfig = {
+                    info: { 
+                        icon: UI_CONFIG.STATUS_ICONS.INFO, 
+                        color: UI_CONFIG.STATUS_COLORS.INFO 
+                    },
+                    error: { 
+                        icon: UI_CONFIG.STATUS_ICONS.ERROR, 
+                        color: UI_CONFIG.STATUS_COLORS.ERROR 
+                    },
+                    success: { 
+                        icon: UI_CONFIG.STATUS_ICONS.SUCCESS, 
+                        color: UI_CONFIG.STATUS_COLORS.SUCCESS 
+                    }
                 };
                 
-                const { icon, color } = config[type] || config.info;
+                const { icon, color } = statusConfig[type] || statusConfig.info;
                 loadingStatus.textContent = icon + message;
                 loadingStatus.style.color = color;
             }
