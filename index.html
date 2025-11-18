@@ -420,7 +420,22 @@
             font-size: 12px;
         }
 
-        /* Variance column dropdown styling */
+        /* Header dropdown styling */
+        .period-dropdown-header {
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .period-dropdown-header option {
+            background: #007bff;
+            color: white;
+        }
+
         .variance-dropdown {
             padding: 4px 8px;
             border-radius: 4px;
@@ -436,11 +451,16 @@
             background: #007bff;
             color: white;
         }
+
+        .detail-level-dropdown {
+            width: auto;
+            min-width: 120px;
+        }
     </style>
 </head>
 <body>
     <div id="app">
-        <h1>Statement Generator <span style="font-size: 0.6em; color: rgba(255,255,255,0.8);">v2.3.0</span></h1>
+        <h1>Statement Generator <span style="font-size: 0.6em; color: rgba(255,255,255,0.8);">v2.4.0</span></h1>
         
         <!-- File Upload Section -->
         <div id="file-upload-section" class="section">
@@ -457,15 +477,7 @@
                 </div>
                 
                 <!-- Right side: File status indicators -->
-                <div class="file-status-grid" style="flex: 0 0 auto; grid-template-columns: repeat(3, auto); gap: 8px;">
-                    <div class="file-status-item clickable" data-file="tb2024" style="min-width: 220px;">
-                        <span class="file-label">TB 2024</span>
-                        <span id="status-tb2024" class="status-indicator">⚪</span>
-                    </div>
-                    <div class="file-status-item clickable" data-file="tb2025" style="min-width: 220px;">
-                        <span class="file-label">TB 2025</span>
-                        <span id="status-tb2025" class="status-indicator">⚪</span>
-                    </div>
+                <div class="file-status-grid" style="flex: 0 0 auto; grid-template-columns: auto; gap: 8px;">
                     <div class="file-status-item clickable" data-file="tb2425" style="min-width: 240px;">
                         <span class="file-label">TB 2024+2025</span>
                         <span id="status-tb2425" class="status-indicator">👁️</span>
@@ -493,16 +505,31 @@
         <div id="statement-section" class="section" style="display: none;">
             <h2>Statements</h2>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <div id="statement-tabs" class="tabs" style="margin-bottom: 0;">
-                    <button class="tab-btn active" data-statement="balance-sheet">Balance Sheet</button>
-                    <button class="tab-btn" data-statement="income-statement">Income Statement</button>
-                    <button class="tab-btn" data-statement="cash-flow">Cash Flow</button>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <label style="font-size: 13px; color: #4a5568; font-weight: 500;">Statement:</label>
+                    <select id="statement-selector" style="padding: 8px 16px; border-radius: 4px; border: 1px solid #e2e8f0; background: white; color: #4a5568; cursor: pointer; font-size: 13px; font-weight: 500;">
+                        <option value="balance-sheet">Balance Sheet</option>
+                        <option value="income-statement">Income Statement</option>
+                        <option value="cash-flow">Cash Flow</option>
+                    </select>
+                    <label style="font-size: 13px; color: #4a5568; font-weight: 500;">Columns:</label>
+                    <select id="placeholder-dropdown" style="padding: 8px 16px; border-radius: 4px; border: 1px solid #e2e8f0; background: white; color: #4a5568; cursor: pointer; font-size: 13px; font-weight: 500;">
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                        <option value="11">11</option>
+                        <option value="12">12</option>
+                    </select>
                 </div>
                 <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
-                    <label style="font-size: 13px; color: #4a5568;">
-                        <input type="checkbox" id="show-category-totals" checked style="margin-right: 5px;">
-                        Show Category Totals
-                    </label>
+                    <!-- Detail level control moved to table header -->
                 </div>
             </div>
             <div id="statement-display" class="statement-display"></div>
@@ -519,6 +546,15 @@
         // ============================================================================
         // CONSTANTS AND CONFIGURATION
         // ============================================================================
+        
+        // Application Configuration
+        const APP_CONFIG = {
+            YEARS: ['2024', '2025'],
+            PERIODS_PER_YEAR: 12,
+            DEFAULT_YEAR: '2024',
+            DEFAULT_PERIOD: 'all',
+            VERSION: '2.4.0'
+        };
         
         // Statement Types
         const STATEMENT_TYPES = {
@@ -1997,6 +2033,40 @@
                 this.sortDirection = 'asc';
             }
 
+            // Helper: Render period dropdown with optgroups
+            renderPeriodDropdown(id, currentValue, years = APP_CONFIG.YEARS) {
+                let html = '<th class="col-number">';
+                html += `<select id="${id}" class="period-dropdown-header">`;
+                
+                years.forEach(year => {
+                    html += `<optgroup label="${year}">`;
+                    html += `<option value="${year}-all" ${currentValue === `${year}-all` ? 'selected' : ''}>${year} (All)</option>`;
+                    for (let i = 1; i <= APP_CONFIG.PERIODS_PER_YEAR; i++) {
+                        const value = `${year}-${i}`;
+                        html += `<option value="${value}" ${currentValue === value ? 'selected' : ''}>${year} (P${i})</option>`;
+                    }
+                    html += '</optgroup>';
+                });
+                
+                html += '</select>';
+                html += '</th>';
+                return html;
+            }
+
+            // Helper: Render a table row with consistent structure
+            renderTableRow(type, label, amount2024, amount2025, varianceAmount, variancePercent, show2024, show2025, variance1Mode, variance2Mode, options = {}) {
+                const { colspan = 2, cssClass = 'number', bold = false, indent = false } = options;
+                const labelText = bold ? `<strong>${label}</strong>` : label;
+                const indentClass = indent ? ' class="indent"' : '';
+                
+                return `
+                    <tr class="${type}-row">
+                        <td colspan="${colspan}"${indentClass}>${labelText}</td>
+                        ${this.renderDataCells(amount2024, amount2025, varianceAmount, variancePercent, show2024, show2025, variance1Mode, variance2Mode, cssClass)}
+                    </tr>
+                `;
+            }
+
             // Format number with thousand separators (whole numbers, no decimals)
             formatNumber(value) {
                 if (value === null || value === undefined) return 'N/A';
@@ -2067,7 +2137,7 @@
                 const variance2Mode = variance2Dropdown ? variance2Dropdown.value : 'none';
                 
                 // Calculate column span dynamically
-                let colCount = 1; // Line Item column
+                let colCount = 2; // Detail Level dropdown + Line Item column
                 if (show2024) colCount++;
                 if (show2025) colCount++;
                 if (variance1Mode !== 'none') colCount++;
@@ -2078,40 +2148,25 @@
                 const currentPeriod2024 = document.getElementById('period-2024-header')?.value || '2024-all';
                 const currentPeriod2025 = document.getElementById('period-2025-header')?.value || '2025-all';
                 
+                // Get current detail level selection
+                const detailLevelDropdown = document.getElementById('detail-level-header');
+                const detailLevel = detailLevelDropdown ? detailLevelDropdown.value : 'category';
+                
                 // Table header
                 html += '<thead><tr>';
-                html += '<th class="col-label">Line Item</th>';
+                // Detail Level dropdown (no Line Item label needed)
+                html += '<th class="col-label" colspan="2">';
+                html += '<select id="detail-level-header" class="variance-dropdown detail-level-dropdown">';
+                html += `<option value="category" ${detailLevel === 'category' ? 'selected' : ''}>Category</option>`;
+                html += `<option value="subcategory" ${detailLevel === 'subcategory' ? 'selected' : ''}>Subcategory</option>`;
+                html += '</select>';
+                html += '</th>';
+                // Period dropdowns using helper function
                 if (show2024) {
-                    html += '<th class="col-number">';
-                    html += '<select id="period-2024-header" style="padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; cursor: pointer; font-size: 12px;">';
-                    // Add 2024 options
-                    html += `<option value="2024-all" ${currentPeriod2024 === '2024-all' ? 'selected' : ''}>2024 (All)</option>`;
-                    for (let i = 1; i <= 12; i++) {
-                        html += `<option value="2024-${i}" ${currentPeriod2024 === `2024-${i}` ? 'selected' : ''}>2024 (P${i})</option>`;
-                    }
-                    // Add 2025 options
-                    html += `<option value="2025-all" ${currentPeriod2024 === '2025-all' ? 'selected' : ''}>2025 (All)</option>`;
-                    for (let i = 1; i <= 12; i++) {
-                        html += `<option value="2025-${i}" ${currentPeriod2024 === `2025-${i}` ? 'selected' : ''}>2025 (P${i})</option>`;
-                    }
-                    html += '</select>';
-                    html += '</th>';
+                    html += this.renderPeriodDropdown('period-2024-header', currentPeriod2024);
                 }
                 if (show2025) {
-                    html += '<th class="col-number">';
-                    html += '<select id="period-2025-header" style="padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; cursor: pointer; font-size: 12px;">';
-                    // Add 2024 options
-                    html += `<option value="2024-all" ${currentPeriod2025 === '2024-all' ? 'selected' : ''}>2024 (All)</option>`;
-                    for (let i = 1; i <= 12; i++) {
-                        html += `<option value="2024-${i}" ${currentPeriod2025 === `2024-${i}` ? 'selected' : ''}>2024 (P${i})</option>`;
-                    }
-                    // Add 2025 options
-                    html += `<option value="2025-all" ${currentPeriod2025 === '2025-all' ? 'selected' : ''}>2025 (All)</option>`;
-                    for (let i = 1; i <= 12; i++) {
-                        html += `<option value="2025-${i}" ${currentPeriod2025 === `2025-${i}` ? 'selected' : ''}>2025 (P${i})</option>`;
-                    }
-                    html += '</select>';
-                    html += '</th>';
+                    html += this.renderPeriodDropdown('period-2025-header', currentPeriod2025);
                 }
                 // Variance Column 1
                 html += '<th class="col-number">';
@@ -2173,10 +2228,7 @@
                             const assetsVariancePercent = totalAssets2024 !== 0 ? (assetsVariance / Math.abs(totalAssets2024)) * 100 : 0;
                             
                             html += `<tr class="spacer-row"><td colspan="${colSpan}"></td></tr>`;
-                            html += '<tr class="total-row">';
-                            html += '<td><strong>TOTAL ASSETS</strong></td>';
-                            html += this.renderDataCells(totalAssets2024, totalAssets2025, assetsVariance, assetsVariancePercent, show2024, show2025, variance1Mode, variance2Mode, 'number');
-                            html += '</tr>';
+                            html += this.renderTableRow('total', 'TOTAL ASSETS', totalAssets2024, totalAssets2025, assetsVariance, assetsVariancePercent, show2024, show2025, variance1Mode, variance2Mode, { bold: true });
                             html += `<tr class="spacer-row"><td colspan="${colSpan}"></td></tr>`;
                         }
                     }
@@ -2191,10 +2243,7 @@
                     const shouldShowDetail = row.subcategory;
                     
                     if (shouldShowDetail) {
-                        html += '<tr class="detail-row">';
-                        html += `<td class="indent">${row.subcategory}</td>`;
-                        html += this.renderDataCells(row.amount_2024, row.amount_2025, row.variance_amount, row.variance_percent, show2024, show2025, variance1Mode, variance2Mode);
-                        html += '</tr>';
+                        html += this.renderTableRow('detail', row.subcategory, row.amount_2024, row.amount_2025, row.variance_amount, row.variance_percent, show2024, show2025, variance1Mode, variance2Mode, { indent: true });
                         
                         // Insert Gross Profit inline after "Kostprijs van de omzet" for Income Statement
                         if (statementType === 'income-statement' && 
@@ -2206,10 +2255,7 @@
                             const gpVariancePercent = metrics.grossProfit['2024'] !== 0 ? 
                                 (gpVariance / Math.abs(metrics.grossProfit['2024'])) * 100 : 0;
                             
-                            html += '<tr class="metric-row">';
-                            html += '<td><strong>Brutowinst (Gross Profit)</strong></td>';
-                            html += this.renderDataCells(metrics.grossProfit['2024'], metrics.grossProfit['2025'], gpVariance, gpVariancePercent, show2024, show2025, variance1Mode, variance2Mode, 'number');
-                            html += '</tr>';
+                            html += this.renderTableRow('metric', 'Brutowinst (Gross Profit)', metrics.grossProfit['2024'], metrics.grossProfit['2025'], gpVariance, gpVariancePercent, show2024, show2025, variance1Mode, variance2Mode, { bold: true });
                             
                             // Empty line after Gross Profit
                             html += `<tr class="spacer-row"><td colspan="${colSpan}"></td></tr>`;
@@ -2228,10 +2274,7 @@
                             const oiVariancePercent = metrics.operatingIncome['2024'] !== 0 ? 
                                 (oiVariance / Math.abs(metrics.operatingIncome['2024'])) * 100 : 0;
                             
-                            html += '<tr class="metric-row">';
-                            html += '<td><strong>Operating Income</strong></td>';
-                            html += this.renderDataCells(metrics.operatingIncome['2024'], metrics.operatingIncome['2025'], oiVariance, oiVariancePercent, show2024, show2025, variance1Mode, variance2Mode, 'number');
-                            html += '</tr>';
+                            html += this.renderTableRow('metric', 'Operating Income', metrics.operatingIncome['2024'], metrics.operatingIncome['2025'], oiVariance, oiVariancePercent, show2024, show2025, variance1Mode, variance2Mode, { bold: true });
                             
                             // Empty line after Operating Income
                             html += `<tr class="spacer-row"><td colspan="${colSpan}"></td></tr>`;
@@ -2239,24 +2282,21 @@
                     }
                 });
 
-                // Check if category totals should be shown
-                const showCategoryTotals = document.getElementById('show-category-totals')?.checked !== false;
+                // Check if category totals should be shown (based on detail level)
+                const showCategoryTotals = detailLevel === 'category';
                 
                 // Calculate grand totals for Balance Sheet (Liabilities & Equity only, Assets already shown)
                 let totalLiabilitiesEquity2024 = 0, totalLiabilitiesEquity2025 = 0;
                 
                 // Add category totals (optional)
                 if (showCategoryTotals) {
-                    html += '<tr class="spacer-row"><td colspan="5"></td></tr>';
-                    html += '<tr class="section-header"><td colspan="5"><strong>Category Totals</strong></td></tr>';
+                    html += `<tr class="spacer-row"><td colspan="${colSpan}"></td></tr>`;
+                    html += `<tr class="section-header"><td colspan="${colSpan}"><strong>Category Totals</strong></td></tr>`;
                 }
                 
                 totals.forEach(row => {
                     if (showCategoryTotals) {
-                        html += '<tr class="subtotal-row">';
-                        html += `<td><strong>Total ${row.category}</strong></td>`;
-                        html += this.renderDataCells(row.amount_2024, row.amount_2025, row.variance_amount, row.variance_percent, show2024, show2025, variance1Mode, variance2Mode, 'number');
-                        html += '</tr>';
+                        html += this.renderTableRow('subtotal', `Total ${row.category}`, row.amount_2024, row.amount_2025, row.variance_amount, row.variance_percent, show2024, show2025, variance1Mode, variance2Mode, { bold: true });
                     }
                     
                     // Accumulate for Balance Sheet Liabilities & Equity total
@@ -2279,10 +2319,7 @@
                     html += `<tr class="spacer-row"><td colspan="${colSpan}"></td></tr>`;
                     
                     // Total Liabilities & Equity
-                    html += '<tr class="total-row">';
-                    html += '<td><strong>TOTAL LIABILITIES & EQUITY</strong></td>';
-                    html += this.renderDataCells(totalLiabilitiesEquity2024, totalLiabilitiesEquity2025, leVariance, leVariancePercent, show2024, show2025, variance1Mode, variance2Mode, 'number');
-                    html += '</tr>';
+                    html += this.renderTableRow('total', 'TOTAL LIABILITIES & EQUITY', totalLiabilitiesEquity2024, totalLiabilitiesEquity2025, leVariance, leVariancePercent, show2024, show2025, variance1Mode, variance2Mode, { bold: true });
                 }
 
                 // Add Net Income at the bottom for Income Statement (after all categories, similar to bottom line)
@@ -2293,10 +2330,7 @@
                         (niVariance / Math.abs(metrics.netIncome['2024'])) * 100 : 0;
                     
                     html += `<tr class="spacer-row"><td colspan="${colSpan}"></td></tr>`;
-                    html += '<tr class="total-row">';
-                    html += '<td><strong>Net Income</strong></td>';
-                    html += this.renderDataCells(metrics.netIncome['2024'], metrics.netIncome['2025'], niVariance, niVariancePercent, show2024, show2025, variance1Mode, variance2Mode, 'number');
-                    html += '</tr>';
+                    html += this.renderTableRow('total', 'Net Income', metrics.netIncome['2024'], metrics.netIncome['2025'], niVariance, niVariancePercent, show2024, show2025, variance1Mode, variance2Mode, { bold: true });
                 }
 
                 // Add cash reconciliation for Cash Flow Statement
@@ -2312,10 +2346,7 @@
                         const scVariancePercent = metrics.startingCash['2024'] !== 0 ? 
                             (scVariance / Math.abs(metrics.startingCash['2024'])) * 100 : 0;
                         
-                        html += '<tr class="detail-row">';
-                        html += '<td>Starting Cash</td>';
-                        html += this.renderDataCells(metrics.startingCash['2024'], metrics.startingCash['2025'], scVariance, scVariancePercent, show2024, show2025, variance1Mode, variance2Mode);
-                        html += '</tr>';
+                        html += this.renderTableRow('detail', 'Starting Cash', metrics.startingCash['2024'], metrics.startingCash['2025'], scVariance, scVariancePercent, show2024, show2025, variance1Mode, variance2Mode);
                     }
                     
                     // Net Change in Cash
@@ -2324,10 +2355,7 @@
                         const ncVariancePercent = metrics.netChange['2024'] !== 0 ? 
                             (ncVariance / Math.abs(metrics.netChange['2024'])) * 100 : 0;
                         
-                        html += '<tr class="detail-row">';
-                        html += '<td>Changes in Cash</td>';
-                        html += this.renderDataCells(metrics.netChange['2024'], metrics.netChange['2025'], ncVariance, ncVariancePercent, show2024, show2025, variance1Mode, variance2Mode);
-                        html += '</tr>';
+                        html += this.renderTableRow('detail', 'Changes in Cash', metrics.netChange['2024'], metrics.netChange['2025'], ncVariance, ncVariancePercent, show2024, show2025, variance1Mode, variance2Mode);
                     }
                     
                     // Ending Cash
@@ -2336,20 +2364,17 @@
                         const ecVariancePercent = metrics.endingCash['2024'] !== 0 ? 
                             (ecVariance / Math.abs(metrics.endingCash['2024'])) * 100 : 0;
                         
-                        html += '<tr class="total-row">';
-                        html += '<td><strong>Ending Cash</strong></td>';
-                        html += this.renderDataCells(metrics.endingCash['2024'], metrics.endingCash['2025'], ecVariance, ecVariancePercent, show2024, show2025, variance1Mode, variance2Mode, 'number');
-                        html += '</tr>';
+                        html += this.renderTableRow('total', 'Ending Cash', metrics.endingCash['2024'], metrics.endingCash['2025'], ecVariance, ecVariancePercent, show2024, show2025, variance1Mode, variance2Mode, { bold: true });
                     }
                 }
 
                 // Add balance check for Balance Sheet
                 if (statementType === 'balance-sheet' && statementData.balanced !== undefined) {
-                    html += '<tr class="spacer-row"><td colspan="5"></td></tr>';
+                    html += `<tr class="spacer-row"><td colspan="${colSpan}"></td></tr>`;
                     if (statementData.balanced) {
-                        html += '<tr class="info-row"><td colspan="5" class="success-message">✅ Balance Sheet is balanced</td></tr>';
+                        html += `<tr class="info-row"><td colspan="${colSpan}" class="success-message">✅ Balance Sheet is balanced</td></tr>`;
                     } else {
-                        html += `<tr class="info-row"><td colspan="5" class="warning-message">⚠️ Balance Sheet imbalance: ${this.formatNumber(statementData.imbalance)}</td></tr>`;
+                        html += `<tr class="info-row"><td colspan="${colSpan}" class="warning-message">⚠️ Balance Sheet imbalance: ${this.formatNumber(statementData.imbalance)}</td></tr>`;
                     }
                 }
 
@@ -2401,6 +2426,19 @@
                     variance2HeaderDropdown.addEventListener('change', (e) => {
                         e.stopPropagation(); // Prevent event bubbling
                         // Re-render the current statement with new variance column setting
+                        if (this.currentStatementType) {
+                            window.uiController.generateAndDisplayStatement(this.currentStatementType);
+                        }
+                    });
+                }
+                
+                // Add event listener for detail level dropdown
+                const detailLevelHeaderDropdown = container.querySelector('#detail-level-header');
+                
+                if (detailLevelHeaderDropdown) {
+                    detailLevelHeaderDropdown.addEventListener('change', (e) => {
+                        e.stopPropagation(); // Prevent event bubbling
+                        // Re-render the current statement with new detail level setting
                         if (this.currentStatementType) {
                             window.uiController.generateAndDisplayStatement(this.currentStatementType);
                         }
@@ -2894,15 +2932,13 @@
                 }
             }
 
-            // Handle tab switching
+            // Handle statement selection
             handleTabSwitch(statementType) {
-                // Update active tab
-                document.querySelectorAll('.tab-btn').forEach(btn => {
-                    btn.classList.remove('active');
-                    if (btn.dataset.statement === statementType) {
-                        btn.classList.add('active');
-                    }
-                });
+                // Update dropdown selection
+                const statementSelector = document.getElementById('statement-selector');
+                if (statementSelector) {
+                    statementSelector.value = statementType;
+                }
                 
                 // Generate and display the selected statement
                 this.generateAndDisplayStatement(statementType);
@@ -2976,12 +3012,13 @@
                     this.handleSelectInputDirectory();
                 });
 
-                // Tab switching
-                document.querySelectorAll('.tab-btn').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        this.handleTabSwitch(btn.dataset.statement);
+                // Statement selector dropdown
+                const statementSelector = document.getElementById('statement-selector');
+                if (statementSelector) {
+                    statementSelector.addEventListener('change', () => {
+                        this.handleTabSwitch(statementSelector.value);
                     });
-                });
+                }
 
                 // Export button
                 document.getElementById('export-all').addEventListener('click', () => {
@@ -3009,13 +3046,7 @@
                     }
                 });
                 
-                // Category totals toggle
-                document.getElementById('show-category-totals')?.addEventListener('change', () => {
-                    // Re-render the current statement
-                    if (this.currentStatementType) {
-                        this.handleTabSwitch(this.currentStatementType);
-                    }
-                });
+                // Detail level dropdown is now in the table header and handled by the table's event listeners
             }
         }
 

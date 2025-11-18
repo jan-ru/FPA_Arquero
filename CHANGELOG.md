@@ -5,6 +5,28 @@ All notable changes to the Financial Statement Generator will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2025-11-18
+
+### Added
+- **Code Refactoring**: Major improvements to code maintainability and DRY principles
+  - Extracted `renderPeriodDropdown()` helper method (eliminated 80+ lines of duplication)
+  - Extracted `renderTableRow()` helper method for consistent row rendering (eliminated 20+ lines)
+  - Added `APP_CONFIG` object for centralized configuration (years, periods, version)
+  - Added CSS classes for dropdowns (`.period-dropdown-header`, `.detail-level-dropdown`)
+
+### Changed
+- **Period Dropdowns**: Now use `<optgroup>` for better organization (2024 group, 2025 group)
+- **Statement Selector**: Converted from tab buttons to dropdown for cleaner UI
+- **Detail Level Control**: Moved from checkbox to dropdown in table header
+- **File Status**: Removed individual TB 2024 and TB 2025 buttons, kept only TB 2024+2025
+- **Inline Styles**: Moved to CSS classes for better maintainability
+
+### Improved
+- Reduced codebase by ~100 lines while maintaining all functionality
+- Better code organization and consistency
+- Easier to add new years or modify dropdown behavior
+- More maintainable row rendering logic
+
 ## [2.3.0] - 2025-11-18
 
 ### Added
