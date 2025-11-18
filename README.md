@@ -240,13 +240,16 @@ For issues or questions:
 
 ## Version
 
-**Current Version:** 1.2.0
+**Current Version:** 2.4.0
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed version history and release notes.
 
-### What's New in 1.2.0
-- Enhanced period validation (validates 22 year-month combinations)
-- Reorganized test structure (test/ directory)
-- Comprehensive file naming documentation
-- Dutch month name support in validation
-- Test suite: 1/2 passing (period ✅, account 99.2% coverage)
+### What's New in 2.4.0
+- **Major Code Refactoring**: Improved maintainability and reduced codebase by ~100 lines
+- **Enhanced UI**: Statement selector now a dropdown, period dropdowns use optgroup organization
+- **Better Code Organization**: Extracted reusable helper methods for period dropdowns and row rendering
+- **Centralized Configuration**: Added APP_CONFIG for easier maintenance
+- **Cleaner Styling**: Moved inline styles to CSS classes
+- **Simplified File Status**: Single TB 2024+2025 button
+- **Detail Level Control**: Moved to table header for better UX
+- All tests passing ✅
