@@ -577,7 +577,7 @@
             PERIODS_PER_YEAR: 12,
             DEFAULT_YEAR: '2024',
             DEFAULT_PERIOD: 'all',
-            VERSION: '2.6.0'
+            VERSION: '2.7.0'
         };
         
         // Statement Types
@@ -1451,19 +1451,29 @@
                     let filtered = combinedMovements.params({ statementType }).filter(d => d.statement_type === statementType);
 
                     // Apply period filters if specified
-                    // Parse year-period combinations (format: "2024-all", "2024-1", "2025-6", etc.)
+                    // Parse year-period combinations (format: "2024-all", "2024-1", "2024-Q1", "2025-6", etc.)
                     const period2024Value = options.period2024 || '2024-all';
                     const period2025Value = options.period2025 || '2025-all';
-                    
+
+                    // Helper function to parse period value (handles 'all', quarters 'Q1-Q4', and individual periods)
+                    const parsePeriod = (periodStr) => {
+                        if (periodStr === 'all') return 999;
+                        if (periodStr.startsWith('Q')) {
+                            const quarter = parseInt(periodStr.substring(1));
+                            return quarter * 3; // Q1=3, Q2=6, Q3=9, Q4=12
+                        }
+                        return parseInt(periodStr);
+                    };
+
                     // Parse first column selection (year-period)
                     const [year2024Str, period2024Str] = period2024Value.split('-');
                     const year2024 = parseInt(year2024Str);
-                    const period2024 = period2024Str === 'all' ? 999 : parseInt(period2024Str);
-                    
+                    const period2024 = parsePeriod(period2024Str);
+
                     // Parse second column selection (year-period)
                     const [year2025Str, period2025Str] = period2025Value.split('-');
                     const year2025 = parseInt(year2025Str);
-                    const period2025 = period2025Str === 'all' ? 999 : parseInt(period2025Str);
+                    const period2025 = parsePeriod(period2025Str);
                     
                     // Filter data based on selected year-period combinations
                     if (period2024Value !== '2024-all' || period2025Value !== '2025-all') {
@@ -2197,17 +2207,25 @@
             renderPeriodDropdown(id, currentValue, years = APP_CONFIG.YEARS) {
                 let html = '<th class="col-number">';
                 html += `<select id="${id}" class="period-dropdown-header">`;
-                
+
                 years.forEach(year => {
                     html += `<optgroup label="${year}">`;
                     html += `<option value="${year}-all" ${currentValue === `${year}-all` ? 'selected' : ''}>${year} (All)</option>`;
+
+                    // Add quarter options
+                    for (let q = 1; q <= 4; q++) {
+                        const value = `${year}-Q${q}`;
+                        html += `<option value="${value}" ${currentValue === value ? 'selected' : ''}>${year} (Q${q})</option>`;
+                    }
+
+                    // Add individual period options
                     for (let i = 1; i <= APP_CONFIG.PERIODS_PER_YEAR; i++) {
                         const value = `${year}-${i}`;
                         html += `<option value="${value}" ${currentValue === value ? 'selected' : ''}>${year} (P${i})</option>`;
                     }
                     html += '</optgroup>';
                 });
-                
+
                 html += '</select>';
                 html += '</th>';
                 return html;
