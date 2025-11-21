@@ -577,7 +577,7 @@
             PERIODS_PER_YEAR: 12,
             DEFAULT_YEAR: '2024',
             DEFAULT_PERIOD: 'all',
-            VERSION: '2.7.0'
+            VERSION: '2.8.0'
         };
         
         // Statement Types
@@ -708,6 +708,54 @@
             BALANCE_SHEET: 'balance-sheet',
             INCOME_STATEMENT: 'income-statement',
             CASH_FLOW: 'cash-flow'
+        };
+
+        // Year Configuration Helper (supports 2, 3, or more years dynamically)
+        const YEAR_CONFIG = {
+            // Get all years from APP_CONFIG
+            get years() {
+                return APP_CONFIG.YEARS;
+            },
+
+            // Get number of years
+            get yearCount() {
+                return APP_CONFIG.YEARS.length;
+            },
+
+            // Get specific year by index (0-based)
+            getYear(index) {
+                return APP_CONFIG.YEARS[index];
+            },
+
+            // Get column name for a year
+            getAmountColumn(year) {
+                return `amount_${year}`;
+            },
+
+            // Get all amount column names
+            get amountColumns() {
+                return APP_CONFIG.YEARS.map(year => `amount_${year}`);
+            },
+
+            // Get year pairs for variance calculations (adjacent years)
+            get yearPairs() {
+                const pairs = [];
+                for (let i = 0; i < APP_CONFIG.YEARS.length - 1; i++) {
+                    pairs.push({
+                        prior: APP_CONFIG.YEARS[i],
+                        current: APP_CONFIG.YEARS[i + 1],
+                        priorColumn: `amount_${APP_CONFIG.YEARS[i]}`,
+                        currentColumn: `amount_${APP_CONFIG.YEARS[i + 1]}`,
+                        varianceColumn: `variance_${APP_CONFIG.YEARS[i]}_${APP_CONFIG.YEARS[i + 1]}`
+                    });
+                }
+                return pairs;
+            },
+
+            // Get default period value for a year
+            getDefaultPeriod(year) {
+                return `${year}-all`;
+            }
         };
 
         // Configuration (loaded from config.json)
@@ -1356,30 +1404,42 @@
 
             // Helper: Calculate variance columns
             deriveVarianceColumns(combined) {
+                // Use YEAR_CONFIG for dynamic year references (currently supports 2 years)
+                const year1 = YEAR_CONFIG.getYear(0); // First year (e.g., '2024')
+                const year2 = YEAR_CONFIG.getYear(1); // Second year (e.g., '2025')
+                const col1 = YEAR_CONFIG.getAmountColumn(year1); // 'amount_2024'
+                const col2 = YEAR_CONFIG.getAmountColumn(year2); // 'amount_2025'
+
                 return combined.derive({
-                    amount_2024: d => d.amount_2024 || 0,
-                    amount_2025: d => d.amount_2025 || 0,
-                    variance_amount: d => (d.amount_2025 || 0) - (d.amount_2024 || 0),
+                    [col1]: d => d[col1] || 0,
+                    [col2]: d => d[col2] || 0,
+                    variance_amount: d => (d[col2] || 0) - (d[col1] || 0),
                     variance_percent: d => {
-                        const amt2024 = d.amount_2024 || 0;
-                        const amt2025 = d.amount_2025 || 0;
-                        return amt2024 !== 0 ? ((amt2025 - amt2024) / Math.abs(amt2024)) * 100 : 0;
+                        const amt1 = d[col1] || 0;
+                        const amt2 = d[col2] || 0;
+                        return amt1 !== 0 ? ((amt2 - amt1) / Math.abs(amt1)) * 100 : 0;
                     }
                 });
             }
 
             // Helper: Calculate category totals
             calculateCategoryTotals(combined) {
+                // Use YEAR_CONFIG for dynamic year references (currently supports 2 years)
+                const year1 = YEAR_CONFIG.getYear(0);
+                const year2 = YEAR_CONFIG.getYear(1);
+                const col1 = YEAR_CONFIG.getAmountColumn(year1);
+                const col2 = YEAR_CONFIG.getAmountColumn(year2);
+
                 return combined
                     .groupby('name1')
                     .rollup({
-                        amount_2024: d => aq.op.sum(d.amount_2024),
-                        amount_2025: d => aq.op.sum(d.amount_2025),
+                        [col1]: d => aq.op.sum(d[col1]),
+                        [col2]: d => aq.op.sum(d[col2]),
                         variance_amount: d => aq.op.sum(d.variance_amount),
                         variance_percent: d => {
-                            const total2024 = aq.op.sum(d.amount_2024);
-                            const total2025 = aq.op.sum(d.amount_2025);
-                            return total2024 !== 0 ? ((total2025 - total2024) / Math.abs(total2024)) * 100 : 0;
+                            const total1 = aq.op.sum(d[col1]);
+                            const total2 = aq.op.sum(d[col2]);
+                            return total1 !== 0 ? ((total2 - total1) / Math.abs(total1)) * 100 : 0;
                         }
                     });
             }
