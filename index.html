@@ -577,7 +577,7 @@
             PERIODS_PER_YEAR: 12,
             DEFAULT_YEAR: '2024',
             DEFAULT_PERIOD: 'all',
-            VERSION: '2.5.0'
+            VERSION: '2.6.0'
         };
         
         // Statement Types
@@ -703,8 +703,141 @@
             ]
         };
 
+        // UI Statement Type Constants (for rendering and display logic)
+        const UI_STATEMENT_TYPES = {
+            BALANCE_SHEET: 'balance-sheet',
+            INCOME_STATEMENT: 'income-statement',
+            CASH_FLOW: 'cash-flow'
+        };
+
         // Configuration (loaded from config.json)
         let config = null;
+
+        // ============================================================================
+        // UTILITY CLASSES
+        // ============================================================================
+
+        // CategoryMatcher - Utility for matching categories against patterns
+        class CategoryMatcher {
+            /**
+             * Check if a category name matches any of the given patterns
+             * @param {string} categoryName - The category name to check
+             * @param {string[]} patterns - Array of patterns to match
+             * @param {string[]} excludePatterns - Optional patterns to exclude
+             * @returns {boolean} True if matches any pattern and not excluded
+             */
+            static matches(categoryName, patterns, excludePatterns = []) {
+                if (!categoryName) return false;
+
+                const lower = categoryName.toLowerCase();
+                const hasMatch = patterns.some(pattern => lower.includes(pattern));
+                const hasExclude = excludePatterns.length > 0 &&
+                                  excludePatterns.some(pattern => lower.includes(pattern));
+
+                return hasMatch && !hasExclude;
+            }
+
+            // Balance Sheet category matchers
+            static isAsset(categoryName) {
+                return CATEGORY_DEFINITIONS.ASSETS.some(cat =>
+                    this.matches(categoryName, [cat])
+                );
+            }
+
+            static isLiability(categoryName) {
+                return CATEGORY_DEFINITIONS.LIABILITIES.some(cat =>
+                    this.matches(categoryName, [cat])
+                );
+            }
+
+            static isEquity(categoryName) {
+                return CATEGORY_DEFINITIONS.EQUITY.some(cat =>
+                    this.matches(categoryName, [cat])
+                );
+            }
+
+            // Income Statement category matchers
+            static isRevenue(categoryName) {
+                return this.matches(categoryName, ['omzet'], ['kostprijs']);
+            }
+
+            static isCOGS(categoryName) {
+                return this.matches(categoryName, ['kostprijs']);
+            }
+
+            static isOperatingExpense(categoryName) {
+                return this.matches(categoryName, ['kosten', 'bedrijf']);
+            }
+
+            static isOtherIncome(categoryName) {
+                return this.matches(categoryName, ['overige', 'opbrengst']);
+            }
+
+            static isTax(categoryName) {
+                return this.matches(categoryName, ['belasting', 'tax']);
+            }
+
+            // Cash Flow category matchers
+            static isDepreciation(categoryName) {
+                return this.matches(categoryName, ['afschrijving', 'depreciation', 'amortization']);
+            }
+
+            static isCurrentAsset(categoryName) {
+                return this.matches(categoryName, ['vlottende', 'current']);
+            }
+
+            static isFixedAsset(categoryName) {
+                return this.matches(categoryName, ['vaste activa', 'fixed assets']);
+            }
+
+            static isLongTermLiability(categoryName) {
+                return this.matches(categoryName, ['eigen vermogen', 'equity', 'langlopend', 'long-term']);
+            }
+
+            // UI rendering helpers
+            static isLiabilityOrEquity(categoryName) {
+                return this.matches(categoryName, ['passiva', 'vermogen', 'liabilit', 'equity', 'schuld']);
+            }
+        }
+
+        // VarianceCalculator - Utility for calculating variances and percentages
+        class VarianceCalculator {
+            /**
+             * Calculate variance amount and percentage between two values
+             * @param {number} current - Current period value
+             * @param {number} prior - Prior period value
+             * @returns {{amount: number, percent: number}} Variance amount and percent
+             */
+            static calculate(current, prior) {
+                const amount = current - prior;
+                const percent = prior !== 0 ? (amount / Math.abs(prior)) * 100 : 0;
+                return { amount, percent };
+            }
+
+            /**
+             * Calculate variance for a metric object with year keys
+             * @param {Object} metric - Object with year keys (e.g., {'2024': 100, '2025': 120})
+             * @param {string} yearCurrent - Current year key
+             * @param {string} yearPrior - Prior year key
+             * @returns {{amount: number, percent: number}} Variance amount and percent
+             */
+            static calculateForMetric(metric, yearCurrent, yearPrior) {
+                return this.calculate(metric[yearCurrent] || 0, metric[yearPrior] || 0);
+            }
+
+            /**
+             * Calculate variance for a row with amount_2024 and amount_2025 properties
+             * @param {Object} row - Row object with amount_2024 and amount_2025
+             * @returns {{amount: number, percent: number}} Variance amount and percent
+             */
+            static calculateForRow(row) {
+                return this.calculate(row.amount_2025 || 0, row.amount_2024 || 0);
+            }
+        }
+
+        // ============================================================================
+        // DATA MANAGEMENT CLASSES
+        // ============================================================================
 
         // DataStore class for state management (Singleton pattern)
         class DataStore {
@@ -1410,15 +1543,13 @@
                     validateBalance: (categoryTotals) => {
                         const totals = categoryTotals.objects();
                         let totalAssets = 0, totalLiabilities = 0, totalEquity = 0;
-                        
+
                         totals.forEach(row => {
-                            const categoryLower = row.name1.toLowerCase();
-                            
-                            if (CATEGORY_DEFINITIONS.ASSETS.some(cat => categoryLower.includes(cat))) {
+                            if (CategoryMatcher.isAsset(row.name1)) {
                                 totalAssets += row.amount_2025 || 0;
-                            } else if (CATEGORY_DEFINITIONS.LIABILITIES.some(cat => categoryLower.includes(cat))) {
+                            } else if (CategoryMatcher.isLiability(row.name1)) {
                                 totalLiabilities += row.amount_2025 || 0;
-                            } else if (CATEGORY_DEFINITIONS.EQUITY.some(cat => categoryLower.includes(cat))) {
+                            } else if (CategoryMatcher.isEquity(row.name1)) {
                                 totalEquity += row.amount_2025 || 0;
                             }
                         });
@@ -1455,30 +1586,28 @@
                         let taxes2024 = 0, taxes2025 = 0;
 
                         totals.forEach(row => {
-                            const categoryLower = row.name1.toLowerCase();
-                            
                             // Revenue (Netto-omzet, Omzet, etc.)
-                            if (categoryLower.includes('omzet') && !categoryLower.includes('kostprijs')) {
+                            if (CategoryMatcher.isRevenue(row.name1)) {
                                 revenue2024 += row.amount_2024 || 0;
                                 revenue2025 += row.amount_2025 || 0;
-                            } 
+                            }
                             // Cost of Goods Sold (Kostprijs van de omzet)
-                            else if (categoryLower.includes('kostprijs')) {
+                            else if (CategoryMatcher.isCOGS(row.name1)) {
                                 cogs2024 += row.amount_2024 || 0;
                                 cogs2025 += row.amount_2025 || 0;
-                            } 
+                            }
                             // Operating Expenses (Bedrijfskosten, Kosten, etc.)
-                            else if (categoryLower.includes('kosten') || categoryLower.includes('bedrijf')) {
+                            else if (CategoryMatcher.isOperatingExpense(row.name1)) {
                                 opex2024 += row.amount_2024 || 0;
                                 opex2025 += row.amount_2025 || 0;
-                            } 
+                            }
                             // Other Income (Overige opbrengsten, etc.)
-                            else if (categoryLower.includes('overige') || categoryLower.includes('opbrengst')) {
+                            else if (CategoryMatcher.isOtherIncome(row.name1)) {
                                 otherIncome2024 += row.amount_2024 || 0;
                                 otherIncome2025 += row.amount_2025 || 0;
-                            } 
+                            }
                             // Taxes (Belastingen)
-                            else if (categoryLower.includes('belasting') || categoryLower.includes('tax')) {
+                            else if (CategoryMatcher.isTax(row.name1)) {
                                 taxes2024 += row.amount_2024 || 0;
                                 taxes2025 += row.amount_2025 || 0;
                             }
@@ -1528,11 +1657,7 @@
                     
                     // Add back non-cash expenses (depreciation, amortization)
                     balanceDetails.forEach(row => {
-                        if (row.name2 && (
-                            row.name2.toLowerCase().includes('afschrijving') ||
-                            row.name2.toLowerCase().includes('depreciation') ||
-                            row.name2.toLowerCase().includes('amortization')
-                        )) {
+                        if (CategoryMatcher.isDepreciation(row.name2)) {
                             cashFlowData.push({
                                 category: 'Operating Activities',
                                 subcategory: row.name2,
@@ -1544,10 +1669,7 @@
                     
                     // Changes in working capital (current assets and liabilities)
                     balanceDetails.forEach(row => {
-                        if (row.name1 && (
-                            row.name1.toLowerCase().includes('vlottende') ||
-                            row.name1.toLowerCase().includes('current')
-                        )) {
+                        if (CategoryMatcher.isCurrentAsset(row.name1)) {
                             const change = (row.amount_2025 || 0) - (row.amount_2024 || 0);
                             if (Math.abs(change) > 0) {
                                 cashFlowData.push({
@@ -1562,10 +1684,7 @@
                     
                     // Investing Activities (changes in fixed assets)
                     balanceDetails.forEach(row => {
-                        if (row.name1 && (
-                            row.name1.toLowerCase().includes('vaste activa') ||
-                            row.name1.toLowerCase().includes('fixed assets')
-                        )) {
+                        if (CategoryMatcher.isFixedAsset(row.name1)) {
                             const change = (row.amount_2025 || 0) - (row.amount_2024 || 0);
                             if (Math.abs(change) > 0) {
                                 cashFlowData.push({
@@ -1580,12 +1699,7 @@
                     
                     // Financing Activities (changes in equity and long-term liabilities)
                     balanceDetails.forEach(row => {
-                        if (row.name1 && (
-                            row.name1.toLowerCase().includes('eigen vermogen') ||
-                            row.name1.toLowerCase().includes('equity') ||
-                            row.name1.toLowerCase().includes('langlopend') ||
-                            row.name1.toLowerCase().includes('long-term')
-                        )) {
+                        if (CategoryMatcher.isLongTermLiability(row.name1)) {
                             const change = (row.amount_2025 || 0) - (row.amount_2024 || 0);
                             if (Math.abs(change) > 0) {
                                 cashFlowData.push({
@@ -2171,7 +2285,7 @@
                 let show2025 = header2025Checkbox ? header2025Checkbox.checked : true;
                 
                 // Override for Cash Flow: only show 2025
-                if (statementType === 'cash-flow') {
+                if (statementType === UI_STATEMENT_TYPES.CASH_FLOW) {
                     show2024 = false;
                     show2025 = true;
                 }
@@ -2245,7 +2359,7 @@
                 // Current Assets = Voorraden + Vorderingen + Liquide Middelen
                 let totalAssets2024 = 0, totalAssets2025 = 0;
                 let totalAssetsInserted = false;
-                if (statementType === 'balance-sheet') {
+                if (statementType === UI_STATEMENT_TYPES.BALANCE_SHEET) {
                     totals.forEach(row => {
                         const categoryLower = row.name1.toLowerCase();
                         if (CATEGORY_DEFINITIONS.ASSETS.some(cat => categoryLower.includes(cat))) {
@@ -2262,16 +2376,14 @@
                 
                 details.forEach(row => {
                     // Insert Total Assets before first Passiva/Eigen vermogen category for Balance Sheet
-                    if (statementType === 'balance-sheet' && 
+                    if (statementType === UI_STATEMENT_TYPES.BALANCE_SHEET &&
                         !totalAssetsInserted &&
                         row.name1 !== currentCategory) {
-                        const categoryLower = row.name1.toLowerCase();
-                        if (categoryLower.includes('passiva') || categoryLower.includes('vermogen') || 
-                            categoryLower.includes('liabilit') || categoryLower.includes('equity')) {
+                        if (CategoryMatcher.isLiabilityOrEquity(row.name1)) {
                             
                             totalAssetsInserted = true;
-                            const assetsVariance = totalAssets2025 - totalAssets2024;
-                            const assetsVariancePercent = totalAssets2024 !== 0 ? (assetsVariance / Math.abs(totalAssets2024)) * 100 : 0;
+                            const { amount: assetsVariance, percent: assetsVariancePercent } =
+                                VarianceCalculator.calculate(totalAssets2025, totalAssets2024);
                             
                             html += `<tr class="spacer-row"><td colspan="${colSpan}"></td></tr>`;
                             html += this.renderTableRow('total', 'TOTAL ASSETS', totalAssets2024, totalAssets2025, assetsVariance, assetsVariancePercent, show2024, show2025, variance1Mode, variance2Mode, { bold: true });
@@ -2292,14 +2404,13 @@
                         html += this.renderTableRow('detail', row.name2, row.amount_2024, row.amount_2025, row.variance_amount, row.variance_percent, show2024, show2025, variance1Mode, variance2Mode, { indent: true });
                         
                         // Insert Gross Profit inline after "Kostprijs van de omzet" for Income Statement
-                        if (statementType === 'income-statement' && 
+                        if (statementType === UI_STATEMENT_TYPES.INCOME_STATEMENT && 
                             statementData.metrics && 
                             row.name2.toLowerCase().includes('kostprijs')) {
                             
                             const metrics = statementData.metrics;
-                            const gpVariance = metrics.grossProfit['2025'] - metrics.grossProfit['2024'];
-                            const gpVariancePercent = metrics.grossProfit['2024'] !== 0 ? 
-                                (gpVariance / Math.abs(metrics.grossProfit['2024'])) * 100 : 0;
+                            const { amount: gpVariance, percent: gpVariancePercent } =
+                                VarianceCalculator.calculateForMetric(metrics.grossProfit, '2025', '2024');
                             
                             html += this.renderTableRow('metric', 'Brutowinst (Gross Profit)', metrics.grossProfit['2024'], metrics.grossProfit['2025'], gpVariance, gpVariancePercent, show2024, show2025, variance1Mode, variance2Mode, { bold: true });
                             
@@ -2308,7 +2419,7 @@
                         }
                         
                         // Insert Operating Income inline after "Overige Personeelskosten" for Income Statement (only once)
-                        if (statementType === 'income-statement' && 
+                        if (statementType === UI_STATEMENT_TYPES.INCOME_STATEMENT && 
                             statementData.metrics && 
                             !operatingIncomeInserted &&
                             row.name2 && row.name2.toLowerCase().includes('overige personeelskosten')) {
@@ -2316,9 +2427,8 @@
                             operatingIncomeInserted = true;
                             
                             const metrics = statementData.metrics;
-                            const oiVariance = metrics.operatingIncome['2025'] - metrics.operatingIncome['2024'];
-                            const oiVariancePercent = metrics.operatingIncome['2024'] !== 0 ? 
-                                (oiVariance / Math.abs(metrics.operatingIncome['2024'])) * 100 : 0;
+                            const { amount: oiVariance, percent: oiVariancePercent } =
+                                VarianceCalculator.calculateForMetric(metrics.operatingIncome, '2025', '2024');
                             
                             html += this.renderTableRow('metric', 'Operating Income', metrics.operatingIncome['2024'], metrics.operatingIncome['2025'], oiVariance, oiVariancePercent, show2024, show2025, variance1Mode, variance2Mode, { bold: true });
                             
@@ -2346,11 +2456,8 @@
                     }
                     
                     // Accumulate for Balance Sheet Liabilities & Equity total
-                    if (statementType === 'balance-sheet') {
-                        const categoryLower = row.name1.toLowerCase();
-                        if (categoryLower.includes('passiva') || categoryLower.includes('liabilit') || 
-                            categoryLower.includes('vermogen') || categoryLower.includes('equity') ||
-                            categoryLower.includes('schuld')) {
+                    if (statementType === UI_STATEMENT_TYPES.BALANCE_SHEET) {
+                        if (CategoryMatcher.isLiabilityOrEquity(row.name1)) {
                             totalLiabilitiesEquity2024 += row.amount_2024 || 0;
                             totalLiabilitiesEquity2025 += row.amount_2025 || 0;
                         }
@@ -2358,9 +2465,9 @@
                 });
                 
                 // Add Balance Sheet Liabilities & Equity total at the end
-                if (statementType === 'balance-sheet' && (totalLiabilitiesEquity2024 !== 0 || totalLiabilitiesEquity2025 !== 0)) {
-                    const leVariance = totalLiabilitiesEquity2025 - totalLiabilitiesEquity2024;
-                    const leVariancePercent = totalLiabilitiesEquity2024 !== 0 ? (leVariance / Math.abs(totalLiabilitiesEquity2024)) * 100 : 0;
+                if (statementType === UI_STATEMENT_TYPES.BALANCE_SHEET && (totalLiabilitiesEquity2024 !== 0 || totalLiabilitiesEquity2025 !== 0)) {
+                    const { amount: leVariance, percent: leVariancePercent } =
+                        VarianceCalculator.calculate(totalLiabilitiesEquity2025, totalLiabilitiesEquity2024);
                     
                     html += `<tr class="spacer-row"><td colspan="${colSpan}"></td></tr>`;
                     
@@ -2369,18 +2476,17 @@
                 }
 
                 // Add Net Income at the bottom for Income Statement (after all categories, similar to bottom line)
-                if (statementType === 'income-statement' && statementData.metrics) {
+                if (statementType === UI_STATEMENT_TYPES.INCOME_STATEMENT && statementData.metrics) {
                     const metrics = statementData.metrics;
-                    const niVariance = metrics.netIncome['2025'] - metrics.netIncome['2024'];
-                    const niVariancePercent = metrics.netIncome['2024'] !== 0 ? 
-                        (niVariance / Math.abs(metrics.netIncome['2024'])) * 100 : 0;
+                    const { amount: niVariance, percent: niVariancePercent } =
+                        VarianceCalculator.calculateForMetric(metrics.netIncome, '2025', '2024');
                     
                     html += `<tr class="spacer-row"><td colspan="${colSpan}"></td></tr>`;
                     html += this.renderTableRow('total', 'Net Income', metrics.netIncome['2024'], metrics.netIncome['2025'], niVariance, niVariancePercent, show2024, show2025, variance1Mode, variance2Mode, { bold: true });
                 }
 
                 // Add cash reconciliation for Cash Flow Statement
-                if (statementType === 'cash-flow' && statementData.metrics) {
+                if (statementType === UI_STATEMENT_TYPES.CASH_FLOW && statementData.metrics) {
                     const metrics = statementData.metrics;
                     
                     html += `<tr class="spacer-row"><td colspan="${colSpan}"></td></tr>`;
@@ -2388,9 +2494,8 @@
                     
                     // Starting Cash
                     if (metrics.startingCash) {
-                        const scVariance = metrics.startingCash['2025'] - metrics.startingCash['2024'];
-                        const scVariancePercent = metrics.startingCash['2024'] !== 0 ? 
-                            (scVariance / Math.abs(metrics.startingCash['2024'])) * 100 : 0;
+                        const { amount: scVariance, percent: scVariancePercent } =
+                            VarianceCalculator.calculateForMetric(metrics.startingCash, '2025', '2024');
                         
                         html += this.renderTableRow('detail', 'Starting Cash', metrics.startingCash['2024'], metrics.startingCash['2025'], scVariance, scVariancePercent, show2024, show2025, variance1Mode, variance2Mode);
                     }
@@ -2406,16 +2511,15 @@
                     
                     // Ending Cash
                     if (metrics.endingCash) {
-                        const ecVariance = metrics.endingCash['2025'] - metrics.endingCash['2024'];
-                        const ecVariancePercent = metrics.endingCash['2024'] !== 0 ? 
-                            (ecVariance / Math.abs(metrics.endingCash['2024'])) * 100 : 0;
+                        const { amount: ecVariance, percent: ecVariancePercent } =
+                            VarianceCalculator.calculateForMetric(metrics.endingCash, '2025', '2024');
                         
                         html += this.renderTableRow('total', 'Ending Cash', metrics.endingCash['2024'], metrics.endingCash['2025'], ecVariance, ecVariancePercent, show2024, show2025, variance1Mode, variance2Mode, { bold: true });
                     }
                 }
 
                 // Add balance check for Balance Sheet
-                if (statementType === 'balance-sheet' && statementData.balanced !== undefined) {
+                if (statementType === UI_STATEMENT_TYPES.BALANCE_SHEET && statementData.balanced !== undefined) {
                     html += `<tr class="spacer-row"><td colspan="${colSpan}"></td></tr>`;
                     if (statementData.balanced) {
                         html += `<tr class="info-row"><td colspan="${colSpan}" class="success-message">✅ Balance Sheet is balanced</td></tr>`;
@@ -2571,7 +2675,7 @@
                 this.statementGenerator = new StatementGenerator(this.dataStore);
                 this.interactiveUI = new InteractiveUI();
                 this.exportHandler = new ExportHandler(this.dataStore);
-                this.currentStatementType = 'balance-sheet';
+                this.currentStatementType = UI_STATEMENT_TYPES.BALANCE_SHEET;
                 this.currentStatementData = null;
             }
 
@@ -2746,7 +2850,7 @@
                     document.getElementById('export-all').disabled = false;
                     
                     // Generate and display default statement (Balance Sheet)
-                    this.generateAndDisplayStatement('balance-sheet');
+                    this.generateAndDisplayStatement(UI_STATEMENT_TYPES.BALANCE_SHEET);
 
                 } catch (error) {
                     console.error('File loading error:', error);
@@ -2871,15 +2975,15 @@
                     let statementName;
                     
                     switch(statementType) {
-                        case 'balance-sheet':
+                        case UI_STATEMENT_TYPES.BALANCE_SHEET:
                             statementName = 'Balance Sheet';
                             statementData = this.statementGenerator.generateBalanceSheet(periodOptions);
                             break;
-                        case 'income-statement':
+                        case UI_STATEMENT_TYPES.INCOME_STATEMENT:
                             statementName = 'Income Statement';
                             statementData = this.statementGenerator.generateIncomeStatement(periodOptions);
                             break;
-                        case 'cash-flow':
+                        case UI_STATEMENT_TYPES.CASH_FLOW:
                             statementName = 'Cash Flow Statement';
                             statementData = this.statementGenerator.generateCashFlowStatement(periodOptions);
                             break;
