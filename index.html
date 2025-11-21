@@ -1512,8 +1512,13 @@
 
                     // Apply period filters if specified
                     // Parse year-period combinations (format: "2024-all", "2024-1", "2024-Q1", "2025-6", etc.)
-                    const period2024Value = options.period2024 || '2024-all';
-                    const period2025Value = options.period2025 || '2025-all';
+                    const year1 = YEAR_CONFIG.getYear(0);
+                    const year2 = YEAR_CONFIG.getYear(1);
+                    const col1 = YEAR_CONFIG.getAmountColumn(year1);
+                    const col2 = YEAR_CONFIG.getAmountColumn(year2);
+
+                    const periodYear1Value = options[`period${year1}`] || `${year1}-all`;
+                    const periodYear2Value = options[`period${year2}`] || `${year2}-all`;
 
                     // Helper function to parse period value (handles 'all', quarters 'Q1-Q4', and individual periods)
                     const parsePeriod = (periodStr) => {
@@ -1526,46 +1531,46 @@
                     };
 
                     // Parse first column selection (year-period)
-                    const [year2024Str, period2024Str] = period2024Value.split('-');
-                    const year2024 = parseInt(year2024Str);
-                    const period2024 = parsePeriod(period2024Str);
+                    const [yearStr1, periodStr1] = periodYear1Value.split('-');
+                    const yearInt1 = parseInt(yearStr1);
+                    const periodInt1 = parsePeriod(periodStr1);
 
                     // Parse second column selection (year-period)
-                    const [year2025Str, period2025Str] = period2025Value.split('-');
-                    const year2025 = parseInt(year2025Str);
-                    const period2025 = parsePeriod(period2025Str);
-                    
+                    const [yearStr2, periodStr2] = periodYear2Value.split('-');
+                    const yearInt2 = parseInt(yearStr2);
+                    const periodInt2 = parsePeriod(periodStr2);
+
                     // Filter data based on selected year-period combinations
-                    if (period2024Value !== '2024-all' || period2025Value !== '2025-all') {
+                    if (periodYear1Value !== `${year1}-all` || periodYear2Value !== `${year2}-all`) {
                         filtered = filtered
-                            .params({ 
-                                year2024: year2024, 
-                                period2024: period2024,
-                                year2025: year2025,
-                                period2025: period2025
+                            .params({
+                                yearInt1: yearInt1,
+                                periodInt1: periodInt1,
+                                yearInt2: yearInt2,
+                                periodInt2: periodInt2
                             })
-                            .filter(d => 
-                                (d.year === year2024 && d.period <= period2024) || 
-                                (d.year === year2025 && d.period <= period2025)
+                            .filter(d =>
+                                (d.year === yearInt1 && d.period <= periodInt1) ||
+                                (d.year === yearInt2 && d.period <= periodInt2)
                             );
                     }
 
                     // Use conditional aggregation to get both columns in one pass (no join needed!)
                     // Include level codes for proper sorting
                     // For Income Statement, flip the sign to show revenue as positive
-                    // Note: Column names remain amount_2024 and amount_2025 for compatibility,
+                    // Note: Column names use dynamic year references from YEAR_CONFIG
                     // but they now represent the selected year-period combinations
                     const signMultiplier = statementType === STATEMENT_TYPES.INCOME_STATEMENT ? -1 : 1;
                     const aggregated = filtered
                         .params({
-                            col1Year: year2024,
-                            col2Year: year2025,
+                            col1Year: yearInt1,
+                            col2Year: yearInt2,
                             signMult: signMultiplier
                         })
                         .groupby('name1', 'name2', 'code0', 'name0', 'code1', 'code2', 'code3')
                         .rollup({
-                            amount_2024: d => aq.op.sum(d.year === col1Year ? d.movement_amount * signMult : 0),
-                            amount_2025: d => aq.op.sum(d.year === col2Year ? d.movement_amount * signMult : 0)
+                            [col1]: d => aq.op.sum(d.year === col1Year ? d.movement_amount * signMult : 0),
+                            [col2]: d => aq.op.sum(d.year === col2Year ? d.movement_amount * signMult : 0)
                         });
 
                     console.log('Columns after aggregation:', aggregated.columnNames());
@@ -1606,21 +1611,28 @@
 
             // Generate Balance Sheet
             generateBalanceSheet(options = {}) {
+                const year1 = YEAR_CONFIG.getYear(0);
+                const year2 = YEAR_CONFIG.getYear(1);
+
                 return this.generateStatement(STATEMENT_TYPES.BALANCE_SHEET, {
                     name: 'Balance Sheet',
-                    period2024: options.period2024,
-                    period2025: options.period2025,
+                    [`period${year1}`]: options[`period${year1}`],
+                    [`period${year2}`]: options[`period${year2}`],
                     validateBalance: (categoryTotals) => {
+                        // Use latest year for balance validation
+                        const latestYear = YEAR_CONFIG.getYear(YEAR_CONFIG.yearCount - 1);
+                        const latestCol = YEAR_CONFIG.getAmountColumn(latestYear);
+
                         const totals = categoryTotals.objects();
                         let totalAssets = 0, totalLiabilities = 0, totalEquity = 0;
 
                         totals.forEach(row => {
                             if (CategoryMatcher.isAsset(row.name1)) {
-                                totalAssets += row.amount_2025 || 0;
+                                totalAssets += row[latestCol] || 0;
                             } else if (CategoryMatcher.isLiability(row.name1)) {
-                                totalLiabilities += row.amount_2025 || 0;
+                                totalLiabilities += row[latestCol] || 0;
                             } else if (CategoryMatcher.isEquity(row.name1)) {
-                                totalEquity += row.amount_2025 || 0;
+                                totalEquity += row[latestCol] || 0;
                             }
                         });
 
@@ -1642,58 +1654,67 @@
 
             // Generate Income Statement
             generateIncomeStatement(options = {}) {
+                const year1 = YEAR_CONFIG.getYear(0);
+                const year2 = YEAR_CONFIG.getYear(1);
+
                 return this.generateStatement(STATEMENT_TYPES.INCOME_STATEMENT, {
                     name: 'Income Statement',
                     orderBy: true,
-                    period2024: options.period2024,
-                    period2025: options.period2025,
+                    [`period${year1}`]: options[`period${year1}`],
+                    [`period${year2}`]: options[`period${year2}`],
                     calculateMetrics: (categoryTotals) => {
+                        // Use YEAR_CONFIG for dynamic year references
+                        const year1 = YEAR_CONFIG.getYear(0);
+                        const year2 = YEAR_CONFIG.getYear(1);
+                        const col1 = YEAR_CONFIG.getAmountColumn(year1);
+                        const col2 = YEAR_CONFIG.getAmountColumn(year2);
+
                         const totals = categoryTotals.objects();
-                        let revenue2024 = 0, revenue2025 = 0;
-                        let cogs2024 = 0, cogs2025 = 0;
-                        let opex2024 = 0, opex2025 = 0;
-                        let otherIncome2024 = 0, otherIncome2025 = 0;
-                        let taxes2024 = 0, taxes2025 = 0;
+                        let revenue1 = 0, revenue2 = 0;
+                        let cogs1 = 0, cogs2 = 0;
+                        let opex1 = 0, opex2 = 0;
+                        let otherIncome1 = 0, otherIncome2 = 0;
+                        let taxes1 = 0, taxes2 = 0;
 
                         totals.forEach(row => {
                             // Revenue (Netto-omzet, Omzet, etc.)
                             if (CategoryMatcher.isRevenue(row.name1)) {
-                                revenue2024 += row.amount_2024 || 0;
-                                revenue2025 += row.amount_2025 || 0;
+                                revenue1 += row[col1] || 0;
+                                revenue2 += row[col2] || 0;
                             }
                             // Cost of Goods Sold (Kostprijs van de omzet)
                             else if (CategoryMatcher.isCOGS(row.name1)) {
-                                cogs2024 += row.amount_2024 || 0;
-                                cogs2025 += row.amount_2025 || 0;
+                                cogs1 += row[col1] || 0;
+                                cogs2 += row[col2] || 0;
                             }
                             // Operating Expenses (Bedrijfskosten, Kosten, etc.)
                             else if (CategoryMatcher.isOperatingExpense(row.name1)) {
-                                opex2024 += row.amount_2024 || 0;
-                                opex2025 += row.amount_2025 || 0;
+                                opex1 += row[col1] || 0;
+                                opex2 += row[col2] || 0;
                             }
                             // Other Income (Overige opbrengsten, etc.)
                             else if (CategoryMatcher.isOtherIncome(row.name1)) {
-                                otherIncome2024 += row.amount_2024 || 0;
-                                otherIncome2025 += row.amount_2025 || 0;
+                                otherIncome1 += row[col1] || 0;
+                                otherIncome2 += row[col2] || 0;
                             }
                             // Taxes (Belastingen)
                             else if (CategoryMatcher.isTax(row.name1)) {
-                                taxes2024 += row.amount_2024 || 0;
-                                taxes2025 += row.amount_2025 || 0;
+                                taxes1 += row[col1] || 0;
+                                taxes2 += row[col2] || 0;
                             }
                         });
 
-                        const grossProfit2024 = revenue2024 + cogs2024;
-                        const grossProfit2025 = revenue2025 + cogs2025;
-                        const operatingIncome2024 = grossProfit2024 + opex2024;
-                        const operatingIncome2025 = grossProfit2025 + opex2025;
-                        const netIncome2024 = operatingIncome2024 + otherIncome2024 - taxes2024;
-                        const netIncome2025 = operatingIncome2025 + otherIncome2025 - taxes2025;
+                        const grossProfit1 = revenue1 + cogs1;
+                        const grossProfit2 = revenue2 + cogs2;
+                        const operatingIncome1 = grossProfit1 + opex1;
+                        const operatingIncome2 = grossProfit2 + opex2;
+                        const netIncome1 = operatingIncome1 + otherIncome1 - taxes1;
+                        const netIncome2 = operatingIncome2 + otherIncome2 - taxes2;
 
                         return {
-                            grossProfit: { '2024': grossProfit2024, '2025': grossProfit2025 },
-                            operatingIncome: { '2024': operatingIncome2024, '2025': operatingIncome2025 },
-                            netIncome: { '2024': netIncome2024, '2025': netIncome2025 }
+                            grossProfit: { [year1]: grossProfit1, [year2]: grossProfit2 },
+                            operatingIncome: { [year1]: operatingIncome1, [year2]: operatingIncome2 },
+                            netIncome: { [year1]: netIncome1, [year2]: netIncome2 }
                         };
                     }
                 });
@@ -1702,153 +1723,158 @@
             // Generate Cash Flow Statement (Indirect Method - Calculated from Balance Sheet and Income Statement)
             generateCashFlowStatement(options = {}) {
                 try {
+                    const year1 = YEAR_CONFIG.getYear(0); // First year (e.g., '2024')
+                    const year2 = YEAR_CONFIG.getYear(1); // Second year (e.g., '2025')
+                    const col1 = YEAR_CONFIG.getAmountColumn(year1); // 'amount_2024'
+                    const col2 = YEAR_CONFIG.getAmountColumn(year2); // 'amount_2025'
+
                     // Get Income Statement to extract Net Income
                     const incomeStatement = this.generateIncomeStatement(options);
                     const incomeDetails = incomeStatement.details.objects();
-                    
+
                     // Get Balance Sheet to calculate changes in working capital
                     const balanceSheet = this.generateBalanceSheet(options);
                     const balanceDetails = balanceSheet.details.objects();
-                    
+
                     // Get Net Income from Income Statement metrics (to ensure consistency)
-                    const netIncome2024 = incomeStatement.metrics.netIncome['2024'];
-                    const netIncome2025 = incomeStatement.metrics.netIncome['2025'];
-                    
+                    const netIncome1 = incomeStatement.metrics.netIncome[year1];
+                    const netIncome2 = incomeStatement.metrics.netIncome[year2];
+
                     // Calculate changes in Balance Sheet items (working capital changes)
                     const cashFlowData = [];
-                    
+
                     // Operating Activities
                     cashFlowData.push({
                         category: 'Operating Activities',
                         subcategory: 'Net Income',
-                        amount_2024: netIncome2024,
-                        amount_2025: netIncome2025
+                        [col1]: netIncome1,
+                        [col2]: netIncome2
                     });
-                    
+
                     // Add back non-cash expenses (depreciation, amortization)
                     balanceDetails.forEach(row => {
                         if (CategoryMatcher.isDepreciation(row.name2)) {
                             cashFlowData.push({
                                 category: 'Operating Activities',
                                 subcategory: row.name2,
-                                amount_2024: Math.abs(row.variance_amount || 0),
-                                amount_2025: Math.abs(row.variance_amount || 0)
+                                [col1]: Math.abs(row.variance_amount || 0),
+                                [col2]: Math.abs(row.variance_amount || 0)
                             });
                         }
                     });
-                    
+
                     // Changes in working capital (current assets and liabilities)
                     balanceDetails.forEach(row => {
                         if (CategoryMatcher.isCurrentAsset(row.name1)) {
-                            const change = (row.amount_2025 || 0) - (row.amount_2024 || 0);
+                            const change = (row[col2] || 0) - (row[col1] || 0);
                             if (Math.abs(change) > 0) {
                                 cashFlowData.push({
                                     category: 'Operating Activities',
                                     subcategory: `Change in ${row.name2}`,
-                                    amount_2024: 0,
-                                    amount_2025: -change // Negative because increase in assets uses cash
+                                    [col1]: 0,
+                                    [col2]: -change // Negative because increase in assets uses cash
                                 });
                             }
                         }
                     });
-                    
+
                     // Investing Activities (changes in fixed assets)
                     balanceDetails.forEach(row => {
                         if (CategoryMatcher.isFixedAsset(row.name1)) {
-                            const change = (row.amount_2025 || 0) - (row.amount_2024 || 0);
+                            const change = (row[col2] || 0) - (row[col1] || 0);
                             if (Math.abs(change) > 0) {
                                 cashFlowData.push({
                                     category: 'Investing Activities',
                                     subcategory: row.name2,
-                                    amount_2024: 0,
-                                    amount_2025: -change
+                                    [col1]: 0,
+                                    [col2]: -change
                                 });
                             }
                         }
                     });
-                    
+
                     // Financing Activities (changes in equity and long-term liabilities)
                     balanceDetails.forEach(row => {
                         if (CategoryMatcher.isLongTermLiability(row.name1)) {
-                            const change = (row.amount_2025 || 0) - (row.amount_2024 || 0);
+                            const change = (row[col2] || 0) - (row[col1] || 0);
                             if (Math.abs(change) > 0) {
                                 cashFlowData.push({
                                     category: 'Financing Activities',
                                     subcategory: row.name2,
-                                    amount_2024: 0,
-                                    amount_2025: change
+                                    [col1]: 0,
+                                    [col2]: change
                                 });
                             }
                         }
                     });
-                    
+
                     // Convert to Arquero table
                     const cashFlowTable = aq.from(cashFlowData);
-                    
+
                     // Calculate variances
                     const withVariances = this.deriveVarianceColumns(cashFlowTable);
-                    
+
                     // Calculate category totals
                     const categoryTotals = this.calculateCategoryTotals(withVariances);
-                    
+
                     // Calculate net change in cash
                     const totals = categoryTotals.objects();
-                    let operating2024 = 0, operating2025 = 0;
-                    let investing2024 = 0, investing2025 = 0;
-                    let financing2024 = 0, financing2025 = 0;
+                    let operating1 = 0, operating2 = 0;
+                    let investing1 = 0, investing2 = 0;
+                    let financing1 = 0, financing2 = 0;
 
                     totals.forEach(row => {
                         if (row.name1 === 'Operating Activities') {
-                            operating2024 = row.amount_2024;
-                            operating2025 = row.amount_2025;
+                            operating1 = row[col1];
+                            operating2 = row[col2];
                         } else if (row.name1 === 'Investing Activities') {
-                            investing2024 = row.amount_2024;
-                            investing2025 = row.amount_2025;
+                            investing1 = row[col1];
+                            investing2 = row[col2];
                         } else if (row.name1 === 'Financing Activities') {
-                            financing2024 = row.amount_2024;
-                            financing2025 = row.amount_2025;
+                            financing1 = row[col1];
+                            financing2 = row[col2];
                         }
                     });
 
-                    const netChange2024 = operating2024 + investing2024 + financing2024;
-                    const netChange2025 = operating2025 + investing2025 + financing2025;
+                    const netChange1 = operating1 + investing1 + financing1;
+                    const netChange2 = operating2 + investing2 + financing2;
 
                     // Get starting cash from Balance Sheet (cash and cash equivalents)
-                    let startingCash2024 = 0, startingCash2025 = 0;
+                    let startingCash1 = 0, startingCash2 = 0;
                     balanceDetails.forEach(row => {
                         if (row.name2) {
                             const subcategoryLower = row.name2.toLowerCase();
                             if (CATEGORY_DEFINITIONS.CASH.some(cat => subcategoryLower.includes(cat))) {
-                                startingCash2024 += row.amount_2024 || 0;
-                                startingCash2025 += row.amount_2025 || 0;
+                                startingCash1 += row[col1] || 0;
+                                startingCash2 += row[col2] || 0;
                             }
                         }
                     });
 
                     // Calculate ending cash
-                    const endingCash2024 = startingCash2024 + netChange2024;
-                    const endingCash2025 = startingCash2025 + netChange2025;
+                    const endingCash1 = startingCash1 + netChange1;
+                    const endingCash2 = startingCash2 + netChange2;
 
                     return {
                         details: withVariances,
                         totals: categoryTotals,
                         metrics: {
                             netIncome: {
-                                '2024': netIncome2024,
-                                '2025': netIncome2025
+                                [year1]: netIncome1,
+                                [year2]: netIncome2
                             },
                             netChange: {
-                                '2024': netChange2024,
-                                '2025': netChange2025,
-                                variance: netChange2025 - netChange2024
+                                [year1]: netChange1,
+                                [year2]: netChange2,
+                                variance: netChange2 - netChange1
                             },
                             startingCash: {
-                                '2024': startingCash2024,
-                                '2025': startingCash2025
+                                [year1]: startingCash1,
+                                [year2]: startingCash2
                             },
                             endingCash: {
-                                '2024': endingCash2024,
-                                '2025': endingCash2025
+                                [year1]: endingCash1,
+                                [year2]: endingCash2
                             }
                         }
                     };
@@ -2351,41 +2377,47 @@
                 this.currentStatement = statementData;
                 this.currentStatementType = statementType;
 
+                // Get years from config
+                const year1 = YEAR_CONFIG.getYear(0); // First year (e.g., '2024')
+                const year2 = YEAR_CONFIG.getYear(1); // Second year (e.g., '2025')
+                const col1 = YEAR_CONFIG.getAmountColumn(year1); // 'amount_2024'
+                const col2 = YEAR_CONFIG.getAmountColumn(year2); // 'amount_2025'
+
                 // Create table HTML
                 let html = '<table class="financial-table">';
-                
+
                 // Check which years and variance should be shown
-                // For Cash Flow Statement, only show 2025 (no 2024 column)
+                // For Cash Flow Statement, only show year2 (no year1 column)
                 // Try header checkboxes first, fall back to true if not found (initial render)
-                const header2024Checkbox = document.getElementById('show-2024-header');
-                const header2025Checkbox = document.getElementById('show-2025-header');
-                let show2024 = header2024Checkbox ? header2024Checkbox.checked : true;
-                let show2025 = header2025Checkbox ? header2025Checkbox.checked : true;
-                
-                // Override for Cash Flow: only show 2025
+                const headerYear1Checkbox = document.getElementById(`show-${year1}-header`);
+                const headerYear2Checkbox = document.getElementById(`show-${year2}-header`);
+                let showYear1 = headerYear1Checkbox ? headerYear1Checkbox.checked : true;
+                let showYear2 = headerYear2Checkbox ? headerYear2Checkbox.checked : true;
+
+                // Override for Cash Flow: only show year2
                 if (statementType === UI_STATEMENT_TYPES.CASH_FLOW) {
-                    show2024 = false;
-                    show2025 = true;
+                    showYear1 = false;
+                    showYear2 = true;
                 }
-                
+
                 // Get variance column settings
                 const variance1Dropdown = document.getElementById('variance-1-header');
                 const variance2Dropdown = document.getElementById('variance-2-header');
                 const variance1Mode = variance1Dropdown ? variance1Dropdown.value : 'none';
                 const variance2Mode = variance2Dropdown ? variance2Dropdown.value : 'none';
-                
+
                 // Calculate column span dynamically
                 let colCount = 2; // Detail Level dropdown + Line Item column
-                if (show2024) colCount++;
-                if (show2025) colCount++;
+                if (showYear1) colCount++;
+                if (showYear2) colCount++;
                 if (variance1Mode !== 'none') colCount++;
                 if (variance2Mode !== 'none') colCount++;
                 const colSpan = colCount;
-                
+
                 // Get current period selections before regenerating (to preserve them)
-                const currentPeriod2024 = document.getElementById('period-2024-header')?.value || '2024-all';
-                const currentPeriod2025 = document.getElementById('period-2025-header')?.value || '2025-all';
-                
+                const currentPeriodYear1 = document.getElementById(`period-${year1}-header`)?.value || `${year1}-all`;
+                const currentPeriodYear2 = document.getElementById(`period-${year2}-header`)?.value || `${year2}-all`;
+
                 // Get current detail level selection
                 const detailLevelDropdown = document.getElementById('detail-level-header');
                 const detailLevel = detailLevelDropdown ? detailLevelDropdown.value : 'name1';
@@ -2400,11 +2432,11 @@
                 html += '</select>';
                 html += '</th>';
                 // Period dropdowns using helper function
-                if (show2024) {
-                    html += this.renderPeriodDropdown('period-2024-header', currentPeriod2024);
+                if (showYear1) {
+                    html += this.renderPeriodDropdown(`period-${year1}-header`, currentPeriodYear1);
                 }
-                if (show2025) {
-                    html += this.renderPeriodDropdown('period-2025-header', currentPeriod2025);
+                if (showYear2) {
+                    html += this.renderPeriodDropdown(`period-${year2}-header`, currentPeriodYear2);
                 }
                 // Variance Column 1
                 html += '<th class="col-number">';
@@ -2435,14 +2467,14 @@
                 // Total Assets = Fixed Assets + Current Assets
                 // Fixed Assets = Immateriële vaste activa + Materiële vaste activa
                 // Current Assets = Voorraden + Vorderingen + Liquide Middelen
-                let totalAssets2024 = 0, totalAssets2025 = 0;
+                let totalAssetsYear1 = 0, totalAssetsYear2 = 0;
                 let totalAssetsInserted = false;
                 if (statementType === UI_STATEMENT_TYPES.BALANCE_SHEET) {
                     totals.forEach(row => {
                         const categoryLower = row.name1.toLowerCase();
                         if (CATEGORY_DEFINITIONS.ASSETS.some(cat => categoryLower.includes(cat))) {
-                            totalAssets2024 += row.amount_2024 || 0;
-                            totalAssets2025 += row.amount_2025 || 0;
+                            totalAssetsYear1 += row[col1] || 0;
+                            totalAssetsYear2 += row[col2] || 0;
                         }
                     });
                 }
@@ -2458,58 +2490,58 @@
                         !totalAssetsInserted &&
                         row.name1 !== currentCategory) {
                         if (CategoryMatcher.isLiabilityOrEquity(row.name1)) {
-                            
+
                             totalAssetsInserted = true;
                             const { amount: assetsVariance, percent: assetsVariancePercent } =
-                                VarianceCalculator.calculate(totalAssets2025, totalAssets2024);
-                            
+                                VarianceCalculator.calculate(totalAssetsYear2, totalAssetsYear1);
+
                             html += `<tr class="spacer-row"><td colspan="${colSpan}"></td></tr>`;
-                            html += this.renderTableRow('total', 'TOTAL ASSETS', totalAssets2024, totalAssets2025, assetsVariance, assetsVariancePercent, show2024, show2025, variance1Mode, variance2Mode, { bold: true });
+                            html += this.renderTableRow('total', 'TOTAL ASSETS', totalAssetsYear1, totalAssetsYear2, assetsVariance, assetsVariancePercent, showYear1, showYear2, variance1Mode, variance2Mode, { bold: true });
                             html += `<tr class="spacer-row"><td colspan="${colSpan}"></td></tr>`;
                         }
                     }
-                    
+
                     // Add category header if changed
                     if (row.name1 !== currentCategory) {
                         currentCategory = row.name1;
                         html += `<tr class="category-header"><td colspan="${colSpan}"><strong>${currentCategory}</strong></td></tr>`;
                     }
-                    
+
                     // Add detail row - always show if subcategory exists
                     const shouldShowDetail = row.name2;
-                    
+
                     if (shouldShowDetail) {
-                        html += this.renderTableRow('detail', row.name2, row.amount_2024, row.amount_2025, row.variance_amount, row.variance_percent, show2024, show2025, variance1Mode, variance2Mode, { indent: true });
-                        
+                        html += this.renderTableRow('detail', row.name2, row[col1], row[col2], row.variance_amount, row.variance_percent, showYear1, showYear2, variance1Mode, variance2Mode, { indent: true });
+
                         // Insert Gross Profit inline after "Kostprijs van de omzet" for Income Statement
-                        if (statementType === UI_STATEMENT_TYPES.INCOME_STATEMENT && 
-                            statementData.metrics && 
+                        if (statementType === UI_STATEMENT_TYPES.INCOME_STATEMENT &&
+                            statementData.metrics &&
                             row.name2.toLowerCase().includes('kostprijs')) {
-                            
+
                             const metrics = statementData.metrics;
                             const { amount: gpVariance, percent: gpVariancePercent } =
-                                VarianceCalculator.calculateForMetric(metrics.grossProfit, '2025', '2024');
-                            
-                            html += this.renderTableRow('metric', 'Brutowinst (Gross Profit)', metrics.grossProfit['2024'], metrics.grossProfit['2025'], gpVariance, gpVariancePercent, show2024, show2025, variance1Mode, variance2Mode, { bold: true });
-                            
+                                VarianceCalculator.calculateForMetric(metrics.grossProfit, year2, year1);
+
+                            html += this.renderTableRow('metric', 'Brutowinst (Gross Profit)', metrics.grossProfit[year1], metrics.grossProfit[year2], gpVariance, gpVariancePercent, showYear1, showYear2, variance1Mode, variance2Mode, { bold: true });
+
                             // Empty line after Gross Profit
                             html += `<tr class="spacer-row"><td colspan="${colSpan}"></td></tr>`;
                         }
-                        
+
                         // Insert Operating Income inline after "Overige Personeelskosten" for Income Statement (only once)
-                        if (statementType === UI_STATEMENT_TYPES.INCOME_STATEMENT && 
-                            statementData.metrics && 
+                        if (statementType === UI_STATEMENT_TYPES.INCOME_STATEMENT &&
+                            statementData.metrics &&
                             !operatingIncomeInserted &&
                             row.name2 && row.name2.toLowerCase().includes('overige personeelskosten')) {
-                            
+
                             operatingIncomeInserted = true;
-                            
+
                             const metrics = statementData.metrics;
                             const { amount: oiVariance, percent: oiVariancePercent } =
-                                VarianceCalculator.calculateForMetric(metrics.operatingIncome, '2025', '2024');
-                            
-                            html += this.renderTableRow('metric', 'Operating Income', metrics.operatingIncome['2024'], metrics.operatingIncome['2025'], oiVariance, oiVariancePercent, show2024, show2025, variance1Mode, variance2Mode, { bold: true });
-                            
+                                VarianceCalculator.calculateForMetric(metrics.operatingIncome, year2, year1);
+
+                            html += this.renderTableRow('metric', 'Operating Income', metrics.operatingIncome[year1], metrics.operatingIncome[year2], oiVariance, oiVariancePercent, showYear1, showYear2, variance1Mode, variance2Mode, { bold: true });
+
                             // Empty line after Operating Income
                             html += `<tr class="spacer-row"><td colspan="${colSpan}"></td></tr>`;
                         }
@@ -2518,81 +2550,81 @@
 
                 // Check if category totals should be shown (based on detail level)
                 const showCategoryTotals = detailLevel === 'name1';
-                
+
                 // Calculate grand totals for Balance Sheet (Liabilities & Equity only, Assets already shown)
-                let totalLiabilitiesEquity2024 = 0, totalLiabilitiesEquity2025 = 0;
-                
+                let totalLiabilitiesEquityYear1 = 0, totalLiabilitiesEquityYear2 = 0;
+
                 // Add category totals (optional)
                 if (showCategoryTotals) {
                     html += `<tr class="spacer-row"><td colspan="${colSpan}"></td></tr>`;
                     html += `<tr class="section-header"><td colspan="${colSpan}"><strong>Category Totals</strong></td></tr>`;
                 }
-                
+
                 totals.forEach(row => {
                     if (showCategoryTotals) {
-                        html += this.renderTableRow('subtotal', `Total ${row.name1}`, row.amount_2024, row.amount_2025, row.variance_amount, row.variance_percent, show2024, show2025, variance1Mode, variance2Mode, { bold: true });
+                        html += this.renderTableRow('subtotal', `Total ${row.name1}`, row[col1], row[col2], row.variance_amount, row.variance_percent, showYear1, showYear2, variance1Mode, variance2Mode, { bold: true });
                     }
-                    
+
                     // Accumulate for Balance Sheet Liabilities & Equity total
                     if (statementType === UI_STATEMENT_TYPES.BALANCE_SHEET) {
                         if (CategoryMatcher.isLiabilityOrEquity(row.name1)) {
-                            totalLiabilitiesEquity2024 += row.amount_2024 || 0;
-                            totalLiabilitiesEquity2025 += row.amount_2025 || 0;
+                            totalLiabilitiesEquityYear1 += row[col1] || 0;
+                            totalLiabilitiesEquityYear2 += row[col2] || 0;
                         }
                     }
                 });
-                
+
                 // Add Balance Sheet Liabilities & Equity total at the end
-                if (statementType === UI_STATEMENT_TYPES.BALANCE_SHEET && (totalLiabilitiesEquity2024 !== 0 || totalLiabilitiesEquity2025 !== 0)) {
+                if (statementType === UI_STATEMENT_TYPES.BALANCE_SHEET && (totalLiabilitiesEquityYear1 !== 0 || totalLiabilitiesEquityYear2 !== 0)) {
                     const { amount: leVariance, percent: leVariancePercent } =
-                        VarianceCalculator.calculate(totalLiabilitiesEquity2025, totalLiabilitiesEquity2024);
-                    
+                        VarianceCalculator.calculate(totalLiabilitiesEquityYear2, totalLiabilitiesEquityYear1);
+
                     html += `<tr class="spacer-row"><td colspan="${colSpan}"></td></tr>`;
-                    
+
                     // Total Liabilities & Equity
-                    html += this.renderTableRow('total', 'TOTAL LIABILITIES & EQUITY', totalLiabilitiesEquity2024, totalLiabilitiesEquity2025, leVariance, leVariancePercent, show2024, show2025, variance1Mode, variance2Mode, { bold: true });
+                    html += this.renderTableRow('total', 'TOTAL LIABILITIES & EQUITY', totalLiabilitiesEquityYear1, totalLiabilitiesEquityYear2, leVariance, leVariancePercent, showYear1, showYear2, variance1Mode, variance2Mode, { bold: true });
                 }
 
                 // Add Net Income at the bottom for Income Statement (after all categories, similar to bottom line)
                 if (statementType === UI_STATEMENT_TYPES.INCOME_STATEMENT && statementData.metrics) {
                     const metrics = statementData.metrics;
                     const { amount: niVariance, percent: niVariancePercent } =
-                        VarianceCalculator.calculateForMetric(metrics.netIncome, '2025', '2024');
-                    
+                        VarianceCalculator.calculateForMetric(metrics.netIncome, year2, year1);
+
                     html += `<tr class="spacer-row"><td colspan="${colSpan}"></td></tr>`;
-                    html += this.renderTableRow('total', 'Net Income', metrics.netIncome['2024'], metrics.netIncome['2025'], niVariance, niVariancePercent, show2024, show2025, variance1Mode, variance2Mode, { bold: true });
+                    html += this.renderTableRow('total', 'Net Income', metrics.netIncome[year1], metrics.netIncome[year2], niVariance, niVariancePercent, showYear1, showYear2, variance1Mode, variance2Mode, { bold: true });
                 }
 
                 // Add cash reconciliation for Cash Flow Statement
                 if (statementType === UI_STATEMENT_TYPES.CASH_FLOW && statementData.metrics) {
                     const metrics = statementData.metrics;
-                    
+
                     html += `<tr class="spacer-row"><td colspan="${colSpan}"></td></tr>`;
                     html += `<tr class="section-header"><td colspan="${colSpan}"><strong>Cash Reconciliation</strong></td></tr>`;
-                    
+
                     // Starting Cash
                     if (metrics.startingCash) {
                         const { amount: scVariance, percent: scVariancePercent } =
-                            VarianceCalculator.calculateForMetric(metrics.startingCash, '2025', '2024');
-                        
-                        html += this.renderTableRow('detail', 'Starting Cash', metrics.startingCash['2024'], metrics.startingCash['2025'], scVariance, scVariancePercent, show2024, show2025, variance1Mode, variance2Mode);
+                            VarianceCalculator.calculateForMetric(metrics.startingCash, year2, year1);
+
+                        html += this.renderTableRow('detail', 'Starting Cash', metrics.startingCash[year1], metrics.startingCash[year2], scVariance, scVariancePercent, showYear1, showYear2, variance1Mode, variance2Mode);
                     }
-                    
+
                     // Net Change in Cash
                     if (metrics.netChange) {
                         const ncVariance = metrics.netChange.variance;
-                        const ncVariancePercent = metrics.netChange['2024'] !== 0 ? 
-                            (ncVariance / Math.abs(metrics.netChange['2024'])) * 100 : 0;
-                        
-                        html += this.renderTableRow('detail', 'Changes in Cash', metrics.netChange['2024'], metrics.netChange['2025'], ncVariance, ncVariancePercent, show2024, show2025, variance1Mode, variance2Mode);
+                        const ncVariancePercent = metrics.netChange[year1] !== 0 ?
+                            (ncVariance / Math.abs(metrics.netChange[year1])) * 100 : 0;
+
+                        html += this.renderTableRow('detail', 'Changes in Cash', metrics.netChange[year1], metrics.netChange[year2], ncVariance, ncVariancePercent, showYear1, showYear2, variance1Mode, variance2Mode);
                     }
-                    
+
                     // Ending Cash
                     if (metrics.endingCash) {
                         const { amount: ecVariance, percent: ecVariancePercent } =
-                            VarianceCalculator.calculateForMetric(metrics.endingCash, '2025', '2024');
-                        
-                        html += this.renderTableRow('total', 'Ending Cash', metrics.endingCash['2024'], metrics.endingCash['2025'], ecVariance, ecVariancePercent, show2024, show2025, variance1Mode, variance2Mode, { bold: true });
+                            VarianceCalculator.calculateForMetric(metrics.endingCash, year2, year1);
+
+                        html += this.renderTableRow('total', 'Ending Cash', metrics.endingCash[year1], metrics.endingCash[year2], ecVariance, ecVariancePercent, showYear1, showYear2, variance1Mode, variance2Mode, { bold: true });
                     }
                 }
 
@@ -2609,13 +2641,13 @@
                 html += '</tbody></table>';
                 
                 container.innerHTML = html;
-                
+
                 // Add event listeners for header period dropdowns
-                const period2024HeaderDropdown = container.querySelector('#period-2024-header');
-                const period2025HeaderDropdown = container.querySelector('#period-2025-header');
-                
-                if (period2024HeaderDropdown) {
-                    period2024HeaderDropdown.addEventListener('change', (e) => {
+                const periodYear1HeaderDropdown = container.querySelector(`#period-${year1}-header`);
+                const periodYear2HeaderDropdown = container.querySelector(`#period-${year2}-header`);
+
+                if (periodYear1HeaderDropdown) {
+                    periodYear1HeaderDropdown.addEventListener('change', (e) => {
                         e.stopPropagation(); // Prevent event bubbling
                         // Re-generate and render the current statement with new period filter
                         if (this.currentStatementType) {
@@ -2624,9 +2656,9 @@
                         }
                     });
                 }
-                
-                if (period2025HeaderDropdown) {
-                    period2025HeaderDropdown.addEventListener('change', (e) => {
+
+                if (periodYear2HeaderDropdown) {
+                    periodYear2HeaderDropdown.addEventListener('change', (e) => {
                         e.stopPropagation(); // Prevent event bubbling
                         // Re-generate and render the current statement with new period filter
                         if (this.currentStatementType) {
@@ -3043,11 +3075,18 @@
                     if (!this.dataStore.getCombinedMovements()) {
                         throw new Error('No data loaded. Please load trial balance files first.');
                     }
-                    
+
+                    // Get years from config
+                    const year1 = YEAR_CONFIG.getYear(0);
+                    const year2 = YEAR_CONFIG.getYear(1);
+
                     // Get period selections from header dropdowns (fallback to defaults if not found)
-                    const period2024 = document.getElementById('period-2024-header')?.value || '2024-all';
-                    const period2025 = document.getElementById('period-2025-header')?.value || '2025-all';
-                    const periodOptions = { period2024, period2025 };
+                    const periodYear1 = document.getElementById(`period-${year1}-header`)?.value || `${year1}-all`;
+                    const periodYear2 = document.getElementById(`period-${year2}-header`)?.value || `${year2}-all`;
+                    const periodOptions = {
+                        [`period${year1}`]: periodYear1,
+                        [`period${year2}`]: periodYear2
+                    };
                     
                     let statementData;
                     let statementName;
@@ -3115,11 +3154,18 @@
             async handleExportAll() {
                 try {
                     this.showExportStatus('Exporting all statements...', 'loading');
-                    
+
+                    // Get years from config
+                    const year1 = YEAR_CONFIG.getYear(0);
+                    const year2 = YEAR_CONFIG.getYear(1);
+
                     // Get period selections from header dropdowns
-                    const period2024 = document.getElementById('period-2024-header')?.value || '2024-all';
-                    const period2025 = document.getElementById('period-2025-header')?.value || '2025-all';
-                    const periodOptions = { period2024, period2025 };
+                    const periodYear1 = document.getElementById(`period-${year1}-header`)?.value || `${year1}-all`;
+                    const periodYear2 = document.getElementById(`period-${year2}-header`)?.value || `${year2}-all`;
+                    const periodOptions = {
+                        [`period${year1}`]: periodYear1,
+                        [`period${year2}`]: periodYear2
+                    };
                     
                     const statements = {
                         'Balance Sheet': this.statementGenerator.generateBalanceSheet(periodOptions),
