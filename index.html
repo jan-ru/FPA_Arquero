@@ -1558,18 +1558,22 @@
                     // Use conditional aggregation to get both columns in one pass (no join needed!)
                     // Include level codes for proper sorting
                     // For Income Statement, flip the sign to show revenue as positive
-                    // Note: Column names use dynamic year references from YEAR_CONFIG
-                    // but they now represent the selected year-period combinations
+                    // Note: Arquero requires static column names in rollup operations.
+                    // We keep amount_2024/amount_2025 as column identifiers, but they represent
+                    // the dynamically selected year-period combinations via col1/col2 references.
                     const signMultiplier = statementType === STATEMENT_TYPES.INCOME_STATEMENT ? -1 : 1;
 
-                    // Build rollup configuration dynamically
-                    const rollupConfig = {};
-                    rollupConfig[col1] = aq.escape(d => aq.op.sum(d.year === yearInt1 ? d.movement_amount * signMultiplier : 0));
-                    rollupConfig[col2] = aq.escape(d => aq.op.sum(d.year === yearInt2 ? d.movement_amount * signMultiplier : 0));
-
                     const aggregated = filtered
+                        .params({
+                            col1Year: yearInt1,
+                            col2Year: yearInt2,
+                            signMult: signMultiplier
+                        })
                         .groupby('name1', 'name2', 'code0', 'name0', 'code1', 'code2', 'code3')
-                        .rollup(rollupConfig);
+                        .rollup({
+                            amount_2024: d => aq.op.sum(d.year === col1Year ? d.movement_amount * signMult : 0),
+                            amount_2025: d => aq.op.sum(d.year === col2Year ? d.movement_amount * signMult : 0)
+                        });
 
                     console.log('Columns after aggregation:', aggregated.columnNames());
 
