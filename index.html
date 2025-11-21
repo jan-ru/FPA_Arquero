@@ -1404,19 +1404,15 @@
 
             // Helper: Calculate variance columns
             deriveVarianceColumns(combined) {
-                // Use YEAR_CONFIG for dynamic year references (currently supports 2 years)
-                const year1 = YEAR_CONFIG.getYear(0); // First year (e.g., '2024')
-                const year2 = YEAR_CONFIG.getYear(1); // Second year (e.g., '2025')
-                const col1 = YEAR_CONFIG.getAmountColumn(year1); // 'amount_2024'
-                const col2 = YEAR_CONFIG.getAmountColumn(year2); // 'amount_2025'
-
+                // Note: Arquero requires static column names in derive operations
+                // We use amount_2024/amount_2025 as the column identifiers
                 return combined.derive({
-                    [col1]: d => d[col1] || 0,
-                    [col2]: d => d[col2] || 0,
-                    variance_amount: d => (d[col2] || 0) - (d[col1] || 0),
+                    amount_2024: d => d.amount_2024 || 0,
+                    amount_2025: d => d.amount_2025 || 0,
+                    variance_amount: d => (d.amount_2025 || 0) - (d.amount_2024 || 0),
                     variance_percent: d => {
-                        const amt1 = d[col1] || 0;
-                        const amt2 = d[col2] || 0;
+                        const amt1 = d.amount_2024 || 0;
+                        const amt2 = d.amount_2025 || 0;
                         return amt1 !== 0 ? ((amt2 - amt1) / Math.abs(amt1)) * 100 : 0;
                     }
                 });
@@ -1424,21 +1420,17 @@
 
             // Helper: Calculate category totals
             calculateCategoryTotals(combined) {
-                // Use YEAR_CONFIG for dynamic year references (currently supports 2 years)
-                const year1 = YEAR_CONFIG.getYear(0);
-                const year2 = YEAR_CONFIG.getYear(1);
-                const col1 = YEAR_CONFIG.getAmountColumn(year1);
-                const col2 = YEAR_CONFIG.getAmountColumn(year2);
-
+                // Note: Arquero requires static column names in rollup operations
+                // We use amount_2024/amount_2025 as the column identifiers
                 return combined
                     .groupby('name1')
                     .rollup({
-                        [col1]: d => aq.op.sum(d[col1]),
-                        [col2]: d => aq.op.sum(d[col2]),
+                        amount_2024: d => aq.op.sum(d.amount_2024),
+                        amount_2025: d => aq.op.sum(d.amount_2025),
                         variance_amount: d => aq.op.sum(d.variance_amount),
                         variance_percent: d => {
-                            const total1 = aq.op.sum(d[col1]);
-                            const total2 = aq.op.sum(d[col2]);
+                            const total1 = aq.op.sum(d.amount_2024);
+                            const total2 = aq.op.sum(d.amount_2025);
                             return total1 !== 0 ? ((total2 - total1) / Math.abs(total1)) * 100 : 0;
                         }
                     });
