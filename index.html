@@ -282,7 +282,7 @@
             background-color: #f8f9fa;
         }
 
-        .financial-table tr.category-header td {
+        .financial-table tr.name1-header td {
             background-color: #e9ecef;
             font-weight: 600;
             padding: 8px 6px;
@@ -456,6 +456,14 @@
             width: auto;
             min-width: 120px;
         }
+
+        /* Dev toggle (CSS-only): if the checkbox is unchecked hide the data controls */
+        #dev-toggle:not(:checked) ~ #data-controls {
+            display: none !important;
+        }
+        #dev-toggle:checked ~ #data-controls {
+            display: flex !important;
+        }
     </style>
 </head>
 <body>
@@ -469,8 +477,24 @@
             <div style="display: flex; gap: 15px; align-items: flex-start; margin-bottom: 15px;">
                 <!-- Left side: Button and status -->
                 <div style="flex: 1; min-width: 300px;">
-                    <div style="margin-bottom: 8px;">
+                    <div style="margin-bottom: 8px; display:flex; gap:8px; align-items:center;">
                         <button id="select-input-dir" class="btn btn-primary">Select Directory</button>
+
+                        <!-- Dev toggle: when off, hide the data controls -->
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <input type="checkbox" id="dev-toggle" checked style="width:18px; height:18px;" />
+                            <label for="dev-toggle" style="font-size:13px; color:#4a5568; font-weight:600; cursor:pointer;">Dev</label>
+                        </div>
+
+                        <!-- Data controls container: hidden when Dev is off -->
+                        <div id="data-controls" style="display:flex; gap:8px; align-items:center;">
+                            <label for="data-selector" style="font-size:13px; color: #4a5568; font-weight:500;">Data:</label>
+                            <select id="data-selector" aria-label="Data selection" style="padding:8px 12px; border-radius:4px; border:1px solid #e2e8f0; background:white; color:#4a5568; cursor:pointer; font-size:13px; font-weight:500;">
+                                <option value="budget">Budget</option>
+                                <option value="actual" selected>Actual</option>
+                                <option value="forecast">Forecast</option>
+                            </select>
+                        </div>
                     </div>
                     <span id="input-dir-status" class="status-text"></span>
                     <div id="loading-status" class="loading-status"></div>
@@ -553,7 +577,7 @@
             PERIODS_PER_YEAR: 12,
             DEFAULT_YEAR: '2024',
             DEFAULT_PERIOD: 'all',
-            VERSION: '2.4.0'
+            VERSION: '2.5.0'
         };
         
         // Statement Types
@@ -566,12 +590,12 @@
         // Excel Column Indices (1-based)
         const EXCEL_COLUMNS = {
             STATEMENT_TYPE: 4,
-            LEVEL1_CODE: 5,
-            LEVEL1_LABEL: 6,
-            LEVEL2_CODE: 7,
-            LEVEL2_LABEL: 8,
-            LEVEL3_CODE: 9,
-            LEVEL3_LABEL: 10,
+            CODE1: 5,
+            NAME1: 6,
+            CODE2: 7,
+            NAME2: 8,
+            CODE3: 9,
+            NAME3: 10,
             ACCOUNT_CODE: 11,
             ACCOUNT_DESCRIPTION: 12
         };
@@ -618,8 +642,8 @@
                 'account_code',
                 'account_description',
                 'statement_type',
-                'level1_code',
-                'level1_label'
+                'code1',
+                'name1'
             ]
         };
 
@@ -999,12 +1023,12 @@
                     
                     // Extract hierarchy columns
                     const statementType = row.getCell(EXCEL_COLUMNS.STATEMENT_TYPE).value;
-                    const level1Code = row.getCell(EXCEL_COLUMNS.LEVEL1_CODE).value;
-                    const level1Label = row.getCell(EXCEL_COLUMNS.LEVEL1_LABEL).value;
-                    const level2Code = row.getCell(EXCEL_COLUMNS.LEVEL2_CODE).value;
-                    const level2Label = row.getCell(EXCEL_COLUMNS.LEVEL2_LABEL).value;
-                    const level3Code = row.getCell(EXCEL_COLUMNS.LEVEL3_CODE).value;
-                    const level3Label = row.getCell(EXCEL_COLUMNS.LEVEL3_LABEL).value;
+                    const level1Code = row.getCell(EXCEL_COLUMNS.CODE1).value;
+                    const level1Label = row.getCell(EXCEL_COLUMNS.NAME1).value;
+                    const level2Code = row.getCell(EXCEL_COLUMNS.CODE2).value;
+                    const level2Label = row.getCell(EXCEL_COLUMNS.NAME2).value;
+                    const level3Code = row.getCell(EXCEL_COLUMNS.CODE3).value;
+                    const level3Label = row.getCell(EXCEL_COLUMNS.NAME3).value;
                     
                     // Determine statement type
                     let stmtType = STATEMENT_TYPES.INCOME_STATEMENT; // Default
@@ -1014,19 +1038,41 @@
                         stmtType = STATEMENT_TYPES.INCOME_STATEMENT;
                     }
                     
+                    // Determine Code0 and Name0 based on code1
+                    let code0 = '';
+                    let name0 = '';
+                    const level1CodeNum = parseInt(level1Code);
+
+                    if ([0, 10, 20].includes(level1CodeNum)) {
+                        code0 = 'A';
+                        name0 = 'vaste activa';
+                    } else if ([30, 40, 50].includes(level1CodeNum)) {
+                        code0 = 'A';
+                        name0 = 'vlottende activa';
+                    } else if (level1CodeNum === 60) {
+                        code0 = 'L';
+                        name0 = 'eigen vermogen';
+                    } else if ([65, 70].includes(level1CodeNum)) {
+                        code0 = 'L';
+                        name0 = 'lange termijn schulden';
+                    } else if ([80, 90].includes(level1CodeNum)) {
+                        code0 = 'L';
+                        name0 = 'korte termijn schulden';
+                    }
+
                     // Create base row with hierarchy
                     const baseRow = {
-                        account_code: String(accountCode),
-                        account_description: String(accountDescription ?? ''),
                         statement_type: stmtType,
-                        level1_code: level1Code !== null && level1Code !== undefined ? String(level1Code) : '',
-                        level1_label: level1Label ?? '',
-                        level2_code: level2Code !== null && level2Code !== undefined ? String(level2Code) : '',
-                        level2_label: level2Label ?? '',
-                        level3_code: level3Code !== null && level3Code !== undefined ? String(level3Code) : '',
-                        level3_label: level3Label ?? '',
-                        category: (level1Label ?? '').toString(),
-                        subcategory: (level2Label ?? level1Label ?? '').toString()
+                        code0: code0,
+                        name0: name0,
+                        code1: level1Code !== null && level1Code !== undefined ? String(level1Code) : '',
+                        name1: (level1Label ?? '').toString(),
+                        code2: level2Code !== null && level2Code !== undefined ? String(level2Code) : '',
+                        name2: (level2Label ?? level1Label ?? '').toString(),
+                        code3: level3Code !== null && level3Code !== undefined ? String(level3Code) : '',
+                        name3: level3Label ?? '',
+                        account_code: String(accountCode),
+                        account_description: String(accountDescription ?? '')
                     };
                     
                     // Process movement columns
@@ -1122,7 +1168,7 @@
                     console.log(`  - Balances: ${balancesTable.numRows()} rows`);
                     
                     // Validate required columns exist
-                    const requiredColumns = ['account_code', 'statement_type', 'level1_code', 'level1_label'];
+                    const requiredColumns = ['account_code', 'statement_type', 'code1', 'name1'];
                     const movementColumns = movementsTable.columnNames();
                     const missingColumns = requiredColumns.filter(col => !movementColumns.includes(col));
                     
@@ -1192,7 +1238,7 @@
             // Helper: Calculate category totals
             calculateCategoryTotals(combined) {
                 return combined
-                    .groupby('category')
+                    .groupby('name1')
                     .rollup({
                         amount_2024: d => aq.op.sum(d.amount_2024),
                         amount_2025: d => aq.op.sum(d.amount_2025),
@@ -1308,12 +1354,12 @@
                     // but they now represent the selected year-period combinations
                     const signMultiplier = statementType === STATEMENT_TYPES.INCOME_STATEMENT ? -1 : 1;
                     const aggregated = filtered
-                        .params({ 
-                            col1Year: year2024, 
-                            col2Year: year2025, 
-                            signMult: signMultiplier 
+                        .params({
+                            col1Year: year2024,
+                            col2Year: year2025,
+                            signMult: signMultiplier
                         })
-                        .groupby('category', 'subcategory', 'level1_code', 'level2_code', 'level3_code')
+                        .groupby('name1', 'name2', 'code0', 'name0', 'code1', 'code2', 'code3')
                         .rollup({
                             amount_2024: d => aq.op.sum(d.year === col1Year ? d.movement_amount * signMult : 0),
                             amount_2025: d => aq.op.sum(d.year === col2Year ? d.movement_amount * signMult : 0)
@@ -1322,7 +1368,7 @@
                     console.log('Columns after aggregation:', aggregated.columnNames());
 
                     // Add ordering if specified - sort by level codes for proper order (all 3 levels)
-                    const ordered = options.orderBy ? aggregated.orderby('level1_code', 'level2_code', 'level3_code') : aggregated;
+                    const ordered = options.orderBy ? aggregated.orderby('code1', 'code2', 'code3') : aggregated;
                     
                     // Calculate variances
                     const withVariances = this.deriveVarianceColumns(ordered);
@@ -1366,7 +1412,7 @@
                         let totalAssets = 0, totalLiabilities = 0, totalEquity = 0;
                         
                         totals.forEach(row => {
-                            const categoryLower = row.category.toLowerCase();
+                            const categoryLower = row.name1.toLowerCase();
                             
                             if (CATEGORY_DEFINITIONS.ASSETS.some(cat => categoryLower.includes(cat))) {
                                 totalAssets += row.amount_2025 || 0;
@@ -1409,7 +1455,7 @@
                         let taxes2024 = 0, taxes2025 = 0;
 
                         totals.forEach(row => {
-                            const categoryLower = row.category.toLowerCase();
+                            const categoryLower = row.name1.toLowerCase();
                             
                             // Revenue (Netto-omzet, Omzet, etc.)
                             if (categoryLower.includes('omzet') && !categoryLower.includes('kostprijs')) {
@@ -1482,14 +1528,14 @@
                     
                     // Add back non-cash expenses (depreciation, amortization)
                     balanceDetails.forEach(row => {
-                        if (row.subcategory && (
-                            row.subcategory.toLowerCase().includes('afschrijving') ||
-                            row.subcategory.toLowerCase().includes('depreciation') ||
-                            row.subcategory.toLowerCase().includes('amortization')
+                        if (row.name2 && (
+                            row.name2.toLowerCase().includes('afschrijving') ||
+                            row.name2.toLowerCase().includes('depreciation') ||
+                            row.name2.toLowerCase().includes('amortization')
                         )) {
                             cashFlowData.push({
                                 category: 'Operating Activities',
-                                subcategory: row.subcategory,
+                                subcategory: row.name2,
                                 amount_2024: Math.abs(row.variance_amount || 0),
                                 amount_2025: Math.abs(row.variance_amount || 0)
                             });
@@ -1498,15 +1544,15 @@
                     
                     // Changes in working capital (current assets and liabilities)
                     balanceDetails.forEach(row => {
-                        if (row.category && (
-                            row.category.toLowerCase().includes('vlottende') ||
-                            row.category.toLowerCase().includes('current')
+                        if (row.name1 && (
+                            row.name1.toLowerCase().includes('vlottende') ||
+                            row.name1.toLowerCase().includes('current')
                         )) {
                             const change = (row.amount_2025 || 0) - (row.amount_2024 || 0);
                             if (Math.abs(change) > 0) {
                                 cashFlowData.push({
                                     category: 'Operating Activities',
-                                    subcategory: `Change in ${row.subcategory}`,
+                                    subcategory: `Change in ${row.name2}`,
                                     amount_2024: 0,
                                     amount_2025: -change // Negative because increase in assets uses cash
                                 });
@@ -1516,15 +1562,15 @@
                     
                     // Investing Activities (changes in fixed assets)
                     balanceDetails.forEach(row => {
-                        if (row.category && (
-                            row.category.toLowerCase().includes('vaste activa') ||
-                            row.category.toLowerCase().includes('fixed assets')
+                        if (row.name1 && (
+                            row.name1.toLowerCase().includes('vaste activa') ||
+                            row.name1.toLowerCase().includes('fixed assets')
                         )) {
                             const change = (row.amount_2025 || 0) - (row.amount_2024 || 0);
                             if (Math.abs(change) > 0) {
                                 cashFlowData.push({
                                     category: 'Investing Activities',
-                                    subcategory: row.subcategory,
+                                    subcategory: row.name2,
                                     amount_2024: 0,
                                     amount_2025: -change
                                 });
@@ -1534,17 +1580,17 @@
                     
                     // Financing Activities (changes in equity and long-term liabilities)
                     balanceDetails.forEach(row => {
-                        if (row.category && (
-                            row.category.toLowerCase().includes('eigen vermogen') ||
-                            row.category.toLowerCase().includes('equity') ||
-                            row.category.toLowerCase().includes('langlopend') ||
-                            row.category.toLowerCase().includes('long-term')
+                        if (row.name1 && (
+                            row.name1.toLowerCase().includes('eigen vermogen') ||
+                            row.name1.toLowerCase().includes('equity') ||
+                            row.name1.toLowerCase().includes('langlopend') ||
+                            row.name1.toLowerCase().includes('long-term')
                         )) {
                             const change = (row.amount_2025 || 0) - (row.amount_2024 || 0);
                             if (Math.abs(change) > 0) {
                                 cashFlowData.push({
                                     category: 'Financing Activities',
-                                    subcategory: row.subcategory,
+                                    subcategory: row.name2,
                                     amount_2024: 0,
                                     amount_2025: change
                                 });
@@ -1568,13 +1614,13 @@
                     let financing2024 = 0, financing2025 = 0;
 
                     totals.forEach(row => {
-                        if (row.category === 'Operating Activities') {
+                        if (row.name1 === 'Operating Activities') {
                             operating2024 = row.amount_2024;
                             operating2025 = row.amount_2025;
-                        } else if (row.category === 'Investing Activities') {
+                        } else if (row.name1 === 'Investing Activities') {
                             investing2024 = row.amount_2024;
                             investing2025 = row.amount_2025;
-                        } else if (row.category === 'Financing Activities') {
+                        } else if (row.name1 === 'Financing Activities') {
                             financing2024 = row.amount_2024;
                             financing2025 = row.amount_2025;
                         }
@@ -1586,8 +1632,8 @@
                     // Get starting cash from Balance Sheet (cash and cash equivalents)
                     let startingCash2024 = 0, startingCash2025 = 0;
                     balanceDetails.forEach(row => {
-                        if (row.subcategory) {
-                            const subcategoryLower = row.subcategory.toLowerCase();
+                        if (row.name2) {
+                            const subcategoryLower = row.name2.toLowerCase();
                             if (CATEGORY_DEFINITIONS.CASH.some(cat => subcategoryLower.includes(cat))) {
                                 startingCash2024 += row.amount_2024 || 0;
                                 startingCash2025 += row.amount_2025 || 0;
@@ -1833,13 +1879,13 @@
                         let currentCategory = null;
 
                         details.forEach(row => {
-                            if (row.category !== currentCategory) {
+                            if (row.name1 !== currentCategory) {
                                 // Mark end of previous category
                                 if (currentCategory) {
                                     categoryEndRows[currentCategory] = rowIndex - 1;
                                 }
                                 
-                                currentCategory = row.category;
+                                currentCategory = row.name1;
                                 categoryStartRows[currentCategory] = rowIndex + 1; // +1 because category header is on current row
                                 
                                 // Add category header
@@ -1850,8 +1896,8 @@
                             
                             // Add detail row
                             const detailRow = isCashFlow
-                                ? ['  ' + (row.subcategory || row.category), row.amount_2025]
-                                : ['  ' + (row.subcategory || row.category), row.amount_2024, row.amount_2025, row.variance_amount, row.variance_percent];
+                                ? ['  ' + (row.name2 || row.name1), row.amount_2025]
+                                : ['  ' + (row.name2 || row.name1), row.amount_2024, row.amount_2025, row.variance_amount, row.variance_percent];
                             
                             const excelRow = worksheet.addRow(detailRow);
                             
@@ -1923,9 +1969,9 @@
                         // Add category totals with Excel formulas
                         const totals = data.totals.objects();
                         totals.forEach(row => {
-                            const totalLabel = 'Total ' + row.category;
-                            const startRow = categoryStartRows[row.category];
-                            const endRow = categoryEndRows[row.category];
+                            const totalLabel = 'Total ' + row.name1;
+                            const startRow = categoryStartRows[row.name1];
+                            const endRow = categoryEndRows[row.name1];
                             
                             const totalRow = isCashFlow 
                                 ? worksheet.addRow([totalLabel, null])
@@ -2150,15 +2196,15 @@
                 
                 // Get current detail level selection
                 const detailLevelDropdown = document.getElementById('detail-level-header');
-                const detailLevel = detailLevelDropdown ? detailLevelDropdown.value : 'category';
-                
+                const detailLevel = detailLevelDropdown ? detailLevelDropdown.value : 'name1';
+
                 // Table header
                 html += '<thead><tr>';
                 // Detail Level dropdown (no Line Item label needed)
                 html += '<th class="col-label" colspan="2">';
                 html += '<select id="detail-level-header" class="variance-dropdown detail-level-dropdown">';
-                html += `<option value="category" ${detailLevel === 'category' ? 'selected' : ''}>Category</option>`;
-                html += `<option value="subcategory" ${detailLevel === 'subcategory' ? 'selected' : ''}>Subcategory</option>`;
+                html += `<option value="name1" ${detailLevel === 'name1' ? 'selected' : ''}>Category</option>`;
+                html += `<option value="name2" ${detailLevel === 'name2' ? 'selected' : ''}>Subcategory</option>`;
                 html += '</select>';
                 html += '</th>';
                 // Period dropdowns using helper function
@@ -2201,7 +2247,7 @@
                 let totalAssetsInserted = false;
                 if (statementType === 'balance-sheet') {
                     totals.forEach(row => {
-                        const categoryLower = row.category.toLowerCase();
+                        const categoryLower = row.name1.toLowerCase();
                         if (CATEGORY_DEFINITIONS.ASSETS.some(cat => categoryLower.includes(cat))) {
                             totalAssets2024 += row.amount_2024 || 0;
                             totalAssets2025 += row.amount_2025 || 0;
@@ -2218,8 +2264,8 @@
                     // Insert Total Assets before first Passiva/Eigen vermogen category for Balance Sheet
                     if (statementType === 'balance-sheet' && 
                         !totalAssetsInserted &&
-                        row.category !== currentCategory) {
-                        const categoryLower = row.category.toLowerCase();
+                        row.name1 !== currentCategory) {
+                        const categoryLower = row.name1.toLowerCase();
                         if (categoryLower.includes('passiva') || categoryLower.includes('vermogen') || 
                             categoryLower.includes('liabilit') || categoryLower.includes('equity')) {
                             
@@ -2234,21 +2280,21 @@
                     }
                     
                     // Add category header if changed
-                    if (row.category !== currentCategory) {
-                        currentCategory = row.category;
+                    if (row.name1 !== currentCategory) {
+                        currentCategory = row.name1;
                         html += `<tr class="category-header"><td colspan="${colSpan}"><strong>${currentCategory}</strong></td></tr>`;
                     }
                     
                     // Add detail row - always show if subcategory exists
-                    const shouldShowDetail = row.subcategory;
+                    const shouldShowDetail = row.name2;
                     
                     if (shouldShowDetail) {
-                        html += this.renderTableRow('detail', row.subcategory, row.amount_2024, row.amount_2025, row.variance_amount, row.variance_percent, show2024, show2025, variance1Mode, variance2Mode, { indent: true });
+                        html += this.renderTableRow('detail', row.name2, row.amount_2024, row.amount_2025, row.variance_amount, row.variance_percent, show2024, show2025, variance1Mode, variance2Mode, { indent: true });
                         
                         // Insert Gross Profit inline after "Kostprijs van de omzet" for Income Statement
                         if (statementType === 'income-statement' && 
                             statementData.metrics && 
-                            row.subcategory.toLowerCase().includes('kostprijs')) {
+                            row.name2.toLowerCase().includes('kostprijs')) {
                             
                             const metrics = statementData.metrics;
                             const gpVariance = metrics.grossProfit['2025'] - metrics.grossProfit['2024'];
@@ -2265,7 +2311,7 @@
                         if (statementType === 'income-statement' && 
                             statementData.metrics && 
                             !operatingIncomeInserted &&
-                            row.subcategory && row.subcategory.toLowerCase().includes('overige personeelskosten')) {
+                            row.name2 && row.name2.toLowerCase().includes('overige personeelskosten')) {
                             
                             operatingIncomeInserted = true;
                             
@@ -2283,7 +2329,7 @@
                 });
 
                 // Check if category totals should be shown (based on detail level)
-                const showCategoryTotals = detailLevel === 'category';
+                const showCategoryTotals = detailLevel === 'name1';
                 
                 // Calculate grand totals for Balance Sheet (Liabilities & Equity only, Assets already shown)
                 let totalLiabilitiesEquity2024 = 0, totalLiabilitiesEquity2025 = 0;
@@ -2296,12 +2342,12 @@
                 
                 totals.forEach(row => {
                     if (showCategoryTotals) {
-                        html += this.renderTableRow('subtotal', `Total ${row.category}`, row.amount_2024, row.amount_2025, row.variance_amount, row.variance_percent, show2024, show2025, variance1Mode, variance2Mode, { bold: true });
+                        html += this.renderTableRow('subtotal', `Total ${row.name1}`, row.amount_2024, row.amount_2025, row.variance_amount, row.variance_percent, show2024, show2025, variance1Mode, variance2Mode, { bold: true });
                     }
                     
                     // Accumulate for Balance Sheet Liabilities & Equity total
                     if (statementType === 'balance-sheet') {
-                        const categoryLower = row.category.toLowerCase();
+                        const categoryLower = row.name1.toLowerCase();
                         if (categoryLower.includes('passiva') || categoryLower.includes('liabilit') || 
                             categoryLower.includes('vermogen') || categoryLower.includes('equity') ||
                             categoryLower.includes('schuld')) {
@@ -3045,6 +3091,8 @@
                         this.handleTabSwitch(this.currentStatementType);
                     }
                 });
+
+                
                 
                 // Detail level dropdown is now in the table header and handled by the table's event listeners
             }
