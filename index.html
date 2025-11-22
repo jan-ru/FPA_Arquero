@@ -474,55 +474,128 @@
         .ag-theme-alpine {
             --ag-header-background-color: #2c5282;
             --ag-header-foreground-color: white;
+            --ag-header-height: 48px;
+            --ag-row-height: 36px;
             --ag-odd-row-background-color: #f7fafc;
             --ag-border-color: #e2e8f0;
             --ag-row-hover-color: #edf2f7;
             --ag-selected-row-background-color: #bee3f8;
+            --ag-cell-horizontal-padding: 12px;
+            --ag-font-size: 14px;
+            --ag-header-font-size: 14px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        /* Header styling */
+        .ag-theme-alpine .ag-header-cell {
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+
+        .ag-theme-alpine .ag-header-cell-label {
+            padding: 8px 0;
         }
 
         /* Custom row styling for different row types */
         .ag-row.total-row {
             font-weight: bold;
-            border-top: 2px solid #2c5282;
-            border-bottom: 2px solid #2c5282;
+            font-size: 15px;
+            border-top: 2px solid #2c5282 !important;
+            border-bottom: 2px solid #2c5282 !important;
             background-color: #edf2f7 !important;
+            height: 42px !important;
+        }
+
+        .ag-row.total-row .ag-cell {
+            padding-top: 8px !important;
+            padding-bottom: 8px !important;
         }
 
         .ag-row.metric-row {
             font-weight: 600;
+            font-size: 14px;
             background-color: #f0f4f8 !important;
             font-style: italic;
+            height: 38px !important;
+        }
+
+        .ag-row.metric-row .ag-cell {
+            padding-top: 6px !important;
+            padding-bottom: 6px !important;
         }
 
         .ag-row.group-row {
             background-color: #e6f2ff !important;
             font-weight: 600;
+            font-size: 14px;
+        }
+
+        .ag-row.group-row .ag-cell {
+            padding-top: 4px;
+            padding-bottom: 4px;
         }
 
         /* Cell styling */
         .ag-cell.number-cell {
             text-align: right;
-            font-family: 'Courier New', monospace;
+            font-family: 'Courier New', Consolas, monospace;
+            font-size: 13px;
         }
 
         .ag-cell.detail-cell {
             padding-left: 20px;
         }
 
+        .ag-cell.group-cell {
+            font-weight: 600;
+        }
+
         /* Variance colors */
         .positive-variance {
             color: #28a745;
+            font-weight: 500;
         }
 
         .negative-variance {
             color: #dc3545;
+            font-weight: 500;
         }
 
         /* Spacer rows (empty rows for spacing) */
         .ag-row.spacer-row {
             background-color: transparent !important;
             border: none !important;
-            height: 10px !important;
+            height: 12px !important;
+            pointer-events: none;
+        }
+
+        .ag-row.spacer-row .ag-cell {
+            border: none !important;
+        }
+
+        /* Improved hover effects */
+        .ag-theme-alpine .ag-row:not(.total-row):not(.metric-row):hover {
+            background-color: #e6f2ff !important;
+            transition: background-color 0.15s ease;
+        }
+
+        /* Grid container responsive sizing */
+        #ag-grid-container {
+            min-height: 400px;
+            max-height: calc(100vh - 350px);
+        }
+
+        @media (max-width: 768px) {
+            .ag-theme-alpine {
+                --ag-font-size: 12px;
+                --ag-row-height: 32px;
+                --ag-cell-horizontal-padding: 8px;
+            }
+
+            #ag-grid-container {
+                height: 500px;
+                max-height: 500px;
+            }
         }
     </style>
 </head>
@@ -679,7 +752,7 @@
             <div id="statement-display" class="statement-display" style="display: none;"></div>
 
             <!-- ag-Grid container (new rendering) -->
-            <div id="ag-grid-container" class="ag-theme-alpine" style="height: 600px; width: 100%;"></div>
+            <div id="ag-grid-container" class="ag-theme-alpine" style="width: 100%;"></div>
 
             <!-- Export Controls -->
             <div class="export-controls">
