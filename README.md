@@ -227,9 +227,9 @@ Edit `config.json` to customize file names and directories:
 The application is now organized into ES6 modules for better maintainability and testing:
 - **Main entry**: `index.html` (669 lines) imports from `src/app.js`
 - **Modules**: 11 JavaScript files in `src/` directory
-- **Tests**: 51 unit tests covering core business logic
+- **Tests**: 96 unit tests covering core business logic
 - **External dependencies**: CDN libraries (ag-Grid, Arquero, ExcelJS)
-- **Test coverage**: ~70% of core logic
+- **Test coverage**: 68.3% line coverage, 96.1% branch coverage
 
 ### Key Components
 - **DataStore** (`src/data/DataStore.js`): Manages trial balance and date dimension data (Singleton pattern)
@@ -269,11 +269,15 @@ deno test test/unit/utils/VarianceCalculator.test.ts --allow-read
 
 ### Test Coverage
 
-Current test coverage (~70% of core logic):
-- ✅ CategoryMatcher: 17 tests
-- ✅ VarianceCalculator: 17 tests
-- ✅ DataStore: 17 tests
+Current test coverage (68.3% overall):
+- ✅ constants.js: 100% (9 tests)
+- ✅ CategoryMatcher: 100% (17 tests)
+- ✅ VarianceCalculator: 100% (17 tests)
+- ✅ DataStore: 100% (17 tests)
+- ✅ StatementGenerator: 61.3% (20 tests)
+- ✅ DataLoader: 42.1% (16 tests)
 - ✅ Period Mapping Validation: 1 functional test
+- **Total: 96 unit tests + 1 functional test**
 
 ### Module Structure
 
