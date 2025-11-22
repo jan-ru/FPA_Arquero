@@ -478,6 +478,7 @@
 
         /* Grid container responsive sizing */
         #ag-grid-container {
+            height: 600px;
             min-height: 400px;
             max-height: calc(100vh - 350px);
         }
@@ -581,7 +582,7 @@
             <div style="display: flex; gap: 20px; align-items: flex-start; margin-bottom: 15px; padding: 12px; background: #f7fafc; border-radius: 6px; flex-wrap: wrap;">
                 <!-- Year 1 Controls -->
                 <div style="display: flex; gap: 8px; align-items: center;">
-                    <label style="font-size: 13px; color: #2c5282; font-weight: 600; min-width: 60px;">Year 1:</label>
+                    <label style="font-size: 13px; color: #2c5282; font-weight: 600; min-width: 70px;">Period 1:</label>
                     <select id="period-2024-header" class="period-dropdown-header" style="padding: 6px 10px; border-radius: 4px; border: 1px solid #cbd5e0; background: white; font-size: 12px;">
                         <optgroup label="2024">
                             <option value="2024-all" selected>2024 (All)</option>
@@ -614,7 +615,7 @@
 
                 <!-- Year 2 Controls -->
                 <div style="display: flex; gap: 8px; align-items: center;">
-                    <label style="font-size: 13px; color: #2c5282; font-weight: 600; min-width: 60px;">Year 2:</label>
+                    <label style="font-size: 13px; color: #2c5282; font-weight: 600; min-width: 70px;">Period 2:</label>
                     <select id="period-2025-header" class="period-dropdown-header" style="padding: 6px 10px; border-radius: 4px; border: 1px solid #cbd5e0; background: white; font-size: 12px;">
                         <optgroup label="2025">
                             <option value="2025-all" selected>2025 (All)</option>
@@ -2878,6 +2879,8 @@
 
             // Initialize grid with data
             render(statementData, statementType) {
+                console.log('AgGridStatementRenderer.render called', { statementType, rowCount: statementData?.details?.numRows() });
+
                 this.currentStatementType = statementType;
                 this.currentStatementData = statementData;
 
@@ -2886,9 +2889,11 @@
 
                 // Prepare data for grid
                 const gridData = this.prepareDataForGrid(statementData, statementType);
+                console.log('Grid data prepared', { dataLength: gridData.length });
 
                 // Get column definitions
                 const columnDefs = this.getColumnDefs(statementType, year1, year2);
+                console.log('Column definitions', { columnCount: columnDefs.length });
 
                 // Get detail level setting
                 const detailLevel = document.getElementById('detail-level')?.value || 'all';
@@ -2939,12 +2944,14 @@
                     rowClass: params => this.getRowClass(params),
 
                     onGridReady: params => {
+                        console.log('Grid ready!', { rowCount: params.api.getDisplayedRowCount() });
                         this.gridApi = params.api;
                         this.columnApi = params.columnApi;
                         params.api.sizeColumnsToFit();
                     },
 
                     onFirstDataRendered: params => {
+                        console.log('First data rendered!', { rowCount: params.api.getDisplayedRowCount() });
                         params.api.sizeColumnsToFit();
                     }
                 };
