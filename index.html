@@ -3090,8 +3090,13 @@
                 const year2 = YEAR_CONFIG.getYear(1);
 
                 // 1. Insert Gross Profit after COGS
-                const cogsIndex = result.findIndex(row =>
-                    row.name2 && row.name2.toLowerCase().includes('kostprijs')
+                // Try multiple patterns to find COGS row
+                let cogsIndex = result.findIndex(row =>
+                    row.name2 && (
+                        row.name2.toLowerCase().includes('kostprijs') ||
+                        row.name2.toLowerCase().includes('cogs') ||
+                        row.name2.toLowerCase().includes('cost of goods')
+                    )
                 );
 
                 if (cogsIndex >= 0 && metrics.grossProfit) {
@@ -3112,9 +3117,22 @@
                 }
 
                 // 2. Insert Operating Income after operating expenses
-                const opexIndex = result.findIndex(row =>
-                    row.name2 && row.name2.toLowerCase().includes('overige personeelskosten')
+                // Try multiple patterns to find last operating expense row
+                let opexIndex = result.findIndex(row =>
+                    row.name2 && (
+                        row.name2.toLowerCase().includes('overige personeelskosten') ||
+                        row.name2.toLowerCase().includes('operating expense') ||
+                        row.name1 && row.name1.toLowerCase().includes('operating')
+                    )
                 );
+
+                // If not found, try to find the last expense before "Other" categories
+                if (opexIndex < 0) {
+                    opexIndex = result.findIndex(row =>
+                        row.name1 && row.name1.toLowerCase().includes('overige')
+                    );
+                    if (opexIndex > 0) opexIndex -= 1;  // Insert before "Other" section
+                }
 
                 if (opexIndex >= 0 && metrics.operatingIncome) {
                     const oiVariance = metrics.operatingIncome[year2] - metrics.operatingIncome[year1];
@@ -3265,8 +3283,7 @@
                         type: 'numericColumn',
                         valueFormatter: params => this.formatCurrency(params.value),
                         aggFunc: 'sum',
-                        cellClass: 'number-cell',
-                        hide: statementType === UI_STATEMENT_TYPES.CASH_FLOW // Hide for cash flow
+                        cellClass: 'number-cell'
                     },
                     {
                         field: 'amount_2025',
