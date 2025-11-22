@@ -683,7 +683,7 @@
 
             <!-- Export Controls -->
             <div class="export-controls">
-                <button id="export-all" class="btn btn-secondary">Export All</button>
+                <button id="export-all" class="btn btn-secondary">Export to Excel</button>
                 <span id="export-status" class="status-text"></span>
             </div>
         </div>
@@ -3395,16 +3395,178 @@
                 }
             }
 
-            // Export to Excel
-            exportToExcel() {
+            // Export to Excel with formatting
+            exportToExcel(statementName) {
                 if (!this.gridApi) {
                     console.error('Grid not initialized');
                     return;
                 }
 
+                const fileName = statementName || this.currentStatementType || 'Statement';
+                const timestamp = new Date().toISOString().split('T')[0];
+
+                // Define Excel styles
+                const excelStyles = [
+                    // Bold style for totals
+                    {
+                        id: 'totalRow',
+                        font: {
+                            bold: true,
+                            size: 11,
+                            fontName: 'Calibri'
+                        },
+                        borders: {
+                            borderTop: {
+                                color: '#000000',
+                                lineStyle: 'Continuous',
+                                weight: 2
+                            },
+                            borderBottom: {
+                                color: '#000000',
+                                lineStyle: 'Double',
+                                weight: 3
+                            }
+                        },
+                        interior: {
+                            color: '#EDF2F7',
+                            pattern: 'Solid'
+                        }
+                    },
+
+                    // Metric rows (Gross Profit, Operating Income, etc.)
+                    {
+                        id: 'metricRow',
+                        font: {
+                            bold: true,
+                            italic: true,
+                            size: 11
+                        },
+                        interior: {
+                            color: '#F0F4F8',
+                            pattern: 'Solid'
+                        }
+                    },
+
+                    // Group/Category rows
+                    {
+                        id: 'groupRow',
+                        font: {
+                            bold: true,
+                            size: 11
+                        },
+                        interior: {
+                            color: '#E6F2FF',
+                            pattern: 'Solid'
+                        }
+                    },
+
+                    // Currency format
+                    {
+                        id: 'currencyCell',
+                        numberFormat: {
+                            format: '#,##0'
+                        },
+                        alignment: {
+                            horizontal: 'Right'
+                        }
+                    },
+
+                    // Positive variance (green)
+                    {
+                        id: 'positiveVariance',
+                        font: {
+                            color: '#28a745'
+                        }
+                    },
+
+                    // Negative variance (red)
+                    {
+                        id: 'negativeVariance',
+                        font: {
+                            color: '#dc3545'
+                        }
+                    },
+
+                    // Header style
+                    {
+                        id: 'header',
+                        interior: {
+                            color: '#2c5282',
+                            pattern: 'Solid'
+                        },
+                        font: {
+                            color: '#FFFFFF',
+                            bold: true,
+                            size: 12
+                        },
+                        borders: {
+                            borderBottom: {
+                                color: '#000000',
+                                lineStyle: 'Continuous',
+                                weight: 2
+                            }
+                        }
+                    }
+                ];
+
                 const params = {
-                    fileName: `${this.currentStatementType}_${new Date().toISOString().split('T')[0]}.xlsx`,
-                    sheetName: this.currentStatementType
+                    fileName: `${fileName}_${timestamp}.xlsx`,
+                    sheetName: fileName,
+                    excelStyles: excelStyles,
+
+                    // Apply styles based on row type and cell content
+                    processCellCallback: (params) => {
+                        const { value, node, column } = params;
+
+                        // Total rows
+                        if (node.data && node.data._rowType === 'total') {
+                            return { styleId: 'totalRow' };
+                        }
+
+                        // Metric rows
+                        if (node.data && node.data._rowType === 'metric') {
+                            return { styleId: 'metricRow' };
+                        }
+
+                        // Group rows
+                        if (node.group) {
+                            return { styleId: 'groupRow' };
+                        }
+
+                        // Amount columns - currency format
+                        if (column.getColId().startsWith('amount_')) {
+                            return { styleId: 'currencyCell' };
+                        }
+
+                        // Variance amount columns - currency + color
+                        if (column.getColId() === 'variance_amount') {
+                            const colorStyle = value >= 0 ? 'positiveVariance' : 'negativeVariance';
+                            return { styleId: ['currencyCell', colorStyle] };
+                        }
+
+                        // Variance percent columns - color only
+                        if (column.getColId() === 'variance_percent') {
+                            const colorStyle = value >= 0 ? 'positiveVariance' : 'negativeVariance';
+                            return { styleId: colorStyle };
+                        }
+
+                        return params.value;
+                    },
+
+                    // Apply style to headers
+                    processHeaderCallback: (params) => {
+                        return { styleId: 'header' };
+                    },
+
+                    // Custom column widths
+                    columnWidth: (params) => {
+                        const colId = params.column.getColId();
+
+                        if (colId === 'name2' || colId === 'ag-Grid-AutoColumn') {
+                            return 300;  // Wider for item names
+                        }
+                        return 120;  // Default width
+                    }
                 };
 
                 this.gridApi.exportDataAsExcel(params);
@@ -3837,32 +3999,26 @@
             }
 
             // Handle export all statements
-            async handleExportAll() {
+            handleExportCurrent() {
                 try {
-                    this.showExportStatus('Exporting all statements...', 'loading');
+                    if (!this.currentStatementType) {
+                        this.showExportStatus('No statement to export', 'error');
+                        return;
+                    }
 
-                    // Get years from config
-                    const year1 = YEAR_CONFIG.getYear(0);
-                    const year2 = YEAR_CONFIG.getYear(1);
+                    this.showExportStatus('Exporting statement...', 'loading');
 
-                    // Get period selections from header dropdowns
-                    const periodYear1 = document.getElementById(`period-${year1}-header`)?.value || `${year1}-all`;
-                    const periodYear2 = document.getElementById(`period-${year2}-header`)?.value || `${year2}-all`;
-                    const periodOptions = {
-                        [`period${year1}`]: periodYear1,
-                        [`period${year2}`]: periodYear2
-                    };
-                    
-                    const statements = {
-                        'Balance Sheet': this.statementGenerator.generateBalanceSheet(periodOptions),
-                        'Income Statement': this.statementGenerator.generateIncomeStatement(periodOptions),
-                        'Cash Flow': this.statementGenerator.generateCashFlowStatement(periodOptions)
-                    };
-                    
-                    await this.exportHandler.exportAllStatements(statements);
-                    
-                    this.showExportStatus('All statements exported successfully!', 'success');
-                    
+                    // Get statement name from selector
+                    const statementSelector = document.getElementById('statement-selector');
+                    const statementName = statementSelector ?
+                        statementSelector.options[statementSelector.selectedIndex].text :
+                        this.currentStatementType;
+
+                    // Export using ag-Grid
+                    this.agGridRenderer.exportToExcel(statementName);
+
+                    this.showExportStatus('Statement exported successfully!', 'success');
+
                 } catch (error) {
                     this.showExportStatus('Export failed: ' + error.message, 'error');
                     console.error('Export error:', error);
@@ -4030,7 +4186,7 @@
 
                 // Export button
                 document.getElementById('export-all').addEventListener('click', () => {
-                    this.handleExportAll();
+                    this.handleExportCurrent();
                 });
                 
                 // File preview clicks
