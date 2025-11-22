@@ -8,7 +8,12 @@
     <!-- External Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/arquero@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/exceljs@latest/dist/exceljs.min.js"></script>
-    
+
+    <!-- ag-Grid Community Edition -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31/styles/ag-grid.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31/styles/ag-theme-alpine.css">
+    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31/dist/ag-grid-community.min.js"></script>
+
     <style>
         /* Global Styles */
         * {
@@ -464,6 +469,54 @@
         #dev-toggle:checked ~ #data-controls {
             display: flex !important;
         }
+
+        /* ===== ag-Grid Theme Customization ===== */
+        .ag-theme-alpine {
+            --ag-header-background-color: #2c5282;
+            --ag-header-foreground-color: white;
+            --ag-odd-row-background-color: #f7fafc;
+            --ag-border-color: #e2e8f0;
+            --ag-row-hover-color: #edf2f7;
+            --ag-selected-row-background-color: #bee3f8;
+        }
+
+        /* Custom row styling for different row types */
+        .ag-row.total-row {
+            font-weight: bold;
+            border-top: 2px solid #2c5282;
+            border-bottom: 2px solid #2c5282;
+            background-color: #edf2f7 !important;
+        }
+
+        .ag-row.metric-row {
+            font-weight: 600;
+            background-color: #f0f4f8 !important;
+            font-style: italic;
+        }
+
+        .ag-row.group-row {
+            background-color: #e6f2ff !important;
+            font-weight: 600;
+        }
+
+        /* Cell styling */
+        .ag-cell.number-cell {
+            text-align: right;
+            font-family: 'Courier New', monospace;
+        }
+
+        .ag-cell.detail-cell {
+            padding-left: 20px;
+        }
+
+        /* Variance colors */
+        .positive-variance {
+            color: #28a745;
+        }
+
+        .negative-variance {
+            color: #dc3545;
+        }
     </style>
 </head>
 <body>
@@ -556,8 +609,12 @@
                     <!-- Detail level control moved to table header -->
                 </div>
             </div>
-            <div id="statement-display" class="statement-display"></div>
-            
+            <!-- Old rendering (will be removed in Phase 7) -->
+            <div id="statement-display" class="statement-display" style="display: none;"></div>
+
+            <!-- ag-Grid container (new rendering) -->
+            <div id="ag-grid-container" class="ag-theme-alpine" style="height: 600px; width: 100%;"></div>
+
             <!-- Export Controls -->
             <div class="export-controls">
                 <button id="export-all" class="btn btn-secondary">Export All</button>
@@ -2771,14 +2828,209 @@
             }
         }
 
+        // ag-Grid Statement Renderer
+        class AgGridStatementRenderer {
+            constructor(containerId) {
+                this.gridDiv = document.querySelector(`#${containerId}`);
+                this.gridApi = null;
+                this.columnApi = null;
+                this.currentStatementType = null;
+                this.currentStatementData = null;
+            }
+
+            // Initialize grid with data
+            render(statementData, statementType) {
+                this.currentStatementType = statementType;
+                this.currentStatementData = statementData;
+
+                const year1 = YEAR_CONFIG.getYear(0);
+                const year2 = YEAR_CONFIG.getYear(1);
+
+                // Prepare data for grid
+                const gridData = this.prepareDataForGrid(statementData, statementType);
+
+                // Get column definitions
+                const columnDefs = this.getColumnDefs(statementType, year1, year2);
+
+                // Create grid options
+                const gridOptions = {
+                    columnDefs: columnDefs,
+                    rowData: gridData,
+                    defaultColDef: {
+                        sortable: true,
+                        filter: true,
+                        resizable: true,
+                        flex: 1
+                    },
+                    groupDefaultExpanded: 1,
+                    rowClass: params => this.getRowClass(params),
+                    onGridReady: params => {
+                        this.gridApi = params.api;
+                        this.columnApi = params.columnApi;
+                        params.api.sizeColumnsToFit();
+                    },
+                    onFirstDataRendered: params => {
+                        params.api.sizeColumnsToFit();
+                    }
+                };
+
+                // Destroy existing grid if it exists
+                if (this.gridApi) {
+                    this.gridApi.destroy();
+                }
+
+                // Create new grid
+                new agGrid.Grid(this.gridDiv, gridOptions);
+            }
+
+            // Prepare data for ag-Grid
+            prepareDataForGrid(statementData, statementType) {
+                const details = statementData.details.objects();
+
+                // Add metadata for row styling and behavior
+                return details.map(row => ({
+                    ...row,
+                    _isMetric: false,
+                    _rowType: 'detail'
+                }));
+            }
+
+            // Get column definitions based on statement type
+            getColumnDefs(statementType, year1, year2) {
+                // Base columns
+                const columns = [
+                    // Category/Item columns
+                    {
+                        field: 'name1',
+                        headerName: 'Category',
+                        rowGroup: true,
+                        hide: true
+                    },
+                    {
+                        field: 'name2',
+                        headerName: 'Line Item',
+                        minWidth: 300,
+                        cellClass: params => params.node.group ? 'group-cell' : 'detail-cell'
+                    },
+
+                    // Year columns
+                    {
+                        field: 'amount_2024',
+                        headerName: year1,
+                        type: 'numericColumn',
+                        valueFormatter: params => this.formatCurrency(params.value),
+                        aggFunc: 'sum',
+                        cellClass: 'number-cell',
+                        hide: statementType === UI_STATEMENT_TYPES.CASH_FLOW // Hide for cash flow
+                    },
+                    {
+                        field: 'amount_2025',
+                        headerName: year2,
+                        type: 'numericColumn',
+                        valueFormatter: params => this.formatCurrency(params.value),
+                        aggFunc: 'sum',
+                        cellClass: 'number-cell'
+                    },
+
+                    // Variance columns
+                    {
+                        field: 'variance_amount',
+                        headerName: 'Variance (€)',
+                        type: 'numericColumn',
+                        valueFormatter: params => this.formatCurrency(params.value),
+                        cellRenderer: params => this.varianceRenderer(params),
+                        aggFunc: 'sum',
+                        hide: statementType === UI_STATEMENT_TYPES.CASH_FLOW
+                    },
+                    {
+                        field: 'variance_percent',
+                        headerName: 'Variance (%)',
+                        type: 'numericColumn',
+                        valueFormatter: params => params.value != null ? params.value.toFixed(1) + '%' : '',
+                        cellRenderer: params => this.varianceRenderer(params),
+                        aggFunc: params => this.calculateGroupVariancePercent(params),
+                        hide: statementType === UI_STATEMENT_TYPES.CASH_FLOW
+                    }
+                ];
+
+                return columns;
+            }
+
+            // Format currency
+            formatCurrency(value) {
+                if (value == null || isNaN(value)) return '-';
+                return new Intl.NumberFormat('nl-NL', {
+                    style: 'decimal',
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                }).format(value);
+            }
+
+            // Variance cell renderer (color coding)
+            varianceRenderer(params) {
+                if (params.value == null) return '';
+
+                const value = params.value;
+                const isPositive = value >= 0;
+                const cssClass = isPositive ? 'positive-variance' : 'negative-variance';
+
+                return `<span class="${cssClass}">${params.valueFormatted}</span>`;
+            }
+
+            // Calculate group variance percent
+            calculateGroupVariancePercent(params) {
+                const total1 = params.values.reduce((sum, val, idx) => {
+                    const row = params.rowNode.allLeafChildren[idx];
+                    return sum + (row.data.amount_2024 || 0);
+                }, 0);
+
+                const total2 = params.values.reduce((sum, val, idx) => {
+                    const row = params.rowNode.allLeafChildren[idx];
+                    return sum + (row.data.amount_2025 || 0);
+                }, 0);
+
+                return total1 !== 0 ? ((total2 - total1) / Math.abs(total1)) * 100 : 0;
+            }
+
+            // Get row class for styling
+            getRowClass(params) {
+                if (!params.data) return '';
+
+                const rowType = params.data._rowType;
+
+                switch(rowType) {
+                    case 'total': return 'total-row';
+                    case 'metric': return 'metric-row';
+                    case 'detail': return 'detail-row';
+                    default: return params.node.group ? 'group-row' : '';
+                }
+            }
+
+            // Export to Excel
+            exportToExcel() {
+                if (!this.gridApi) {
+                    console.error('Grid not initialized');
+                    return;
+                }
+
+                const params = {
+                    fileName: `${this.currentStatementType}_${new Date().toISOString().split('T')[0]}.xlsx`,
+                    sheetName: this.currentStatementType
+                };
+
+                this.gridApi.exportDataAsExcel(params);
+            }
+        }
+
         // UI Controller
         class UIController {
             constructor() {
                 this.dataStore = new DataStore();
                 this.dataLoader = new DataLoader();
                 this.statementGenerator = new StatementGenerator(this.dataStore);
-                this.interactiveUI = new InteractiveUI();
+                this.interactiveUI = new InteractiveUI(); // Keep for now (Phase 7 cleanup)
                 this.exportHandler = new ExportHandler(this.dataStore);
+                this.agGridRenderer = new AgGridStatementRenderer('ag-grid-container'); // NEW: ag-Grid renderer
                 this.currentStatementType = UI_STATEMENT_TYPES.BALANCE_SHEET;
                 this.currentStatementData = null;
             }
@@ -3154,8 +3406,11 @@
                     if (!statementData || !statementData.details) {
                         throw new Error('Statement generation returned invalid data');
                     }
-                    
-                    this.interactiveUI.renderStatement(statementData, statementType, 'statement-display');
+
+                    // Render with ag-Grid (NEW)
+                    this.agGridRenderer.render(statementData, statementType);
+
+                    // OLD: this.interactiveUI.renderStatement(statementData, statementType, 'statement-display');
                     this.currentStatementType = statementType;
                     this.currentStatementData = statementData;
                     
