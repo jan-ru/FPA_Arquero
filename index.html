@@ -596,24 +596,83 @@
                         <option value="income-statement">Income Statement</option>
                         <option value="cash-flow">Cash Flow</option>
                     </select>
-                    <label style="font-size: 13px; color: #4a5568; font-weight: 500;">Columns:</label>
-                    <select id="placeholder-dropdown" style="padding: 8px 16px; border-radius: 4px; border: 1px solid #e2e8f0; background: white; color: #4a5568; cursor: pointer; font-size: 13px; font-weight: 500;">
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                        <option value="6">6</option>
-                        <option value="7">7</option>
-                        <option value="8">8</option>
-                        <option value="9">9</option>
-                        <option value="10">10</option>
-                        <option value="11">11</option>
-                        <option value="12">12</option>
-                    </select>
                 </div>
                 <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
-                    <!-- Detail level control moved to table header -->
+                    <!-- Detail level control -->
+                    <label style="font-size: 13px; color: #4a5568; font-weight: 500;">Detail:</label>
+                    <select id="detail-level" style="padding: 8px 12px; border-radius: 4px; border: 1px solid #e2e8f0; background: white; color: #4a5568; cursor: pointer; font-size: 13px; font-weight: 500;">
+                        <option value="all">All Levels</option>
+                        <option value="summary">Summary Only</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Period and Variance Controls -->
+            <div style="display: flex; gap: 20px; align-items: flex-start; margin-bottom: 15px; padding: 12px; background: #f7fafc; border-radius: 6px; flex-wrap: wrap;">
+                <!-- Year 1 Controls -->
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <label style="font-size: 13px; color: #2c5282; font-weight: 600; min-width: 60px;">Year 1:</label>
+                    <select id="period-2024-header" class="period-dropdown-header" style="padding: 6px 10px; border-radius: 4px; border: 1px solid #cbd5e0; background: white; font-size: 12px;">
+                        <optgroup label="2024">
+                            <option value="2024-all" selected>2024 (All)</option>
+                            <option value="2024-Q1">2024 (Q1)</option>
+                            <option value="2024-Q2">2024 (Q2)</option>
+                            <option value="2024-Q3">2024 (Q3)</option>
+                            <option value="2024-Q4">2024 (Q4)</option>
+                            <option value="2024-1">2024 (P1)</option>
+                            <option value="2024-2">2024 (P2)</option>
+                            <option value="2024-3">2024 (P3)</option>
+                            <option value="2024-4">2024 (P4)</option>
+                            <option value="2024-5">2024 (P5)</option>
+                            <option value="2024-6">2024 (P6)</option>
+                            <option value="2024-7">2024 (P7)</option>
+                            <option value="2024-8">2024 (P8)</option>
+                            <option value="2024-9">2024 (P9)</option>
+                            <option value="2024-10">2024 (P10)</option>
+                            <option value="2024-11">2024 (P11)</option>
+                            <option value="2024-12">2024 (P12)</option>
+                        </optgroup>
+                    </select>
+                    <label style="font-size: 12px; color: #4a5568;">Variance:</label>
+                    <select id="variance-1-header" style="padding: 6px 10px; border-radius: 4px; border: 1px solid #cbd5e0; background: white; font-size: 12px;">
+                        <option value="none">None</option>
+                        <option value="amount">Amount</option>
+                        <option value="percent">Percent</option>
+                        <option value="both">Both</option>
+                    </select>
+                </div>
+
+                <!-- Year 2 Controls -->
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <label style="font-size: 13px; color: #2c5282; font-weight: 600; min-width: 60px;">Year 2:</label>
+                    <select id="period-2025-header" class="period-dropdown-header" style="padding: 6px 10px; border-radius: 4px; border: 1px solid #cbd5e0; background: white; font-size: 12px;">
+                        <optgroup label="2025">
+                            <option value="2025-all" selected>2025 (All)</option>
+                            <option value="2025-Q1">2025 (Q1)</option>
+                            <option value="2025-Q2">2025 (Q2)</option>
+                            <option value="2025-Q3">2025 (Q3)</option>
+                            <option value="2025-Q4">2025 (Q4)</option>
+                            <option value="2025-1">2025 (P1)</option>
+                            <option value="2025-2">2025 (P2)</option>
+                            <option value="2025-3">2025 (P3)</option>
+                            <option value="2025-4">2025 (P4)</option>
+                            <option value="2025-5">2025 (P5)</option>
+                            <option value="2025-6">2025 (P6)</option>
+                            <option value="2025-7">2025 (P7)</option>
+                            <option value="2025-8">2025 (P8)</option>
+                            <option value="2025-9">2025 (P9)</option>
+                            <option value="2025-10">2025 (P10)</option>
+                            <option value="2025-11">2025 (P11)</option>
+                            <option value="2025-12">2025 (P12)</option>
+                        </optgroup>
+                    </select>
+                    <label style="font-size: 12px; color: #4a5568;">Variance:</label>
+                    <select id="variance-2-header" style="padding: 6px 10px; border-radius: 4px; border: 1px solid #cbd5e0; background: white; font-size: 12px;">
+                        <option value="none">None</option>
+                        <option value="amount">Amount</option>
+                        <option value="percent">Percent</option>
+                        <option value="both">Both</option>
+                    </select>
                 </div>
             </div>
             <!-- Old rendering (will be removed in Phase 7) -->
@@ -2859,6 +2918,10 @@
                 // Get column definitions
                 const columnDefs = this.getColumnDefs(statementType, year1, year2);
 
+                // Get detail level setting
+                const detailLevel = document.getElementById('detail-level')?.value || 'all';
+                const expandGroups = detailLevel === 'all' ? -1 : 0;  // -1 = expand all, 0 = collapse all
+
                 // Create grid options
                 const gridOptions = {
                     columnDefs: columnDefs,
@@ -2899,7 +2962,7 @@
                         return false;  // We're using rowGroup instead of master/detail
                     },
 
-                    groupDefaultExpanded: 1,  // Expand first level by default
+                    groupDefaultExpanded: expandGroups,  // Controlled by detail level dropdown
                     suppressAggFuncInHeader: true,  // Clean header display
                     rowClass: params => this.getRowClass(params),
 
@@ -3169,6 +3232,16 @@
 
             // Get column definitions based on statement type
             getColumnDefs(statementType, year1, year2) {
+                // Get period labels from dropdowns
+                const period1Dropdown = document.getElementById(`period-${year1}-header`);
+                const period2Dropdown = document.getElementById(`period-${year2}-header`);
+                const period1Label = period1Dropdown ? period1Dropdown.options[period1Dropdown.selectedIndex].text : year1;
+                const period2Label = period2Dropdown ? period2Dropdown.options[period2Dropdown.selectedIndex].text : year2;
+
+                // Get variance modes from dropdowns
+                const variance1Mode = document.getElementById('variance-1-header')?.value || 'none';
+                const variance2Mode = document.getElementById('variance-2-header')?.value || 'none';
+
                 // Base columns
                 const columns = [
                     // Category/Item columns
@@ -3188,7 +3261,7 @@
                     // Year columns
                     {
                         field: 'amount_2024',
-                        headerName: year1,
+                        headerName: period1Label,
                         type: 'numericColumn',
                         valueFormatter: params => this.formatCurrency(params.value),
                         aggFunc: 'sum',
@@ -3197,33 +3270,59 @@
                     },
                     {
                         field: 'amount_2025',
-                        headerName: year2,
+                        headerName: period2Label,
                         type: 'numericColumn',
                         valueFormatter: params => this.formatCurrency(params.value),
                         aggFunc: 'sum',
                         cellClass: 'number-cell'
-                    },
+                    }
+                ];
 
-                    // Variance columns
-                    {
-                        field: 'variance_amount',
-                        headerName: 'Variance (€)',
+                // Add variance columns based on variance mode settings
+                // Variance for Year 1 (appears after Year 1 column)
+                if (variance1Mode === 'amount' || variance1Mode === 'both') {
+                    columns.push({
+                        field: 'variance_amount_1',
+                        headerName: 'Var €',
                         type: 'numericColumn',
                         valueFormatter: params => this.formatCurrency(params.value),
                         cellRenderer: params => this.varianceRenderer(params),
                         aggFunc: 'sum',
-                        hide: statementType === UI_STATEMENT_TYPES.CASH_FLOW
-                    },
-                    {
-                        field: 'variance_percent',
-                        headerName: 'Variance (%)',
+                        hide: true  // Not implemented yet - placeholder
+                    });
+                }
+                if (variance1Mode === 'percent' || variance1Mode === 'both') {
+                    columns.push({
+                        field: 'variance_percent_1',
+                        headerName: 'Var %',
                         type: 'numericColumn',
                         valueFormatter: params => params.value != null ? params.value.toFixed(1) + '%' : '',
                         cellRenderer: params => this.varianceRenderer(params),
-                        aggFunc: params => this.calculateGroupVariancePercent(params),
-                        hide: statementType === UI_STATEMENT_TYPES.CASH_FLOW
-                    }
-                ];
+                        hide: true  // Not implemented yet - placeholder
+                    });
+                }
+
+                // Variance for Year 2 (default variance - comparing Year 2 to Year 1)
+                if (variance2Mode === 'amount' || variance2Mode === 'both') {
+                    columns.push({
+                        field: 'variance_amount',
+                        headerName: 'Var €',
+                        type: 'numericColumn',
+                        valueFormatter: params => this.formatCurrency(params.value),
+                        cellRenderer: params => this.varianceRenderer(params),
+                        aggFunc: 'sum'
+                    });
+                }
+                if (variance2Mode === 'percent' || variance2Mode === 'both') {
+                    columns.push({
+                        field: 'variance_percent',
+                        headerName: 'Var %',
+                        type: 'numericColumn',
+                        valueFormatter: params => params.value != null ? params.value.toFixed(1) + '%' : '',
+                        cellRenderer: params => this.varianceRenderer(params),
+                        aggFunc: params => this.calculateGroupVariancePercent(params)
+                    });
+                }
 
                 return columns;
             }
@@ -3861,6 +3960,54 @@
                 if (statementSelector) {
                     statementSelector.addEventListener('change', () => {
                         this.handleTabSwitch(statementSelector.value);
+                    });
+                }
+
+                // Period dropdowns - re-render on change
+                const period2024Dropdown = document.getElementById('period-2024-header');
+                if (period2024Dropdown) {
+                    period2024Dropdown.addEventListener('change', () => {
+                        if (this.currentStatementType) {
+                            this.generateAndDisplayStatement(this.currentStatementType);
+                        }
+                    });
+                }
+
+                const period2025Dropdown = document.getElementById('period-2025-header');
+                if (period2025Dropdown) {
+                    period2025Dropdown.addEventListener('change', () => {
+                        if (this.currentStatementType) {
+                            this.generateAndDisplayStatement(this.currentStatementType);
+                        }
+                    });
+                }
+
+                // Variance mode dropdowns - re-render on change
+                const variance1Dropdown = document.getElementById('variance-1-header');
+                if (variance1Dropdown) {
+                    variance1Dropdown.addEventListener('change', () => {
+                        if (this.currentStatementType) {
+                            this.generateAndDisplayStatement(this.currentStatementType);
+                        }
+                    });
+                }
+
+                const variance2Dropdown = document.getElementById('variance-2-header');
+                if (variance2Dropdown) {
+                    variance2Dropdown.addEventListener('change', () => {
+                        if (this.currentStatementType) {
+                            this.generateAndDisplayStatement(this.currentStatementType);
+                        }
+                    });
+                }
+
+                // Detail level dropdown - re-render on change
+                const detailLevelDropdown = document.getElementById('detail-level');
+                if (detailLevelDropdown) {
+                    detailLevelDropdown.addEventListener('change', () => {
+                        if (this.currentStatementType) {
+                            this.generateAndDisplayStatement(this.currentStatementType);
+                        }
                     });
                 }
 
