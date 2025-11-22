@@ -2843,8 +2843,23 @@
                 try {
                     await this.dataLoader.selectInputDirectory();
                     const statusText = document.getElementById('input-dir-status');
-                    const dirName = this.dataLoader.inputDirHandle.name;
-                    statusText.textContent = `📁 ${dirName}`;
+                    const dirHandle = this.dataLoader.inputDirHandle;
+                    const dirName = dirHandle.name;
+
+                    // Try to get full path (if available in browser)
+                    let pathDisplay = dirName;
+                    try {
+                        if (dirHandle.resolve) {
+                            const path = await dirHandle.resolve(dirHandle);
+                            if (path && path.length > 0) {
+                                pathDisplay = path.join('/');
+                            }
+                        }
+                    } catch (e) {
+                        // Path not available, use directory name only
+                    }
+
+                    statusText.textContent = `📁 ${pathDisplay}`;
                     statusText.style.color = '#28a745';
                     
                     // Check if directory is named "input"
@@ -2946,6 +2961,39 @@
                         loadingStatus.textContent = '';
                     }
                     console.log('✅ All files loaded successfully!');
+
+                    // Update status to show file names
+                    const statusText = document.getElementById('input-dir-status');
+                    if (statusText) {
+                        const dirHandle = this.dataLoader.inputDirHandle;
+                        const dirName = dirHandle.name;
+
+                        // Try to get full path
+                        let pathDisplay = dirName;
+                        try {
+                            if (dirHandle.resolve) {
+                                const path = await dirHandle.resolve(dirHandle);
+                                if (path && path.length > 0) {
+                                    pathDisplay = path.join('/');
+                                }
+                            }
+                        } catch (e) {
+                            // Path not available
+                        }
+
+                        const file1 = config.inputFiles.trialBalance2024;
+                        const file2 = config.inputFiles.trialBalance2025;
+                        statusText.innerHTML = `
+                            <div style="line-height: 1.5;">
+                                <div style="margin-bottom: 4px;"><strong>📁 Directory:</strong> ${pathDisplay}</div>
+                                <div style="font-size: 0.9em; color: #666;">
+                                    <div>• ${file1}</div>
+                                    <div>• ${file2}</div>
+                                </div>
+                            </div>
+                        `;
+                        statusText.style.color = '#28a745';
+                    }
                     
                     // Show statement section
                     document.getElementById('statement-section').style.display = 'block';
