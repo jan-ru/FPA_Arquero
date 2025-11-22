@@ -652,7 +652,7 @@
 
             <!-- Export Controls -->
             <div class="export-controls">
-                <button id="export-all" class="btn btn-secondary">Export to Excel</button>
+                <button id="export-all" class="btn btn-secondary">Export to CSV</button>
                 <span id="export-status" class="status-text"></span>
             </div>
         </div>
@@ -2904,8 +2904,8 @@
                     columnDefs: columnDefs,
                     rowData: gridData,
                     defaultColDef: {
-                        sortable: true,
-                        filter: true,
+                        sortable: false,  // Rows have fixed order based on code hierarchy
+                        filter: false,    // No filtering needed
                         resizable: true,
                         flex: 1
                     },
@@ -3374,7 +3374,7 @@
                 }
             }
 
-            // Export to Excel with formatting
+            // Export to CSV (Excel export requires ag-Grid Enterprise)
             exportToExcel(statementName) {
                 if (!this.gridApi) {
                     console.error('Grid not initialized');
@@ -3384,6 +3384,18 @@
                 const fileName = statementName || this.currentStatementType || 'Statement';
                 const timestamp = new Date().toISOString().split('T')[0];
 
+                // Note: exportDataAsExcel() requires ag-Grid Enterprise
+                // Using exportDataAsCsv() instead (Community Edition)
+                const params = {
+                    fileName: `${fileName}_${timestamp}.csv`
+                };
+
+                this.gridApi.exportDataAsCsv(params);
+                console.log('Exported to CSV:', params.fileName);
+            }
+
+            // Legacy Excel export code (requires ag-Grid Enterprise - not available in Community)
+            exportToExcelEnterprise(statementName) {
                 // Define Excel styles
                 const excelStyles = [
                     // Bold style for totals
