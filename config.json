@@ -2,15 +2,10 @@
   "inputFiles": {
     "trialBalance2024": "2024_BalansenWinstverliesperperiode.xlsx",
     "trialBalance2025": "2025_BalansenWinstverliesperperiode.xlsx",
-    "hierarchy": "DimAccounts.xlsx",
-    "dates": "DimDates.xlsx",
-    "format": "format.xlsx"
+    "dates": "DimDates.xlsx"
   },
   "outputFiles": {
-    "balanceSheet": "m_balance_sheet.xlsx",
-    "incomeStatement": "m_income_statement.xlsx",
-    "cashFlowStatement": "m_cash_flow_statement.xlsx",
-    "allStatements": "m_financial_statements_all.xlsx"
+    "allStatements": "financial_statements_all.xlsx"
   },
   "directories": {
     "input": "input",

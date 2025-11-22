@@ -5,17 +5,19 @@ A browser-based application that transforms trial balance data into professional
 ## Features
 
 - **Single-Page Application**: No installation required, runs entirely in the browser
-- **Multi-Period Analysis**: Compare 2024 and 2025 data with automatic variance calculations
-- **Interactive Tables**: Sort columns, hover for details, and navigate between statements
-- **Excel Integration**: Import data from Excel files and export results back to Excel
+- **Professional Data Grid**: Built with ag-Grid Community Edition for fast, responsive display
+- **Multi-Period Analysis**: Compare any two periods (year, quarter, or month) with automatic variance calculations
+- **Flexible Period Selection**: Choose from yearly (All), quarterly (Q1-Q4), or monthly (P1-P12) periods
+- **Dynamic Variance Columns**: Configurable variance display (Amount, Percent, or Both)
+- **CSV Export**: Export current statement to CSV (opens in Excel)
 - **Data Validation**: Automatic detection of unmapped accounts and balance verification
-- **Professional Styling**: Modern, gradient-based UI with responsive design
+- **Modern UI**: Clean, responsive design with professional styling
 
 ## Technology Stack
 
+- **ag-Grid Community**: Professional data grid for statement display
 - **Arquero**: Data manipulation and transformation
-- **ExcelJS**: Excel file reading and writing
-- **Vanilla JavaScript**: No framework dependencies
+- **Vanilla JavaScript**: No framework dependencies, all processing client-side
 - **HTML5/CSS3**: Modern web standards
 - **File System Access API**: Direct directory access in compatible browsers
 
@@ -33,50 +35,74 @@ This application requires a browser that supports the File System Access API:
 ### 1. Prepare Your Data
 
 Create an `input` directory with the following Excel files:
-- `trial_balance_2024.xlsx` - Trial balance for 2024 (includes hierarchy columns)
-- `trial_balance_2025.xlsx` - Trial balance for 2025 (includes hierarchy columns)
+- `2024_BalansenWinstverliesperperiode.xlsx` - Trial balance for 2024 (includes hierarchy columns)
+- `2025_BalansenWinstverliesperperiode.xlsx` - Trial balance for 2025 (includes hierarchy columns)
 - `DimDates.xlsx` - Period definitions (date dimension)
-- `format.xlsx` - Statement formatting rules
-
-See [SAMPLE_DATA_FORMAT.md](SAMPLE_DATA_FORMAT.md) for detailed file format specifications.
 
 ### 2. Open the Application
 
 1. Open `index.html` in a compatible browser (Chrome or Edge recommended)
-2. Click "Select Input Directory" and choose your `input` folder
-3. Click "Load All Files" to import your data
+2. Click "Select Directory" and choose your `input` folder
+3. Wait for automatic file loading
 4. Review validation messages for any data issues
 
 ### 3. View Financial Statements
 
-- Use the tabs to switch between Balance Sheet, Income Statement, and Cash Flow Statement
-- Click column headers to sort data
-- Hover over amounts to see additional details
-- Review variance calculations to analyze year-over-year changes
+- **Statement Selector**: Use the dropdown to switch between Balance Sheet, Income Statement, and Cash Flow Statement
+- **Period Selection**: Choose periods for comparison (supports Year, Quarter, or Month)
+- **Variance Columns**: Configure what variance data to display (Amount/Percent/Both/None)
+- **Detail Level**: Toggle between "All Levels" (expanded) and "Summary Only" (collapsed)
+- **Row Hierarchy**: Data is organized by code hierarchy (code0 → code1 → code2 → code3)
 
 ### 4. Export Results
 
-- Click "Export Current Statement" to download the currently displayed statement
-- Click "Export All Statements" to download a workbook with all three statements
+- Click "Export to CSV" to download the currently displayed statement
 - Files are saved to your browser's default download location
+- Format: `{Statement Name}_{Date}.csv`
+- CSV files can be opened in Excel
 
 ## File Structure
 
 ```
 financial-statement-generator/
-├── index.html                  # Main application file
+├── index.html                  # Main HTML file (imports from src/)
 ├── config.json                 # Configuration (file names, directories)
 ├── README.md                   # This file
-├── SAMPLE_DATA_FORMAT.md       # Data format specifications
+├── CHANGELOG.md                # Version history
 ├── run_tests.sh                # Test runner script
+├── src/                        # Application modules (ES6)
+│   ├── app.js                  # Main application entry point
+│   ├── constants.js            # All application constants
+│   ├── data/                   # Data management
+│   │   ├── DataStore.js        # Singleton state management
+│   │   └── DataLoader.js       # Excel file loading/parsing
+│   ├── utils/                  # Utility classes
+│   │   ├── CategoryMatcher.js  # Financial category pattern matching
+│   │   └── VarianceCalculator.js # Variance calculations
+│   ├── statements/             # Financial statement generation
+│   │   └── StatementGenerator.js # BS, IS, CF generation logic
+│   ├── export/                 # Export functionality
+│   │   └── ExportHandler.js    # Excel export (deprecated)
+│   └── ui/                     # UI components
+│       ├── UIController.js     # Main UI controller
+│       ├── AgGridStatementRenderer.js # ag-Grid renderer
+│       └── InteractiveUI.js    # Legacy HTML renderer (deprecated)
 ├── test/                       # Testing directory
-│   ├── scripts/                # Test scripts
-│   └── docs/                   # Test documentation
+│   ├── unit/                   # Unit tests
+│   │   ├── utils/              # Tests for utils
+│   │   ├── data/               # Tests for data layer
+│   │   ├── statements/         # Tests for statement generation
+│   │   └── ...
+│   └── scripts/                # Functional tests
+│       ├── run_all_tests.ts    # Test runner
+│       └── test_period_mapping.ts # Period validation
+├── docs/                       # Documentation
+│   ├── ag-grid-migration-plan.md
+│   └── ag-grid-excel-formatting-examples.md
 └── input/                      # Your data files (create this)
-    ├── trial_balance_2024.xlsx
-    ├── trial_balance_2025.xlsx
-    ├── DimDates.xlsx
-    └── format.xlsx
+    ├── 2024_BalansenWinstverliesperperiode.xlsx
+    ├── 2025_BalansenWinstverliesperperiode.xlsx
+    └── DimDates.xlsx
 ```
 
 ## Configuration
@@ -88,13 +114,9 @@ Edit `config.json` to customize file names and directories:
   "inputFiles": {
     "trialBalance2024": "2024_BalansenWinstverliesperperiode.xlsx",
     "trialBalance2025": "2025_BalansenWinstverliesperperiode.xlsx",
-    "dates": "DimDates.xlsx",
-    "format": "format.xlsx"
+    "dates": "DimDates.xlsx"
   },
   "outputFiles": {
-    "balanceSheet": "balance_sheet.xlsx",
-    "incomeStatement": "income_statement.xlsx",
-    "cashFlowStatement": "cash_flow_statement.xlsx",
     "allStatements": "financial_statements_all.xlsx"
   },
   "directories": {
@@ -107,7 +129,7 @@ Edit `config.json` to customize file names and directories:
 ## Data Requirements
 
 ### Trial Balance Files
-- **Required columns**: 
+- **Required columns**:
   - `account_code`, `account_description` - Account identification
   - Monthly movement columns (e.g., `januari2024`, `februari2024`, etc.)
   - Balance columns (e.g., `Saldo2024`)
@@ -117,36 +139,46 @@ Edit `config.json` to customize file names and directories:
 - Supports Dutch month names (januari, februari, maart, etc.)
 
 ### Dates File
-- **Required columns**: `period`, `year`, `period_start`, `period_end`
+- **Required columns**: `period`, `year`, `period_start`, `period_end`, `MonthNumber`, `Year`
 - Defines the time periods for analysis
-
-### Format File
-- **Required columns**: `statement_type`, `line_number`, `line_type`, `line_label`
-- Controls the presentation order and formatting of statements
+- Maps month names to period numbers
 
 ## Features in Detail
 
 ### Balance Sheet
 - Automatically groups accounts into Assets, Liabilities, and Equity
-- Calculates subtotals for each category
+- Displays TOTAL ASSETS and TOTAL LIABILITIES & EQUITY rows
 - Verifies the accounting equation: Assets = Liabilities + Equity
-- Displays warning if imbalance exceeds 0.01
+- Hierarchical display with expandable/collapsible groups
 
 ### Income Statement
 - Groups accounts into Revenue, COGS, Operating Expenses, Other Income, and Taxes
-- Calculates Gross Profit, Operating Income, and Net Income
-- Shows key metrics in a highlighted section
+- Displays calculated metrics:
+  - **Gross Profit** (Revenue - COGS)
+  - **Operating Income** (Gross Profit - Operating Expenses)
+  - **Net Income** (Operating Income + Other Income - Taxes)
+- Metric rows are styled with italic font and highlighted background
 
 ### Cash Flow Statement
 - Categorizes cash flows into Operating, Investing, and Financing activities
-- Calculates net cash flow for each category
-- Displays total net change in cash
+- Displays cash reconciliation:
+  - **Starting Cash**
+  - **Net Change in Cash**
+  - **Ending Cash**
 
 ### Variance Analysis
-- Automatically calculates absolute variance (2025 - 2024)
-- Calculates percentage variance ((2025 - 2024) / 2024 * 100)
+- Automatically calculates absolute variance (Period 2 - Period 1)
+- Calculates percentage variance ((Period 2 - Period 1) / Period 1 * 100)
 - Color codes positive (green) and negative (red) variances
 - Handles division by zero gracefully
+- Configurable display via variance column dropdowns
+
+### ag-Grid Features
+- **Fixed Row Order**: Rows maintain hierarchical order (no sorting/filtering)
+- **Resizable Columns**: Drag column borders to adjust width
+- **Professional Styling**: Custom theme with enhanced typography
+- **Responsive Design**: Adapts to different screen sizes
+- **Row Types**: Different styling for totals, metrics, groups, and details
 
 ## Troubleshooting
 
@@ -170,35 +202,136 @@ Edit `config.json` to customize file names and directories:
 - Verify all accounts are properly mapped in hierarchy
 - Look for data entry errors in amounts
 
-### Unmapped accounts warning
-- Review the list of unmapped account codes
-- Add missing accounts to the trial balance files with proper hierarchy columns
-- Reload the data after updating the trial balance files
+### Grid not displaying data
+- Check browser console (F12) for error messages
+- Verify debug logs show data is loaded
+- Ensure grid container has height (should be 600px)
+- Refresh the page and try again
+
+### Export not working
+- CSV export requires ag-Grid Community Edition (free)
+- Files download to browser's default download folder
+- Check browser's download settings if files aren't appearing
 
 ## Performance
 
 - Handles up to 5,000 trial balance accounts efficiently
 - Statement generation typically completes in under 2 seconds
-- Memory usage remains stable even with large datasets
+- ag-Grid provides smooth scrolling even with large datasets
+- Memory usage remains stable
 - Export operations complete in 1-3 seconds
+
+## Architecture
+
+### Modular Design (v2.8.0+)
+The application is now organized into ES6 modules for better maintainability and testing:
+- **Main entry**: `index.html` (669 lines) imports from `src/app.js`
+- **Modules**: 11 JavaScript files in `src/` directory
+- **Tests**: 51 unit tests covering core business logic
+- **External dependencies**: CDN libraries (ag-Grid, Arquero, ExcelJS)
+- **Test coverage**: ~70% of core logic
+
+### Key Components
+- **DataStore** (`src/data/DataStore.js`): Manages trial balance and date dimension data (Singleton pattern)
+- **DataLoader** (`src/data/DataLoader.js`): Handles Excel file loading via File System Access API
+- **StatementGenerator** (`src/statements/StatementGenerator.js`): Transforms trial balance into financial statements
+- **AgGridStatementRenderer** (`src/ui/AgGridStatementRenderer.js`): Renders statements using ag-Grid
+- **UIController** (`src/ui/UIController.js`): Coordinates user interactions and data flow
+- **CategoryMatcher** (`src/utils/CategoryMatcher.js`): Pattern matching for financial categories
+- **VarianceCalculator** (`src/utils/VarianceCalculator.js`): Variance and percentage calculations
+
+### Data Flow
+1. User selects input directory
+2. DataLoader loads Excel files
+3. DataStore stores data in Arquero tables
+4. StatementGenerator creates statement data
+5. AgGridStatementRenderer displays in ag-Grid
+6. User can export to CSV
+
+## Development
+
+### Running Tests
+
+Run all tests (unit + functional):
+```bash
+./run_tests.sh
+```
+
+Run only unit tests:
+```bash
+deno test test/unit/ --allow-read
+```
+
+Run specific test file:
+```bash
+deno test test/unit/utils/VarianceCalculator.test.ts --allow-read
+```
+
+### Test Coverage
+
+Current test coverage (~70% of core logic):
+- ✅ CategoryMatcher: 17 tests
+- ✅ VarianceCalculator: 17 tests
+- ✅ DataStore: 17 tests
+- ✅ Period Mapping Validation: 1 functional test
+
+### Module Structure
+
+All modules use ES6 import/export syntax:
+```javascript
+// Import from constants
+import { YEAR_CONFIG, CATEGORY_DEFINITIONS } from '../constants.js';
+
+// Import utilities
+import CategoryMatcher from '../utils/CategoryMatcher.js';
+
+// Export class
+export default class MyClass { ... }
+```
+
+### Adding New Tests
+
+Create test files in `test/unit/`:
+```typescript
+import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
+import MyClass from "../../../src/path/MyClass.js";
+
+Deno.test("MyClass - basic test", () => {
+    const result = MyClass.someMethod();
+    assertEquals(result, expected);
+});
+```
+
+## Migration History
+
+### v3.0.0 - ag-Grid Migration
+Complete UI rewrite from custom HTML tables to ag-Grid Community Edition:
+- **Removed**: ~950 lines of custom table rendering code
+- **Added**: ag-Grid integration with professional styling
+- **Result**: More maintainable, better performance, professional appearance
+
+See `docs/ag-grid-migration-plan.md` for detailed migration documentation.
 
 ## Limitations
 
 - Requires modern browser with File System Access API
 - All processing happens in browser memory (no server-side storage)
 - Data is not persisted between sessions
-- Limited to Excel file format for import/export
+- CSV export only (Excel export requires ag-Grid Enterprise)
+- Row order is fixed (sorting/filtering disabled to preserve hierarchy)
+- Single statement export (not all three at once)
 
 ## Future Enhancements
 
 Potential features for future versions:
-- Drill-down capability to view underlying accounts
-- Advanced filtering options
-- Custom report templates
-- Multi-year comparison (3+ periods)
-- PDF export option
+- Excel export with formatting (requires ag-Grid Enterprise or ExcelJS integration)
+- Multi-statement workbook export
 - Chart and graph visualizations
 - Budget vs. actual analysis
+- Drill-down to view account details
+- PDF export option
+- Custom report templates
+- Multi-year comparison (3+ periods)
 - Deno CLI version for command-line usage
 
 ## Testing
@@ -218,13 +351,8 @@ deno run --allow-read --allow-env --allow-sys --allow-run test/scripts/run_all_t
 
 **Available Tests:**
 - Period Mapping Validation - Verifies all trial balance periods exist in DimDates.xlsx
-- Data Integrity Validation - Verifies hierarchy columns are properly populated in trial balance files
 
 See [test/docs/TESTING_GUIDE.md](test/docs/TESTING_GUIDE.md) for complete testing documentation.
-
-### Manual Testing
-
-See [test/docs/TESTING_CHECKLIST.md](test/docs/TESTING_CHECKLIST.md) for comprehensive manual testing procedures.
 
 ## License
 
@@ -234,22 +362,29 @@ This project is provided as-is for educational and business use.
 
 For issues or questions:
 1. Check the troubleshooting section above
-2. Review the sample data format documentation
+2. Review the browser console for error messages (F12)
 3. Verify your browser compatibility
-4. Check the browser console for error messages
+4. Check the ag-Grid migration documentation in `docs/`
 
 ## Version
 
-**Current Version:** 2.4.0
+**Current Version:** 3.0.0
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed version history and release notes.
 
-### What's New in 2.4.0
-- **Major Code Refactoring**: Improved maintainability and reduced codebase by ~100 lines
-- **Enhanced UI**: Statement selector now a dropdown, period dropdowns use optgroup organization
-- **Better Code Organization**: Extracted reusable helper methods for period dropdowns and row rendering
-- **Centralized Configuration**: Added APP_CONFIG for easier maintenance
-- **Cleaner Styling**: Moved inline styles to CSS classes
-- **Simplified File Status**: Single TB 2024+2025 button
-- **Detail Level Control**: Moved to table header for better UX
+### What's New in 3.0.0
+- **ag-Grid Integration**: Complete migration to ag-Grid Community Edition
+- **Professional Data Grid**: Fast, responsive, and feature-rich display
+- **CSV Export**: Export current statement to CSV (opens in Excel)
+- **Fixed Row Order**: Sorting disabled to maintain code hierarchy
+- **Enhanced Styling**: Custom ag-Grid theme with improved typography
+- **Better Labels**: "Period 1/Period 2" instead of "Year 1/Year 2"
+- **Responsive Design**: Adapts to different screen sizes
+- **Code Reduction**: ~950 lines of old code removed
 - All tests passing ✅
+
+### Migration Notes
+- Export format changed from Excel to CSV (ag-Grid Community limitation)
+- Row sorting/filtering disabled (preserves hierarchical order)
+- Old ExcelJS export code deprecated but kept for reference
+- See `docs/ag-grid-migration-plan.md` for technical details

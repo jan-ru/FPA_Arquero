@@ -1,6 +1,6 @@
 # Kiro IDE
 .kiro/
 .vscode/
-test/
+# Data directories
 input/
 output/
