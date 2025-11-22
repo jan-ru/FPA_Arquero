@@ -235,110 +235,7 @@
             box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
         }
 
-        .statement-display {
-            min-height: 400px;
-            overflow-x: auto;
-        }
-
-        .financial-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 12px;
-        }
-
-        .financial-table th {
-            background-color: #007bff;
-            color: white;
-            padding: 8px 6px;
-            text-align: left;
-            font-weight: 500;
-            position: sticky;
-            top: 0;
-        }
-
-        .financial-table th.sortable {
-            cursor: pointer;
-            user-select: none;
-        }
-
-        .financial-table th.sortable:hover {
-            background-color: #0056b3;
-        }
-
-        .financial-table th.col-number {
-            text-align: right;
-        }
-
-        .financial-table td {
-            padding: 6px;
-            border-bottom: 1px solid #e9ecef;
-        }
-
-        .financial-table td.number {
-            text-align: right;
-            font-family: 'Courier New', monospace;
-        }
-
-        .financial-table td.indent {
-            padding-left: 24px;
-        }
-
-        .financial-table tr.detail-row:hover {
-            background-color: #f8f9fa;
-        }
-
-        .financial-table tr.name1-header td {
-            background-color: #e9ecef;
-            font-weight: 600;
-            padding: 8px 6px;
-            border-top: 2px solid #007bff;
-        }
-
-        .financial-table tr.subtotal-row td {
-            background-color: #f8f9fa;
-            border-top: 2px solid #333;
-            border-bottom: 2px solid #333;
-            padding: 8px 6px;
-        }
-
-        .financial-table tr.total-row td {
-            background-color: #e7f3ff;
-            border-top: 3px double #007bff;
-            border-bottom: 3px double #007bff;
-            padding: 8px 6px;
-            font-size: 13px;
-        }
-
-        .financial-table tr.metric-row td {
-            background-color: #fff3cd;
-            padding: 8px 6px;
-        }
-
-        .financial-table tr.section-header td {
-            background-color: #d1ecf1;
-            font-weight: 600;
-            padding: 8px 6px;
-            border-top: 2px solid #0c5460;
-        }
-
-        .financial-table tr.spacer-row td {
-            padding: 3px;
-            border: none;
-        }
-
-        .financial-table tr.info-row td {
-            padding: 8px 6px;
-            text-align: center;
-            font-weight: 500;
-        }
-
-        .financial-table .positive {
-            color: #28a745;
-        }
-
-        .financial-table .negative {
-            color: #dc3545;
-        }
+        /* ===== Old table styles removed - using ag-Grid now ===== */
 
         .success-message {
             color: #28a745;
@@ -748,10 +645,8 @@
                     </select>
                 </div>
             </div>
-            <!-- Old rendering (will be removed in Phase 7) -->
-            <div id="statement-display" class="statement-display" style="display: none;"></div>
 
-            <!-- ag-Grid container (new rendering) -->
+            <!-- ag-Grid container -->
             <div id="ag-grid-container" class="ag-theme-alpine" style="width: 100%;"></div>
 
             <!-- Export Controls -->
@@ -2124,6 +2019,8 @@
         }
 
         // ExportHandler class for Excel export
+        // @deprecated - No longer used. Export functionality moved to ag-Grid (AgGridStatementRenderer.exportToExcel)
+        // Kept for reference only. Can be removed in future cleanup.
         class ExportHandler {
             constructor(dataStore) {
                 this.dataStore = dataStore;
@@ -2472,6 +2369,8 @@
         }
 
         // InteractiveUI class for rendering financial statements
+        // @deprecated - No longer used. Rendering moved to ag-Grid (AgGridStatementRenderer)
+        // Kept for reference only. Can be removed in future cleanup.
         class InteractiveUI {
             constructor() {
                 this.currentStatement = null;
@@ -3652,9 +3551,7 @@
                 this.dataStore = new DataStore();
                 this.dataLoader = new DataLoader();
                 this.statementGenerator = new StatementGenerator(this.dataStore);
-                this.interactiveUI = new InteractiveUI(); // Keep for now (Phase 7 cleanup)
-                this.exportHandler = new ExportHandler(this.dataStore);
-                this.agGridRenderer = new AgGridStatementRenderer('ag-grid-container'); // NEW: ag-Grid renderer
+                this.agGridRenderer = new AgGridStatementRenderer('ag-grid-container');
                 this.currentStatementType = UI_STATEMENT_TYPES.BALANCE_SHEET;
                 this.currentStatementData = null;
             }
