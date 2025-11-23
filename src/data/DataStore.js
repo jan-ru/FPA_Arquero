@@ -11,6 +11,7 @@ export default class DataStore {
 
         this.factTables = {}; // Store FactTables by period and type: {2024: {movements: table, balances: table}, 2025: {...}}
         this.combinedMovements = null; // Combined movements table for both years
+        this.combinedBalances = null; // Combined balances table for both years
 
         DataStore.instance = this;
     }
@@ -76,6 +77,17 @@ export default class DataStore {
         return this.combinedMovements;
     }
 
+    // Store combined balances table
+    setCombinedBalances(table) {
+        this.combinedBalances = table;
+        console.log(`Combined balances table stored (${table.numRows()} rows)`);
+    }
+
+    // Retrieve combined balances table
+    getCombinedBalances() {
+        return this.combinedBalances;
+    }
+
     // Check if all required data is loaded
     isDataComplete() {
         const has2024Movements = this.factTables['2024']?.movements;
@@ -83,13 +95,14 @@ export default class DataStore {
         const has2025Movements = this.factTables['2025']?.movements;
         const has2025Balances = this.factTables['2025']?.balances;
         const hasBothPeriods = has2024Movements && has2024Balances && has2025Movements && has2025Balances;
-        return !!(hasBothPeriods && this.combinedMovements);
+        return !!(hasBothPeriods && this.combinedMovements && this.combinedBalances);
     }
 
     // Clear all data
     clear() {
         this.factTables = {};
         this.combinedMovements = null;
+        this.combinedBalances = null;
         console.log('DataStore cleared');
     }
 }

@@ -7,6 +7,35 @@
 import { assertEquals, assertExists } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import DataLoader from "../../../src/data/DataLoader.js";
 import { MONTH_MAP } from "../../../src/constants.js";
+import DateUtils from "../../../src/utils/DateUtils.js";
+
+// Mock dayjs for DateUtils with proper month names
+const dutchMonthNames = [
+    'januari', 'februari', 'maart', 'april', 'mei', 'juni',
+    'juli', 'augustus', 'september', 'oktober', 'november', 'december'
+];
+
+const mockDayjs = Object.assign(
+    () => ({
+        month: (i: number) => ({
+            format: (fmt: string) => dutchMonthNames[i]
+        }),
+        localeData: () => ({
+            months: () => dutchMonthNames
+        })
+    }),
+    {
+        locale: () => mockDayjs,
+        extend: () => mockDayjs,
+        localeData: () => ({
+            months: () => dutchMonthNames
+        })
+    }
+);
+(globalThis as any).dayjs = mockDayjs;
+
+// Initialize DateUtils before running tests
+DateUtils.initialize();
 
 Deno.test("DataLoader - constructor initializes correctly", () => {
     const loader = new DataLoader();
@@ -43,10 +72,11 @@ Deno.test("DataLoader.validateColumns - validates required columns present", () 
     const requiredColumns = ['account_code', 'statement_type', 'code1', 'name1'];
 
     const result = loader.validateColumns(data, requiredColumns);
-    assertEquals(result, true);
+    assertEquals(result.isValid, true);
+    assertEquals(result.errors.length, 0);
 });
 
-Deno.test("DataLoader.validateColumns - throws when columns missing", () => {
+Deno.test("DataLoader.validateColumns - returns errors when columns missing", () => {
     const loader = new DataLoader();
     const data = [
         {
@@ -57,30 +87,26 @@ Deno.test("DataLoader.validateColumns - throws when columns missing", () => {
     ];
     const requiredColumns = ['account_code', 'statement_type', 'code1', 'name1'];
 
-    let errorThrown = false;
-    try {
-        loader.validateColumns(data, requiredColumns);
-    } catch (error: any) {
-        errorThrown = true;
-        assertEquals(error.message.includes('missing required columns'), true);
-        assertEquals(error.message.includes('statement_type'), true);
-    }
-    assertEquals(errorThrown, true);
+    const result = loader.validateColumns(data, requiredColumns);
+    assertEquals(result.isValid, false);
+    assertEquals(result.errors.length > 0, true);
+
+    // Check that missing columns are reported
+    const errorMessages = result.errors.map(e => e.message).join(' ');
+    assertEquals(errorMessages.includes('statement_type'), true);
+    assertEquals(errorMessages.includes('code1'), true);
+    assertEquals(errorMessages.includes('name1'), true);
 });
 
-Deno.test("DataLoader.validateColumns - throws when data is empty", () => {
+Deno.test("DataLoader.validateColumns - returns error when data is empty", () => {
     const loader = new DataLoader();
     const data: any[] = [];
     const requiredColumns = ['account_code'];
 
-    let errorThrown = false;
-    try {
-        loader.validateColumns(data, requiredColumns);
-    } catch (error: any) {
-        errorThrown = true;
-        assertEquals(error.message, 'File is empty or invalid');
-    }
-    assertEquals(errorThrown, true);
+    const result = loader.validateColumns(data, requiredColumns);
+    assertEquals(result.isValid, false);
+    assertEquals(result.errors.length, 1);
+    assertEquals(result.errors[0].message, 'File is empty or invalid');
 });
 
 Deno.test("DataLoader.mapMonthToPeriod - maps Dutch months to periods", () => {

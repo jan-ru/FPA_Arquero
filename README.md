@@ -1,4 +1,5 @@
 # Financial Statement Generator
+**Version 0.0.1**
 
 A browser-based application that transforms trial balance data into professional financial statements including Balance Sheet, Income Statement, and Cash Flow Statement.
 
@@ -372,19 +373,27 @@ For issues or questions:
 
 ## Version
 
-**Current Version:** 3.0.0
+**Current Version:** 2.8.0 (with v3.0 ag-Grid features implemented)
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed version history and release notes.
 
-### What's New in 3.0.0
-- **ag-Grid Integration**: Complete migration to ag-Grid Community Edition
-- **Professional Data Grid**: Fast, responsive, and feature-rich display
+### What's New in 2.8.0
+- **Modular Architecture**: Complete ES6 module extraction (11 modules across 5 functional areas)
+- **Comprehensive Testing**: 96 unit tests with 68.3% code coverage using Deno
+- **Factory Pattern**: SpecialRowsFactory for statement-specific row handlers
+- **Utility Modules**: CategoryMatcher, VarianceCalculator, Logger, HierarchyBuilder, HierarchySorter
+- **Configuration-Driven**: Multiple config objects (APP_CONFIG, YEAR_CONFIG, EXPORT_CONFIG, UI_CONFIG, CATEGORY_DEFINITIONS)
+- **Enhanced Maintainability**: Clear separation of concerns, single responsibility modules
+
+### ag-Grid Features (v3.0 Implementation)
+- **Professional Data Grid**: ag-Grid Community Edition v31 for statement rendering
 - **CSV Export**: Export current statement to CSV (opens in Excel)
-- **Fixed Row Order**: Sorting disabled to maintain code hierarchy
-- **Enhanced Styling**: Custom ag-Grid theme with improved typography
-- **Better Labels**: "Period 1/Period 2" instead of "Year 1/Year 2"
+- **Custom Styling**: Enhanced typography and spacing with custom CSS
+- **Row Classification**: Different styling for totals, metrics, groups, and detail rows
+- **Column Resizing**: User-customizable column widths
+- **Fixed Row Order**: Sorting disabled to maintain hierarchical code order
 - **Responsive Design**: Adapts to different screen sizes
-- **Code Reduction**: ~950 lines of old code removed
+- **Code Reduction**: ~950 lines of legacy HTML table code deprecated
 - All tests passing ✅
 
 ### Migration Notes

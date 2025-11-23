@@ -50,7 +50,8 @@ const mockAq = {
     }),
     op: {
         sum: (arr: any) => arr.reduce((a: number, b: number) => a + b, 0),
-    }
+    },
+    escape: (fn: any) => fn
 };
 
 // Make aq available globally for the module
@@ -62,6 +63,7 @@ import StatementGenerator from "../../../src/statements/StatementGenerator.js";
 // Mock DataStore
 class MockDataStore {
     private combinedMovements: any = null;
+    private combinedBalances: any = null;
     private factTables: any = {};
     private hierarchyTable: any = null;
 
@@ -71,6 +73,14 @@ class MockDataStore {
 
     getCombinedMovements() {
         return this.combinedMovements;
+    }
+
+    setCombinedBalances(data: any[]) {
+        this.combinedBalances = mockAq.from(data);
+    }
+
+    getCombinedBalances() {
+        return this.combinedBalances;
     }
 
     setFactTable(table: any, period: string, type = 'movements') {
@@ -134,7 +144,7 @@ Deno.test("StatementGenerator.validateRequiredData - throws when no data", () =>
         generator.validateRequiredData();
     } catch (error: any) {
         errorThrown = true;
-        assertEquals(error.message, 'Required data not loaded');
+        assertEquals(error.message, 'Required cumulative data not loaded');
     }
     assertEquals(errorThrown, true);
 });
@@ -145,6 +155,8 @@ Deno.test("StatementGenerator.validateRequiredData - returns data when available
         { account_code: '1000', statement_type: 'BS', amount_2024: 100, amount_2025: 120 }
     ];
     dataStore.setCombinedMovements(testData);
+    dataStore.setCombinedBalances(testData);
+    dataStore.setCombinedBalances(testData);
 
     const generator = new StatementGenerator(dataStore as any);
     const result = generator.validateRequiredData();
@@ -233,6 +245,7 @@ Deno.test("StatementGenerator.validateData - no errors when data loaded", () => 
         { account_code: '1000', statement_type: 'BS', amount_2024: 100 }
     ];
     dataStore.setCombinedMovements(testData);
+    dataStore.setCombinedBalances(testData);
 
     const generator = new StatementGenerator(dataStore as any);
     const result = generator.validateData();
@@ -249,7 +262,7 @@ Deno.test("StatementGenerator.generateStatement - throws when no data", () => {
         generator.generateStatement('BS');
     } catch (error: any) {
         errorThrown = true;
-        assertEquals(error.message, 'Required data not loaded');
+        assertEquals(error.message, 'Required cumulative data not loaded');
     }
     assertEquals(errorThrown, true);
 });
@@ -285,6 +298,7 @@ Deno.test("StatementGenerator.generateStatement - generates basic statement", ()
         }
     ];
     dataStore.setCombinedMovements(testData);
+    dataStore.setCombinedBalances(testData);
 
     const generator = new StatementGenerator(dataStore as any);
     const result = generator.generateStatement('BS');
@@ -325,6 +339,7 @@ Deno.test("StatementGenerator.generateBalanceSheet - generates balance sheet", (
         }
     ];
     dataStore.setCombinedMovements(testData);
+    dataStore.setCombinedBalances(testData);
 
     const generator = new StatementGenerator(dataStore as any);
     const result = generator.generateBalanceSheet();
@@ -367,6 +382,7 @@ Deno.test("StatementGenerator.generateIncomeStatement - generates income stateme
         }
     ];
     dataStore.setCombinedMovements(testData);
+    dataStore.setCombinedBalances(testData);
 
     const generator = new StatementGenerator(dataStore as any);
     const result = generator.generateIncomeStatement();
@@ -375,9 +391,8 @@ Deno.test("StatementGenerator.generateIncomeStatement - generates income stateme
     assertExists(result.details);
     assertExists(result.totals);
     assertExists((result as any).metrics);
-    assertExists((result as any).metrics.grossProfit);
-    assertExists((result as any).metrics.operatingIncome);
     assertExists((result as any).metrics.netIncome);
+    // grossProfit and operatingIncome removed in simplified version
 });
 
 Deno.test("StatementGenerator.generateStatement - filters by period", () => {
@@ -424,6 +439,7 @@ Deno.test("StatementGenerator.generateStatement - filters by period", () => {
         }
     ];
     dataStore.setCombinedMovements(testData);
+    dataStore.setCombinedBalances(testData);
 
     const generator = new StatementGenerator(dataStore as any);
     const result = generator.generateStatement('BS', {
@@ -454,6 +470,7 @@ Deno.test("StatementGenerator - sign flip for Income Statement", () => {
         }
     ];
     dataStore.setCombinedMovements(testData);
+    dataStore.setCombinedBalances(testData);
 
     const generator = new StatementGenerator(dataStore as any);
     const result = generator.generateIncomeStatement();

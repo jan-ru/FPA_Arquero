@@ -2,16 +2,23 @@
  * DataLoader - Handles Excel file loading and transformation
  * Loads trial balance data and transforms from wide to long format
  *
- * Dependencies: ExcelJS (global from CDN), aq/Arquero (global from CDN)
+ * Dependencies: ExcelJS (global from CDN), aq/Arquero (global from CDN), Day.js (global from CDN)
  */
 
 import { MONTH_MAP, EXCEL_COLUMNS, STATEMENT_TYPES, VALIDATION_CONFIG } from '../constants.js';
+import DateUtils from '../utils/DateUtils.js';
+import ValidationResult from '../utils/ValidationResult.js';
+import HierarchyCodeMapper from '../utils/HierarchyCodeMapper.js';
+import { AccountMapper } from '../config/accountMappings.js';
 
 export default class DataLoader {
     constructor() {
         this.inputDirHandle = null;
         this.outputDirHandle = null;
         this.config = null; // Will be set via setConfig()
+
+        // Initialize DateUtils for date/period handling
+        DateUtils.initialize();
     }
 
     // Set configuration
@@ -21,6 +28,7 @@ export default class DataLoader {
 
     // Request access to input directory
     async selectInputDirectory() {
+        console.log('Opening directory picker...');
         try {
             // Note: The File System Access API doesn't support relative paths or specific subdirectories
             // as starting points. We can only use well-known directories like 'documents', 'desktop', etc.
@@ -39,8 +47,14 @@ export default class DataLoader {
 
             return this.inputDirHandle;
         } catch (error) {
+            // If user canceled the dialog, don't treat it as an error
+            if (error.name === 'AbortError') {
+                console.log('Directory selection canceled by user');
+                throw error; // Re-throw the AbortError so the caller can handle it
+            }
+
             console.error('Error selecting input directory:', error);
-            throw new Error('Failed to select input directory');
+            throw new Error('Failed to select input directory: ' + error.message);
         }
     }
 
@@ -76,9 +90,13 @@ export default class DataLoader {
     }
 
     // Validate required columns in Excel data
+    // Returns ValidationResult instead of throwing for better error handling
     validateColumns(data, requiredColumns) {
+        const result = new ValidationResult();
+
         if (!data || data.length === 0) {
-            throw new Error('File is empty or invalid');
+            result.addError('data', 'File is empty or invalid');
+            return result;
         }
 
         const firstRow = data[0];
@@ -86,10 +104,17 @@ export default class DataLoader {
         const missingColumns = requiredColumns.filter(col => !actualColumns.includes(col));
 
         if (missingColumns.length > 0) {
-            throw new Error(`File missing required columns: ${missingColumns.join(', ')}`);
+            missingColumns.forEach(col => {
+                result.addError('columns', `Missing required column: ${col}`);
+            });
         }
 
-        return true;
+        // Add info about found columns
+        if (result.isValid) {
+            result.addInfo('columns', `Found all ${requiredColumns.length} required columns`);
+        }
+
+        return result;
     }
 
     // Map month name and year to period number
@@ -108,13 +133,19 @@ export default class DataLoader {
         }
 
         // Check for month patterns (e.g., "januari2024", "februari2024")
-        for (const [monthName, periodNum] of Object.entries(MONTH_MAP)) {
-            if (lowerCol.includes(monthName) && lowerCol.includes(year)) {
-                return {
-                    period: periodNum,
-                    year: parseInt(year),
-                    type: 'movement'
-                };
+        // Try all Dutch month names using DateUtils
+        const monthNames = DateUtils.getAllMonthNames();
+        for (const monthName of monthNames) {
+            const lowerMonth = monthName.toLowerCase();
+            if (lowerCol.includes(lowerMonth) && lowerCol.includes(year)) {
+                const periodNum = DateUtils.getMonthNumber(monthName);
+                if (periodNum) {
+                    return {
+                        period: periodNum,
+                        year: parseInt(year),
+                        type: 'movement'
+                    };
+                }
             }
         }
 
@@ -159,6 +190,22 @@ export default class DataLoader {
         return { movements, balances };
     }
 
+    // Calculate cumulative profit from balances table
+    calculateCumulativeProfit(balancesTable) {
+        try {
+            // Filter for Income Statement accounts at period 12 (end of year)
+            const isAccounts = balancesTable
+                .filter(d => d.statement_type === 'IS' && d.period === 12)
+                .rollup({ total: d => aq.op.sum(d.balance_amount) });
+
+            const profit = isAccounts.numRows() > 0 ? isAccounts.get('total', 0) : 0;
+            return profit || 0;
+        } catch (error) {
+            console.warn('Error calculating cumulative profit:', error);
+            return 0;
+        }
+    }
+
     // Transform wide format data to long format
     transformWideToLong(worksheet, year) {
         const movements = [];
@@ -186,13 +233,37 @@ export default class DataLoader {
             if (!accountCode) return;
 
             // Extract hierarchy columns
-            const statementType = row.getCell(EXCEL_COLUMNS.STATEMENT_TYPE).value;
-            const level1Code = row.getCell(EXCEL_COLUMNS.CODE1).value;
-            const level1Label = row.getCell(EXCEL_COLUMNS.NAME1).value;
-            const level2Code = row.getCell(EXCEL_COLUMNS.CODE2).value;
-            const level2Label = row.getCell(EXCEL_COLUMNS.NAME2).value;
-            const level3Code = row.getCell(EXCEL_COLUMNS.CODE3).value;
-            const level3Label = row.getCell(EXCEL_COLUMNS.NAME3).value;
+            let statementType = row.getCell(EXCEL_COLUMNS.STATEMENT_TYPE).value;
+            let level1Code = row.getCell(EXCEL_COLUMNS.CODE1).value;
+            let level1Label = row.getCell(EXCEL_COLUMNS.NAME1).value;
+            let level2Code = row.getCell(EXCEL_COLUMNS.CODE2).value;
+            let level2Label = row.getCell(EXCEL_COLUMNS.NAME2).value;
+            let level3Code = row.getCell(EXCEL_COLUMNS.CODE3).value;
+            let level3Label = row.getCell(EXCEL_COLUMNS.NAME3).value;
+
+            // Apply special account mappings (e.g., Afrondingsverschil)
+            const rowData = {
+                accountCode,
+                accountDescription,
+                statementType,
+                level1Code,
+                level1Label,
+                level2Code,
+                level2Label,
+                level3Code,
+                level3Label
+            };
+
+            const remappedRow = AccountMapper.applySpecialMappings(rowData);
+
+            // Use remapped values if changed
+            statementType = remappedRow.statementType;
+            level1Code = remappedRow.level1Code;
+            level1Label = remappedRow.level1Label;
+            level2Code = remappedRow.level2Code;
+            level2Label = remappedRow.level2Label;
+            level3Code = remappedRow.level3Code;
+            level3Label = remappedRow.level3Label;
 
             // Determine statement type
             let stmtType = STATEMENT_TYPES.INCOME_STATEMENT; // Default
@@ -202,27 +273,8 @@ export default class DataLoader {
                 stmtType = STATEMENT_TYPES.INCOME_STATEMENT;
             }
 
-            // Determine Code0 and Name0 based on code1
-            let code0 = '';
-            let name0 = '';
-            const level1CodeNum = parseInt(level1Code);
-
-            if ([0, 10, 20].includes(level1CodeNum)) {
-                code0 = 'A';
-                name0 = 'vaste activa';
-            } else if ([30, 40, 50].includes(level1CodeNum)) {
-                code0 = 'A';
-                name0 = 'vlottende activa';
-            } else if (level1CodeNum === 60) {
-                code0 = 'L';
-                name0 = 'eigen vermogen';
-            } else if ([65, 70].includes(level1CodeNum)) {
-                code0 = 'L';
-                name0 = 'lange termijn schulden';
-            } else if ([80, 90].includes(level1CodeNum)) {
-                code0 = 'L';
-                name0 = 'korte termijn schulden';
-            }
+            // Determine Code0 and Name0 based on code1 using HierarchyCodeMapper
+            const { code0, name0 } = HierarchyCodeMapper.getCode0AndName0(level1Code);
 
             // Create base row with hierarchy
             const baseRow = {
@@ -277,13 +329,16 @@ export default class DataLoader {
 
     // Load trial balance amounts for a specific period
     async loadTrialBalance(period) {
-        if (!this.config) {
-            throw new Error('Configuration not loaded. Call setConfig() first.');
+        // Use instance config or fall back to global window.config
+        const config = this.config || window.config;
+
+        if (!config) {
+            throw new Error('Configuration not loaded. Call setConfig() first or ensure window.config is available.');
         }
 
         const filename = period === '2024'
-            ? this.config.inputFiles.trialBalance2024
-            : this.config.inputFiles.trialBalance2025;
+            ? config.inputFiles.trialBalance2024
+            : config.inputFiles.trialBalance2025;
 
         try {
             // Validate period parameter
@@ -329,7 +384,16 @@ export default class DataLoader {
 
             // Convert arrays to Arquero tables
             const movementsTable = aq.from(movements);
-            const balancesTable = aq.from(balances);
+            let balancesTable = aq.from(balances);
+
+            // Calculate cumulative profit BEFORE renaming the column
+            const cumulativeProfit = this.calculateCumulativeProfit(balancesTable);
+
+            // Normalize balances table to use 'movement_amount' column name for consistency
+            // This allows the same statement generation logic to work with both movements and balances
+            if (balancesTable.numRows() > 0 && balancesTable.columnNames().includes('balance_amount')) {
+                balancesTable = balancesTable.rename({ balance_amount: 'movement_amount' });
+            }
 
             console.log(`Trial Balance ${period} loaded successfully:`);
             console.log(`  - Movements: ${movementsTable.numRows()} rows`);
@@ -346,7 +410,12 @@ export default class DataLoader {
 
             return {
                 movements: movementsTable,
-                balances: balancesTable
+                balances: balancesTable,
+                metadata: {
+                    rows: worksheet.rowCount,
+                    columns: worksheet.columnCount,
+                    cumulativeProfit: cumulativeProfit
+                }
             };
 
         } catch (error) {

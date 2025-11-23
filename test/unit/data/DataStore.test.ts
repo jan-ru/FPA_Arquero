@@ -150,6 +150,7 @@ Deno.test("DataStore.isDataComplete - returns true when all data loaded", () => 
     store.setFactTable(mockTable, '2025', 'movements');
     store.setFactTable(mockTable, '2025', 'balances');
     store.setCombinedMovements(mockTable);
+    store.setCombinedBalances(mockTable);
 
     assertEquals(store.isDataComplete(), true);
 });

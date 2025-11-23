@@ -57,7 +57,12 @@ export default class CategoryMatcher {
     }
 
     static isOtherIncome(categoryName) {
-        return this.matches(categoryName, ['overige', 'opbrengst']);
+        return this.matches(categoryName, [
+            'overige', 'opbrengst',
+            'financiële', 'baten', 'lasten',  // Financiële baten en lasten
+            'buitengewone',                    // Buitengewone baten en lasten
+            'afrondingsverschil', 'afronding'  // Afrondingsverschil
+        ]);
     }
 
     static isTax(categoryName) {

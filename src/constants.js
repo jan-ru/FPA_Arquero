@@ -190,7 +190,8 @@ export const YEAR_CONFIG = {
     }
 };
 
-// Dutch to English month mapping (used by DataLoader)
+// Dutch to English month mapping (DEPRECATED - use DateUtils.getMonthNumber() instead)
+// Kept for backward compatibility but will be removed in future version
 export const MONTH_MAP = {
     'januari': 1,
     'februari': 2,
@@ -204,4 +205,30 @@ export const MONTH_MAP = {
     'oktober': 10,
     'november': 11,
     'december': 12
+};
+
+/**
+ * @deprecated Use DateUtils.getMonthNumber() for month name to number conversion
+ * @example
+ * import DateUtils from './utils/DateUtils.js';
+ * DateUtils.initialize();
+ * const monthNum = DateUtils.getMonthNumber('januari'); // 1
+ */
+
+// Hierarchy Code Ranges and Mappings
+export const HIERARCHY_CODES = {
+    // Account code ranges for Activa and Passiva
+    ACTIVA_RANGE: { min: 0, max: 50 },
+    PASSIVA_RANGE: { min: 60, max: 90 },
+
+    // Level 1 code ranges by category
+    ACTIVA_VASTE: [0, 10, 20],
+    ACTIVA_VLOTTENDE: [30, 40, 50],
+    PASSIVA_EIGEN_VERMOGEN: [60],
+    PASSIVA_LANGE_TERMIJN: [65, 70],
+    PASSIVA_KORTE_TERMIJN: [80, 90],
+
+    // Special account codes for mapping
+    IS_BUITENGEWONE: { code1: '54', code2: '54010', name: 'Buitengewone baten en lasten' },
+    BS_KORTLOPENDE_SCHULDEN: { code1: '80', code2: '08080', name: 'Overige kortlopende schulden' }
 };

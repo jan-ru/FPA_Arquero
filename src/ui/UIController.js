@@ -21,6 +21,7 @@ import StatementGenerator from '../statements/StatementGenerator.js';
 import AgGridStatementRenderer from './AgGridStatementRenderer.js';
 import { UI_CONFIG, UI_STATEMENT_TYPES } from '../constants.js';
 import { YEAR_CONFIG } from '../constants.js';
+import APP_CONFIG from '../config/appConfig.js';
 
 class UIController {
     constructor() {
@@ -28,8 +29,24 @@ class UIController {
         this.dataLoader = new DataLoader();
         this.statementGenerator = new StatementGenerator(this.dataStore);
         this.agGridRenderer = new AgGridStatementRenderer('ag-grid-container');
-        this.currentStatementType = UI_STATEMENT_TYPES.BALANCE_SHEET;
+
+        // Use centralized config for defaults
+        this.currentStatementType = this.mapStatementType(APP_CONFIG.statements.defaultType);
         this.currentStatementData = null;
+    }
+
+    /**
+     * Map statement type from config format to UI constant
+     * @param {string} configType - Type from APP_CONFIG ('income-statement', etc.)
+     * @returns {string} UI_STATEMENT_TYPES constant
+     */
+    mapStatementType(configType) {
+        const mapping = {
+            'income-statement': UI_STATEMENT_TYPES.INCOME_STATEMENT,
+            'balance-sheet': UI_STATEMENT_TYPES.BALANCE_SHEET,
+            'cash-flow': UI_STATEMENT_TYPES.CASH_FLOW
+        };
+        return mapping[configType] || UI_STATEMENT_TYPES.INCOME_STATEMENT;
     }
 
     // Update file status indicator
@@ -136,6 +153,12 @@ class UIController {
             await this.handleLoadAllFiles();
 
         } catch (error) {
+            // If user canceled the dialog, don't show an error message
+            if (error.name === 'AbortError') {
+                console.log('Directory selection was canceled');
+                return;
+            }
+
             this.showErrorMessage(error.message);
         }
     }
@@ -144,8 +167,8 @@ class UIController {
     async checkRequiredFilesExist() {
         try {
             const requiredFiles = [
-                config.inputFiles.trialBalance2024,
-                config.inputFiles.trialBalance2025
+                APP_CONFIG.excel.trialBalance2024,
+                APP_CONFIG.excel.trialBalance2025
             ];
 
             for (const filename of requiredFiles) {
@@ -172,26 +195,39 @@ class UIController {
             // Step 1: Load trial balance for 2024 (movements and balances with hierarchy included)
             this.showLoadingMessage('Loading 2024 trial balance...');
             this.updateFileStatus('tb2024', 'loading');
-            const { movements: movements2024, balances: balances2024 } = await this.dataLoader.loadTrialBalance('2024');
+            const { movements: movements2024, balances: balances2024, metadata: metadata2024 } = await this.dataLoader.loadTrialBalance('2024');
 
             this.dataStore.setFactTable(movements2024, '2024', 'movements');
             this.dataStore.setFactTable(balances2024, '2024', 'balances');
-            this.updateFileStatus('tb2024', 'success', `M:${movements2024.numRows()} B:${balances2024.numRows()}`);
+
+            // Format status: Wide dimensions → Long dimensions | Profit
+            const totalLongRows2024 = movements2024.numRows() + balances2024.numRows();
+            const status2024 = `${metadata2024.rows}R × ${metadata2024.columns}C → ${totalLongRows2024}R × ${movements2024.columnNames().length}C | Profit: €${this.formatNumber(metadata2024.cumulativeProfit)}`;
+            this.updateFileStatus('tb2024', 'success', status2024);
 
             // Step 2: Load trial balance for 2025 (movements and balances with hierarchy included)
             this.showLoadingMessage('Loading 2025 trial balance...');
             this.updateFileStatus('tb2025', 'loading');
-            const { movements: movements2025, balances: balances2025 } = await this.dataLoader.loadTrialBalance('2025');
+            const { movements: movements2025, balances: balances2025, metadata: metadata2025 } = await this.dataLoader.loadTrialBalance('2025');
 
             this.dataStore.setFactTable(movements2025, '2025', 'movements');
             this.dataStore.setFactTable(balances2025, '2025', 'balances');
-            this.updateFileStatus('tb2025', 'success', `M:${movements2025.numRows()} B:${balances2025.numRows()}`);
 
-            // Step 3: Create combined movements table for both years
+            // Format status: Wide dimensions → Long dimensions | Profit
+            const totalLongRows2025 = movements2025.numRows() + balances2025.numRows();
+            const status2025 = `${metadata2025.rows}R × ${metadata2025.columns}C → ${totalLongRows2025}R × ${movements2025.columnNames().length}C | Profit: €${this.formatNumber(metadata2025.cumulativeProfit)}`;
+            this.updateFileStatus('tb2025', 'success', status2025);
+
+            // Step 3: Create combined data tables for both years (movements and balances)
             this.showLoadingMessage('Combining data...');
             const combinedMovements = movements2024.concat(movements2025);
+            const combinedBalances = balances2024.concat(balances2025);
+
+            // Store both - we'll choose which to use based on view type
             this.dataStore.setCombinedMovements(combinedMovements);
+            this.dataStore.setCombinedBalances(combinedBalances);
             console.log(`Combined movements table created: ${combinedMovements.numRows()} rows`);
+            console.log(`Combined balances table created: ${combinedBalances.numRows()} rows`);
 
             // Update combined TB count
             const combinedCount = movements2024.numRows() + balances2024.numRows() + movements2025.numRows() + balances2025.numRows();
@@ -230,8 +266,8 @@ class UIController {
                     // Path not available
                 }
 
-                const file1 = config.inputFiles.trialBalance2024;
-                const file2 = config.inputFiles.trialBalance2025;
+                const file1 = APP_CONFIG.excel.trialBalance2024;
+                const file2 = APP_CONFIG.excel.trialBalance2025;
                 statusText.innerHTML = `
                     <div style="line-height: 1.5;">
                         <div style="margin-bottom: 4px;"><strong>📁 Directory:</strong> ${pathDisplay}</div>
@@ -250,8 +286,8 @@ class UIController {
             // Enable export button
             document.getElementById('export-all').disabled = false;
 
-            // Generate and display default statement (Balance Sheet)
-            this.generateAndDisplayStatement(UI_STATEMENT_TYPES.BALANCE_SHEET);
+            // Generate and display default statement from config
+            this.generateAndDisplayStatement(this.currentStatementType);
 
         } catch (error) {
             console.error('File loading error:', error);
@@ -371,9 +407,9 @@ class UIController {
             const year1 = YEAR_CONFIG.getYear(0);
             const year2 = YEAR_CONFIG.getYear(1);
 
-            // Get period selections from header dropdowns (fallback to defaults if not found)
-            const periodYear1 = document.getElementById(`period-${year1}-header`)?.value || `${year1}-all`;
-            const periodYear2 = document.getElementById(`period-${year2}-header`)?.value || `${year2}-all`;
+            // Get period selections from header dropdowns (fallback to config defaults if not found)
+            const periodYear1 = document.getElementById(`period-${year1}-header`)?.value || APP_CONFIG.statements.defaultPeriod1;
+            const periodYear2 = document.getElementById(`period-${year2}-header`)?.value || APP_CONFIG.statements.defaultPeriod2;
             const periodOptions = {
                 [`period${year1}`]: periodYear1,
                 [`period${year2}`]: periodYear2
@@ -542,35 +578,51 @@ class UIController {
 
         titleDiv.textContent = title;
 
-        // Get first 20 rows
-        const rows = table.slice(0, 20).objects();
+        // Get all rows (ag-Grid handles filtering and virtual scrolling)
+        const rows = table.objects();
         const columns = table.columnNames();
 
-        // Build table HTML
-        let html = '<table><thead><tr>';
-        columns.forEach(col => {
-            html += `<th>${col}</th>`;
-        });
-        html += '</tr></thead><tbody>';
+        // Clear previous content and create ag-Grid container
+        contentDiv.innerHTML = '<div id="preview-grid" class="ag-theme-alpine" style="height: 500px; width: 100%;"></div>';
+        const gridDiv = document.getElementById('preview-grid');
 
-        rows.forEach(row => {
-            html += '<tr>';
-            columns.forEach(col => {
-                const value = row[col];
-                const displayValue = value !== null && value !== undefined ? value : '';
-                html += `<td>${displayValue}</td>`;
-            });
-            html += '</tr>';
-        });
+        // Create column definitions
+        const columnDefs = columns.map(col => ({
+            field: col,
+            headerName: col,
+            sortable: true,
+            filter: true,
+            resizable: true,
+            minWidth: 120
+        }));
 
-        html += '</tbody></table>';
-        contentDiv.innerHTML = html;
+        // Create grid options
+        const gridOptions = {
+            columnDefs: columnDefs,
+            rowData: rows,
+            defaultColDef: {
+                sortable: true,
+                filter: true,
+                resizable: true,
+                flex: 1
+            },
+            domLayout: 'normal',
+            animateRows: true,
+            onGridReady: params => {
+                params.api.sizeColumnsToFit();
+            }
+        };
+
+        // Create the grid
+        new agGrid.Grid(gridDiv, gridOptions);
+
         previewDiv.style.display = 'block';
     }
 
     // Setup event listeners
     setupEventListeners() {
         document.getElementById('select-input-dir').addEventListener('click', () => {
+            console.log('Select Directory button clicked');
             this.handleSelectInputDirectory();
         });
 
@@ -630,6 +682,16 @@ class UIController {
             });
         }
 
+        // View type dropdown (cumulative vs period) - re-render on change
+        const viewTypeDropdown = document.getElementById('view-type');
+        if (viewTypeDropdown) {
+            viewTypeDropdown.addEventListener('change', () => {
+                if (this.currentStatementType) {
+                    this.generateAndDisplayStatement(this.currentStatementType);
+                }
+            });
+        }
+
         // Export button
         document.getElementById('export-all').addEventListener('click', () => {
             this.handleExportCurrent();
@@ -659,6 +721,12 @@ class UIController {
 
 
         // Detail level dropdown is now in the table header and handled by the table's event listeners
+    }
+
+    // Helper: Format number with thousand separators
+    formatNumber(value) {
+        if (value === null || value === undefined) return '0';
+        return Math.round(value).toLocaleString(APP_CONFIG.display.locale);
     }
 }
 

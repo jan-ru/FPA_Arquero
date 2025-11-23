@@ -13,6 +13,10 @@
 
 import CategoryMatcher from '../utils/CategoryMatcher.js';
 import VarianceCalculator from '../utils/VarianceCalculator.js';
+import Logger from '../utils/Logger.js';
+import HierarchyBuilder from '../utils/HierarchyBuilder.js';
+import SpecialRowsFactory from '../statements/specialrows/SpecialRowsFactory.js';
+import ColumnDefBuilder from './columns/ColumnDefBuilder.js';
 import { YEAR_CONFIG, UI_CONFIG, UI_STATEMENT_TYPES } from '../constants.js';
 
 class AgGridStatementRenderer {
@@ -26,7 +30,7 @@ class AgGridStatementRenderer {
 
     // Initialize grid with data
     render(statementData, statementType) {
-        console.log('AgGridStatementRenderer.render called', { statementType, rowCount: statementData?.details?.numRows() });
+        Logger.debug('AgGridStatementRenderer.render called', { statementType, rowCount: statementData?.details?.numRows() });
 
         this.currentStatementType = statementType;
         this.currentStatementData = statementData;
@@ -36,15 +40,11 @@ class AgGridStatementRenderer {
 
         // Prepare data for grid
         const gridData = this.prepareDataForGrid(statementData, statementType);
-        console.log('Grid data prepared', { dataLength: gridData.length });
+        Logger.debug('Grid data prepared', { dataLength: gridData.length });
 
         // Get column definitions
         const columnDefs = this.getColumnDefs(statementType, year1, year2);
-        console.log('Column definitions', { columnCount: columnDefs.length });
-
-        // Get detail level setting
-        const detailLevel = document.getElementById('detail-level')?.value || 'all';
-        const expandGroups = detailLevel === 'all' ? -1 : 0;  // -1 = expand all, 0 = collapse all
+        Logger.debug('Column definitions', { columnCount: columnDefs.length });
 
         // Create grid options
         const gridOptions = {
@@ -57,48 +57,28 @@ class AgGridStatementRenderer {
                 flex: 1
             },
 
-            // Auto-group column configuration
-            autoGroupColumnDef: {
-                headerName: 'Category',
-                minWidth: 250,
-                cellRendererParams: {
-                    suppressCount: true,  // Don't show row count in group headers
-                    innerRenderer: params => {
-                        // Custom rendering for group rows
-                        return params.value || '';
-                    }
-                }
-            },
-
-            // Group by name1, but exclude special rows (empty name1 or special _rowType)
-            getRowId: params => {
-                // Generate unique ID for each row
-                return params.data.name2 + (params.data.name1 || '') + Math.random();
-            },
-
-            // Customize grouping behavior
-            isRowMaster: params => {
-                // Special rows (totals, metrics, spacers) should not be group masters
-                if (!params.name1 || params._rowType === 'total' ||
-                    params._rowType === 'metric' || params._rowType === 'spacer') {
-                    return false;
-                }
-                return false;  // We're using rowGroup instead of master/detail
-            },
-
-            groupDefaultExpanded: expandGroups,  // Controlled by detail level dropdown
             suppressAggFuncInHeader: true,  // Clean header display
-            rowClass: params => this.getRowClass(params),
+
+            // Row styling based on type and level
+            rowClassRules: {
+                'total-row': params => params.data?._rowType === 'total',
+                'metric-row': params => params.data?._rowType === 'metric',
+                'group-row': params => params.data?._rowType === 'group',
+                'level-0-row': params => params.data?.level === 0,
+                'level-1-row': params => params.data?.level === 1,
+                'level-2-row': params => params.data?.level === 2,
+                'level-3-row': params => params.data?.level === 3
+            },
 
             onGridReady: params => {
-                console.log('Grid ready!', { rowCount: params.api.getDisplayedRowCount() });
+                Logger.debug('Grid ready!', { rowCount: params.api.getDisplayedRowCount() });
                 this.gridApi = params.api;
                 this.columnApi = params.columnApi;
                 params.api.sizeColumnsToFit();
             },
 
             onFirstDataRendered: params => {
-                console.log('First data rendered!', { rowCount: params.api.getDisplayedRowCount() });
+                Logger.debug('First data rendered!', { rowCount: params.api.getDisplayedRowCount() });
                 params.api.sizeColumnsToFit();
             }
         };
@@ -116,32 +96,239 @@ class AgGridStatementRenderer {
     prepareDataForGrid(statementData, statementType) {
         const details = statementData.details.objects();
 
-        // Add metadata for row styling and behavior
-        let gridData = details.map(row => ({
-            ...row,
-            _isMetric: false,
-            _rowType: 'detail'
-        }));
+        // Get detail level setting
+        const detailLevel = document.getElementById('detail-level')?.value || 'level5';
 
-        // Insert special rows based on statement type
-        switch(statementType) {
-            case UI_STATEMENT_TYPES.BALANCE_SHEET:
-                gridData = this.insertBalanceSheetSpecialRows(gridData, statementData);
-                break;
+        // Build hierarchical tree structure using HierarchyBuilder
+        let gridData = HierarchyBuilder.buildTree(details, detailLevel);
 
-            case UI_STATEMENT_TYPES.INCOME_STATEMENT:
-                gridData = this.insertIncomeStatementMetrics(gridData, statementData);
-                break;
-
-            case UI_STATEMENT_TYPES.CASH_FLOW:
-                gridData = this.insertCashFlowReconciliation(gridData, statementData);
-                break;
-        }
+        // Insert special rows based on statement type using factory
+        const specialRowsHandler = SpecialRowsFactory.create(statementType);
+        gridData = specialRowsHandler.insert(gridData, statementData);
 
         return gridData;
     }
 
-    // Insert Balance Sheet special rows (Total Assets, Total L&E)
+    // Build hierarchical tree structure - creates ALL levels for outline display
+    buildHierarchicalTree(details, detailLevel) {
+        console.log('buildHierarchicalTree called', { detailCount: details.length, detailLevel });
+        console.log('Sample detail row received:', details[0]);
+
+        // Check how many rows have name3 and account data populated
+        const rowsWithName3 = details.filter(d => d.name3 && d.name3.trim() !== '').length;
+        const rowsWithAccounts = details.filter(d => {
+            const hasCode = d.account_code && typeof d.account_code === 'string' && d.account_code.trim() !== '';
+            return hasCode;
+        }).length;
+        const rowsWithEmptyAccount = details.filter(d => !d.account_code || d.account_code === '').length;
+        const rowsWithUndefinedAccount = details.filter(d => d.account_code === undefined).length;
+
+        console.log(`Rows with name3: ${rowsWithName3} out of ${details.length}`);
+        console.log(`Rows with account_code (non-empty): ${rowsWithAccounts} out of ${details.length}`);
+        console.log(`Rows with empty account_code: ${rowsWithEmptyAccount}`);
+        console.log(`Rows with undefined account_code: ${rowsWithUndefinedAccount}`);
+
+        // Show sample of first few rows with account data
+        const samplesWithAccounts = details.filter(d => d.account_code && typeof d.account_code === 'string' && d.account_code.trim() !== '').slice(0, 3);
+        console.log('Sample rows with accounts:', samplesWithAccounts);
+
+        // Create hierarchy map to aggregate data
+        const hierarchyMap = new Map();
+
+        // Determine max depth based on detail level
+        // Level hierarchy: code0 (Activa/Passiva) -> name0 (vaste/vlottende activa) -> name1 -> name2 -> name3 -> account
+        const maxDepth = {
+            'level0': 1,  // Show code0 only (Activa/Passiva)
+            'level1': 2,  // Show code0 + name0
+            'level2': 3,  // Show code0 + name0 + name1
+            'level3': 4,  // Show code0 + name0 + name1 + name2
+            'level4': 5,  // Show code0 + name0 + name1 + name2 + name3 (where applicable)
+            'level5': 6   // Show all including account_code + account_description
+        }[detailLevel] || 6;
+
+        console.log('Max depth:', maxDepth);
+
+        // Process each detail row
+        details.forEach((row, idx) => {
+            // Build hierarchy path based on detail level
+            const pathParts = [];
+            const codes = [];
+
+            // Level 0: code0 (Activa or Passiva)
+            if (maxDepth >= 1 && row.code0) {
+                pathParts.push(row.code0);
+                codes.push({ code0: row.code0 });
+            }
+            // Level 1: name0 (vaste activa, vlottende activa, etc.)
+            if (maxDepth >= 2 && row.name0) {
+                pathParts.push(row.name0);
+                codes.push({ code0: row.code0, name0: row.name0 });
+            }
+            // Level 2: name1
+            if (maxDepth >= 3 && row.name1) {
+                pathParts.push(row.name1);
+                codes.push({ code1: row.code1, name1: row.name1 });
+            }
+            // Level 3: name2
+            if (maxDepth >= 4 && row.name2) {
+                pathParts.push(row.name2);
+                codes.push({ code2: row.code2, name2: row.name2 });
+            }
+            // Level 4: name3 (only populated for some categories like 'Belastingen en premies sociale verz.')
+            if (maxDepth >= 5 && row.name3 && row.name3.trim() !== '') {
+                pathParts.push(row.name3);
+                codes.push({ code3: row.code3, name3: row.name3 });
+            }
+            // Level 5: account_code + account_description (individual accounts)
+            if (maxDepth >= 6 && row.account_code && row.account_code.trim() !== '') {
+                const accountLabel = row.account_description && row.account_description.trim() !== ''
+                    ? `${row.account_code} - ${row.account_description}`
+                    : row.account_code;
+                pathParts.push(accountLabel);
+                codes.push({ account_code: row.account_code, account_description: row.account_description });
+            }
+
+            // Log first few rows for debugging
+            if (idx < 5) {
+                console.log(`Row ${idx}:`, {
+                    code0: row.code0,
+                    name0: row.name0,
+                    code1: row.code1,
+                    name1: row.name1,
+                    code2: row.code2,
+                    name2: row.name2,
+                    code3: row.code3,
+                    name3: row.name3,
+                    account_code: row.account_code,
+                    account_description: row.account_description,
+                    maxDepth,
+                    pathParts,
+                    pathLength: pathParts.length
+                });
+            }
+
+            if (pathParts.length === 0) return; // Skip rows with no hierarchy
+
+            // Create ALL parent nodes in the hierarchy
+            for (let i = 0; i < pathParts.length; i++) {
+                const path = pathParts.slice(0, i + 1);
+                const pathKey = path.join('|');
+
+                if (!hierarchyMap.has(pathKey)) {
+                    const node = {
+                        hierarchy: [...path],
+                        level: i,
+                        label: pathParts[i],
+                        // ALWAYS preserve all code levels for sorting
+                        code0: row.code0 || '',
+                        name0: row.name0 || '',
+                        code1: row.code1 || '',
+                        name1: row.name1 || '',
+                        code2: row.code2 || '',
+                        name2: row.name2 || '',
+                        code3: row.code3 || '',
+                        name3: row.name3 || '',
+                        account_code: row.account_code || '',
+                        account_description: row.account_description || '',
+                        amount_2024: 0,
+                        amount_2025: 0,
+                        variance_amount: 0,
+                        variance_percent: 0,
+                        _rowType: i === pathParts.length - 1 ? 'detail' : 'group'
+                    };
+                    hierarchyMap.set(pathKey, node);
+                }
+
+                // Aggregate amounts at ALL levels (so parents show totals)
+                const node = hierarchyMap.get(pathKey);
+                node.amount_2024 += row.amount_2024 || 0;
+                node.amount_2025 += row.amount_2025 || 0;
+            }
+        });
+
+        // Calculate variances
+        hierarchyMap.forEach(node => {
+            node.variance_amount = node.amount_2025 - node.amount_2024;
+            node.variance_percent = node.amount_2024 !== 0 ?
+                ((node.amount_2025 - node.amount_2024) / Math.abs(node.amount_2024)) * 100 : 0;
+        });
+
+        // Convert to array and sort by code hierarchy (code0, code1, code2, then hierarchy path)
+        const result = Array.from(hierarchyMap.values());
+        result.sort((a, b) => {
+            // Helper function to convert code to number for sorting
+            const toNum = (code) => {
+                if (!code && code !== 0) return 999999; // Empty codes go last
+                const num = parseInt(code);
+                return isNaN(num) ? 999999 : num;
+            };
+
+            // Sort by code0 first (Assets vs Liabilities/Equity)
+            // code0 is now text ('Activa' or 'Passiva'), so handle both numeric and text
+            const code0A = a.code0 || '';
+            const code0B = b.code0 || '';
+            const code0NumA = toNum(code0A);
+            const code0NumB = toNum(code0B);
+
+            // If both are non-numeric (text), use alphabetic comparison
+            if (code0NumA === 999999 && code0NumB === 999999) {
+                const code0TextDiff = code0A.localeCompare(code0B);
+                if (code0TextDiff !== 0) return code0TextDiff;
+            } else {
+                // Otherwise use numeric comparison
+                const code0Diff = code0NumA - code0NumB;
+                if (code0Diff !== 0) return code0Diff;
+            }
+
+            // Then by code1
+            const code1Diff = toNum(a.code1) - toNum(b.code1);
+            if (code1Diff !== 0) return code1Diff;
+
+            // Then by code2
+            const code2Diff = toNum(a.code2) - toNum(b.code2);
+            if (code2Diff !== 0) return code2Diff;
+
+            // Then by code3
+            const code3Diff = toNum(a.code3) - toNum(b.code3);
+            if (code3Diff !== 0) return code3Diff;
+
+            // Finally by account_code
+            const acctA = a.account_code || '';
+            const acctB = b.account_code || '';
+            if (acctA !== acctB) return acctA.localeCompare(acctB);
+
+            // If all codes are equal, sort by hierarchy path
+            const maxLength = Math.max(a.hierarchy.length, b.hierarchy.length);
+            for (let i = 0; i < maxLength; i++) {
+                const aVal = a.hierarchy[i] || '';
+                const bVal = b.hierarchy[i] || '';
+                if (aVal !== bVal) return aVal.localeCompare(bVal);
+            }
+
+            return 0;
+        });
+
+        console.log('Built hierarchy tree:', {
+            nodeCount: result.length,
+            sample: result.slice(0, 20).map(r => ({
+                level: r.level,
+                label: r.label,
+                code0: r.code0,
+                code1: r.code1,
+                code2: r.code2,
+                code3: r.code3,
+                name0: r.name0,
+                name1: r.name1,
+                name2: r.name2,
+                name3: r.name3,
+                hierarchy: r.hierarchy,
+                amount_2024: r.amount_2024
+            }))
+        });
+        return result;
+    }
+
+    // Insert Balance Sheet special rows (Totaal activa, Totaal passiva)
     insertBalanceSheetSpecialRows(data, statementData) {
         const result = [...data];
         const totals = statementData.totals?.objects() || [];
@@ -157,7 +344,8 @@ class AgGridStatementRenderer {
 
         // Find insertion point: before first liability/equity category
         let insertIndex = result.findIndex(row =>
-            CategoryMatcher.isLiabilityOrEquity(row.name1)
+            CategoryMatcher.isLiabilityOrEquity(row.name1) ||
+            CategoryMatcher.isLiabilityOrEquity(row.name0)
         );
 
         if (insertIndex > 0) {
@@ -165,16 +353,36 @@ class AgGridStatementRenderer {
             const assetsVariancePercent = totalAssetsYear1 !== 0 ?
                 ((totalAssetsYear2 - totalAssetsYear1) / Math.abs(totalAssetsYear1)) * 100 : 0;
 
-            // Insert TOTAL ASSETS row
+            // Insert Totaal activa row
             result.splice(insertIndex, 0, {
+                hierarchy: ['Totaal activa'],
+                level: 0,
+                label: 'Totaal activa',
+                name0: '',
                 name1: '',
-                name2: 'TOTAL ASSETS',
+                name2: 'Totaal activa',
                 amount_2024: totalAssetsYear1,
                 amount_2025: totalAssetsYear2,
                 variance_amount: assetsVariance,
                 variance_percent: assetsVariancePercent,
                 _isMetric: true,
                 _rowType: 'total'
+            });
+
+            // Insert blank/spacer row after Totaal activa
+            result.splice(insertIndex + 1, 0, {
+                hierarchy: ['SPACER_1'],
+                level: 0,
+                label: '',
+                name0: '',
+                name1: '',
+                name2: '',
+                amount_2024: null,
+                amount_2025: null,
+                variance_amount: null,
+                variance_percent: null,
+                _isMetric: false,
+                _rowType: 'spacer'
             });
         }
 
@@ -193,8 +401,12 @@ class AgGridStatementRenderer {
             ((totalLEYear2 - totalLEYear1) / Math.abs(totalLEYear1)) * 100 : 0;
 
         result.push({
+            hierarchy: ['Totaal passiva'],
+            level: 0,
+            label: 'Totaal passiva',
+            name0: '',
             name1: '',
-            name2: 'TOTAL LIABILITIES & EQUITY',
+            name2: 'Totaal passiva',
             amount_2024: totalLEYear1,
             amount_2025: totalLEYear2,
             variance_amount: leVariance,
@@ -215,30 +427,54 @@ class AgGridStatementRenderer {
         const year1 = YEAR_CONFIG.getYear(0);
         const year2 = YEAR_CONFIG.getYear(1);
 
-        // 1. Insert Gross Profit after COGS
+        // 1. Insert Bruto marge (Gross Margin) after COGS
         // Try multiple patterns to find COGS row
         let cogsIndex = result.findIndex(row =>
-            row.name2 && (
-                row.name2.toLowerCase().includes('kostprijs') ||
-                row.name2.toLowerCase().includes('cogs') ||
-                row.name2.toLowerCase().includes('cost of goods')
+            row.label && (
+                row.label.toLowerCase().includes('kostprijs') ||
+                row.label.toLowerCase().includes('cogs') ||
+                row.label.toLowerCase().includes('cost of goods')
             )
         );
+
+        console.log('Income Statement - looking for COGS:', { cogsIndex, hasMetrics: !!metrics.grossProfit });
+        console.log('Sample rows:', result.slice(0, 10).map(r => ({ label: r.label, name2: r.name2 })));
 
         if (cogsIndex >= 0 && metrics.grossProfit) {
             const gpVariance = metrics.grossProfit[year2] - metrics.grossProfit[year1];
             const gpVariancePercent = metrics.grossProfit[year1] !== 0 ?
                 ((metrics.grossProfit[year2] - metrics.grossProfit[year1]) / Math.abs(metrics.grossProfit[year1])) * 100 : 0;
 
+            // Insert Bruto marge subtotal
             result.splice(cogsIndex + 1, 0, {
+                hierarchy: ['Bruto marge'],
+                level: 0,
+                label: 'Bruto marge',
+                name0: '',
                 name1: '',
-                name2: 'Brutowinst (Gross Profit)',
+                name2: 'Bruto marge',
                 amount_2024: metrics.grossProfit[year1],
                 amount_2025: metrics.grossProfit[year2],
                 variance_amount: gpVariance,
                 variance_percent: gpVariancePercent,
                 _isMetric: true,
                 _rowType: 'metric'
+            });
+
+            // Insert blank/spacer row after Bruto marge
+            result.splice(cogsIndex + 2, 0, {
+                hierarchy: ['SPACER_GROSS_MARGIN'],
+                level: 0,
+                label: '',
+                name0: '',
+                name1: '',
+                name2: '',
+                amount_2024: null,
+                amount_2025: null,
+                variance_amount: null,
+                variance_percent: null,
+                _isMetric: false,
+                _rowType: 'spacer'
             });
         }
 
@@ -266,6 +502,9 @@ class AgGridStatementRenderer {
                 ((metrics.operatingIncome[year2] - metrics.operatingIncome[year1]) / Math.abs(metrics.operatingIncome[year1])) * 100 : 0;
 
             result.splice(opexIndex + 1, 0, {
+                hierarchy: ['Operating Income'],
+                level: 0,
+                label: 'Operating Income',
                 name1: '',
                 name2: 'Operating Income',
                 amount_2024: metrics.operatingIncome[year1],
@@ -284,6 +523,9 @@ class AgGridStatementRenderer {
                 ((metrics.netIncome[year2] - metrics.netIncome[year1]) / Math.abs(metrics.netIncome[year1])) * 100 : 0;
 
             result.push({
+                hierarchy: ['NET INCOME'],
+                level: 0,
+                label: 'NET INCOME',
                 name1: '',
                 name2: 'NET INCOME',
                 amount_2024: metrics.netIncome[year1],
@@ -307,16 +549,6 @@ class AgGridStatementRenderer {
         const year1 = YEAR_CONFIG.getYear(0);
         const year2 = YEAR_CONFIG.getYear(1);
 
-        // Add spacing row
-        result.push({
-            name1: '',
-            name2: '',
-            amount_2024: null,
-            amount_2025: null,
-            _isMetric: false,
-            _rowType: 'spacer'
-        });
-
         // Starting Cash
         if (metrics.startingCash) {
             const scVariance = metrics.startingCash[year2] - metrics.startingCash[year1];
@@ -324,6 +556,9 @@ class AgGridStatementRenderer {
                 ((metrics.startingCash[year2] - metrics.startingCash[year1]) / Math.abs(metrics.startingCash[year1])) * 100 : 0;
 
             result.push({
+                hierarchy: ['Cash Reconciliation', 'Starting Cash'],
+                level: 1,
+                label: 'Starting Cash',
                 name1: 'Cash Reconciliation',
                 name2: 'Starting Cash',
                 amount_2024: metrics.startingCash[year1],
@@ -342,6 +577,9 @@ class AgGridStatementRenderer {
                 (ncVariance / Math.abs(metrics.netChange[year1])) * 100 : 0;
 
             result.push({
+                hierarchy: ['Cash Reconciliation', 'Changes in Cash'],
+                level: 1,
+                label: 'Changes in Cash',
                 name1: 'Cash Reconciliation',
                 name2: 'Changes in Cash',
                 amount_2024: metrics.netChange[year1],
@@ -360,6 +598,9 @@ class AgGridStatementRenderer {
                 ((metrics.endingCash[year2] - metrics.endingCash[year1]) / Math.abs(metrics.endingCash[year1])) * 100 : 0;
 
             result.push({
+                hierarchy: ['Cash Reconciliation', 'Ending Cash'],
+                level: 1,
+                label: 'Ending Cash',
                 name1: 'Cash Reconciliation',
                 name2: 'Ending Cash',
                 amount_2024: metrics.endingCash[year1],
@@ -376,47 +617,51 @@ class AgGridStatementRenderer {
 
     // Get column definitions based on statement type
     getColumnDefs(statementType, year1, year2) {
-        // Get period labels from dropdowns
-        const period1Dropdown = document.getElementById(`period-${year1}-header`);
-        const period2Dropdown = document.getElementById(`period-${year2}-header`);
-        const period1Label = period1Dropdown ? period1Dropdown.options[period1Dropdown.selectedIndex].text : year1;
-        const period2Label = period2Dropdown ? period2Dropdown.options[period2Dropdown.selectedIndex].text : year2;
+        // Use ColumnDefBuilder to create column definitions
+        const builder = new ColumnDefBuilder(statementType, year1, year2);
+        builder.setFormatters(
+            (value, params) => this.formatCurrency(value, params),
+            (params) => this.varianceRenderer(params)
+        );
+        return builder.build();
 
-        // Get variance modes from dropdowns
-        const variance1Mode = document.getElementById('variance-1-header')?.value || 'none';
-        const variance2Mode = document.getElementById('variance-2-header')?.value || 'none';
-
-        // Base columns
+        // OLD IMPLEMENTATION KEPT FOR REFERENCE - CAN BE REMOVED AFTER TESTING
+        /*
         const columns = [
-            // Category/Item columns
+            // Category column with hierarchy indentation
             {
-                field: 'name1',
+                field: 'label',
                 headerName: 'Category',
-                rowGroup: true,
-                hide: true
+                minWidth: 400,
+                cellRenderer: params => {
+                    if (!params.data) return '';
+
+                    const level = params.data.level || 0;
+                    const indent = '&nbsp;&nbsp;&nbsp;&nbsp;'.repeat(level);
+                    const label = params.data.label || '';
+
+                    return indent + label;
+                },
+                cellClass: params => {
+                    const level = params.data?.level || 0;
+                    return level === 0 ? 'group-cell' : 'detail-cell';
+                }
             },
-            {
-                field: 'name2',
-                headerName: 'Line Item',
-                minWidth: 300,
-                cellClass: params => params.node.group ? 'group-cell' : 'detail-cell'
-            },
+            // Account code column removed - not available in aggregated data
 
             // Year columns
             {
                 field: 'amount_2024',
                 headerName: period1Label,
                 type: 'numericColumn',
-                valueFormatter: params => this.formatCurrency(params.value),
-                aggFunc: 'sum',
+                valueFormatter: params => this.formatCurrency(params.value, params),
                 cellClass: 'number-cell'
             },
             {
                 field: 'amount_2025',
                 headerName: period2Label,
                 type: 'numericColumn',
-                valueFormatter: params => this.formatCurrency(params.value),
-                aggFunc: 'sum',
+                valueFormatter: params => this.formatCurrency(params.value, params),
                 cellClass: 'number-cell'
             }
         ];
@@ -430,7 +675,6 @@ class AgGridStatementRenderer {
                 type: 'numericColumn',
                 valueFormatter: params => this.formatCurrency(params.value),
                 cellRenderer: params => this.varianceRenderer(params),
-                aggFunc: 'sum',
                 hide: true  // Not implemented yet - placeholder
             });
         }
@@ -451,9 +695,8 @@ class AgGridStatementRenderer {
                 field: 'variance_amount',
                 headerName: 'Var €',
                 type: 'numericColumn',
-                valueFormatter: params => this.formatCurrency(params.value),
-                cellRenderer: params => this.varianceRenderer(params),
-                aggFunc: 'sum'
+                valueFormatter: params => this.formatCurrency(params.value, params),
+                cellRenderer: params => this.varianceRenderer(params)
             });
         }
         if (variance2Mode === 'percent' || variance2Mode === 'both') {
@@ -461,17 +704,24 @@ class AgGridStatementRenderer {
                 field: 'variance_percent',
                 headerName: 'Var %',
                 type: 'numericColumn',
-                valueFormatter: params => params.value != null ? params.value.toFixed(1) + '%' : '',
-                cellRenderer: params => this.varianceRenderer(params),
-                aggFunc: params => this.calculateGroupVariancePercent(params)
+                valueFormatter: params => {
+                    // For spacer rows, return empty string
+                    if (params?.data?._rowType === 'spacer') return '';
+                    return params.value != null ? params.value.toFixed(1) + '%' : '';
+                },
+                cellRenderer: params => this.varianceRenderer(params)
             });
         }
 
         return columns;
+        */
     }
 
     // Format currency
-    formatCurrency(value) {
+    formatCurrency(value, params) {
+        // For spacer rows, return empty string
+        if (params?.data?._rowType === 'spacer') return '';
+
         if (value == null || isNaN(value)) return '-';
         return new Intl.NumberFormat('nl-NL', {
             style: 'decimal',
@@ -506,19 +756,10 @@ class AgGridStatementRenderer {
         return total1 !== 0 ? ((total2 - total1) / Math.abs(total1)) * 100 : 0;
     }
 
-    // Get row class for styling
+    // Get row class for styling (not used with rowClassRules)
     getRowClass(params) {
-        if (!params.data) return '';
-
-        const rowType = params.data._rowType;
-
-        switch(rowType) {
-            case 'total': return 'total-row';
-            case 'metric': return 'metric-row';
-            case 'spacer': return 'spacer-row';
-            case 'detail': return 'detail-row';
-            default: return params.node.group ? 'group-row' : '';
-        }
+        // Deprecated - now using rowClassRules instead
+        return '';
     }
 
     // Export to CSV (Excel export requires ag-Grid Enterprise)

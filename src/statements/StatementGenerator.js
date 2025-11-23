@@ -21,6 +21,8 @@ import {
 } from '../constants.js';
 import CategoryMatcher from '../utils/CategoryMatcher.js';
 import VarianceCalculator from '../utils/VarianceCalculator.js';
+import Logger from '../utils/Logger.js';
+import AccountSignHandler from '../utils/AccountSignHandler.js';
 
 class StatementGenerator {
     constructor(dataStore) {
@@ -33,15 +35,25 @@ class StatementGenerator {
         return amt2024 !== 0 ? ((amt2025 - amt2024) / Math.abs(amt2024)) * 100 : 0;
     }
 
-    // Helper: Validate required data is loaded
+    // Helper: Validate required data is loaded and return appropriate data based on view type
     validateRequiredData() {
-        const combinedMovements = this.dataStore.getCombinedMovements();
-
-        if (!combinedMovements) {
-            throw new Error('Required data not loaded');
+        // Determine view type from UI dropdown (if available, otherwise default to cumulative)
+        let viewType = 'cumulative';
+        if (typeof document !== 'undefined') {
+            viewType = document.getElementById('view-type')?.value || 'cumulative';
         }
 
-        return combinedMovements;
+        // Get appropriate combined data based on view type
+        const combinedData = viewType === 'period'
+            ? this.dataStore.getCombinedMovements()
+            : this.dataStore.getCombinedBalances();
+
+        if (!combinedData) {
+            throw new Error(`Required ${viewType} data not loaded`);
+        }
+
+        console.log(`Using ${viewType} view for statement generation (${combinedData.numRows()} rows)`);
+        return combinedData;
     }
 
     // Helper: Calculate variance columns
@@ -141,8 +153,13 @@ class StatementGenerator {
         try {
             const combinedMovements = this.validateRequiredData();
 
+            Logger.debug('=== DEBUGGING COLUMNS ===');
+            Logger.debug('Combined movements columns:', combinedMovements.columnNames());
+
             // Filter for specific statement type
             let filtered = combinedMovements.params({ statementType }).filter(d => d.statement_type === statementType);
+
+            Logger.debug('Filtered columns (after statement type filter):', filtered.columnNames());
 
             // Apply period filters if specified
             // Parse year-period combinations (format: "2024-all", "2024-1", "2024-Q1", "2025-6", etc.)
@@ -192,10 +209,14 @@ class StatementGenerator {
             // Use conditional aggregation to get both columns in one pass (no join needed!)
             // Include level codes for proper sorting
             // For Income Statement, flip the sign to show revenue as positive
+            // For Balance Sheet Passiva (code1 60-90), flip the sign to show as positive
             // Note: Arquero requires static column names in rollup operations.
             // We keep amount_2024/amount_2025 as column identifiers, but they represent
             // the dynamically selected year-period combinations via col1/col2 references.
             const signMultiplier = statementType === STATEMENT_TYPES.INCOME_STATEMENT ? -1 : 1;
+
+            Logger.debug('Columns in filtered table (before groupby):', filtered.columnNames());
+            Logger.debug('About to groupby with columns:', ['name1', 'name2', 'name3', 'code0', 'name0', 'code1', 'code2', 'code3', 'account_code', 'account_description']);
 
             const aggregated = filtered
                 .params({
@@ -203,16 +224,23 @@ class StatementGenerator {
                     col2Year: yearInt2,
                     signMult: signMultiplier
                 })
-                .groupby('name1', 'name2', 'code0', 'name0', 'code1', 'code2', 'code3')
+                .groupby('name1', 'name2', 'name3', 'code0', 'name0', 'code1', 'code2', 'code3', 'account_code', 'account_description')
                 .rollup({
                     amount_2024: d => aq.op.sum(d.year === col1Year ? d.movement_amount * signMult : 0),
                     amount_2025: d => aq.op.sum(d.year === col2Year ? d.movement_amount * signMult : 0)
                 });
 
-            console.log('Columns after aggregation:', aggregated.columnNames());
+            Logger.debug('Columns after aggregation:', aggregated.columnNames());
+            Logger.debug('Sample aggregated row:', aggregated.objects()[0]);
+
+            // For Balance Sheet, flip sign for Passiva accounts to show as positive
+            let processedData = aggregated;
+            if (statementType === STATEMENT_TYPES.BALANCE_SHEET) {
+                processedData = AccountSignHandler.flipSignForPassiva(aggregated, col1, col2);
+            }
 
             // Add ordering if specified - sort by level codes for proper order (all 3 levels)
-            const ordered = options.orderBy ? aggregated.orderby('code1', 'code2', 'code3') : aggregated;
+            const ordered = options.orderBy ? processedData.orderby('code1', 'code2', 'code3') : processedData;
 
             // Calculate variances
             const withVariances = this.deriveVarianceColumns(ordered);
@@ -305,51 +333,21 @@ class StatementGenerator {
                 const col1 = YEAR_CONFIG.getAmountColumn(year1);
                 const col2 = YEAR_CONFIG.getAmountColumn(year2);
 
+                // Simple roll-up: sum ALL Income Statement categories
+                // No need for complex category matching - just add everything up
                 const totals = categoryTotals.objects();
-                let revenue1 = 0, revenue2 = 0;
-                let cogs1 = 0, cogs2 = 0;
-                let opex1 = 0, opex2 = 0;
-                let otherIncome1 = 0, otherIncome2 = 0;
-                let taxes1 = 0, taxes2 = 0;
+                let netIncome1 = 0;
+                let netIncome2 = 0;
 
                 totals.forEach(row => {
-                    // Revenue (Netto-omzet, Omzet, etc.)
-                    if (CategoryMatcher.isRevenue(row.name1)) {
-                        revenue1 += row[col1] || 0;
-                        revenue2 += row[col2] || 0;
-                    }
-                    // Cost of Goods Sold (Kostprijs van de omzet)
-                    else if (CategoryMatcher.isCOGS(row.name1)) {
-                        cogs1 += row[col1] || 0;
-                        cogs2 += row[col2] || 0;
-                    }
-                    // Operating Expenses (Bedrijfskosten, Kosten, etc.)
-                    else if (CategoryMatcher.isOperatingExpense(row.name1)) {
-                        opex1 += row[col1] || 0;
-                        opex2 += row[col2] || 0;
-                    }
-                    // Other Income (Overige opbrengsten, etc.)
-                    else if (CategoryMatcher.isOtherIncome(row.name1)) {
-                        otherIncome1 += row[col1] || 0;
-                        otherIncome2 += row[col2] || 0;
-                    }
-                    // Taxes (Belastingen)
-                    else if (CategoryMatcher.isTax(row.name1)) {
-                        taxes1 += row[col1] || 0;
-                        taxes2 += row[col2] || 0;
-                    }
+                    netIncome1 += row[col1] || 0;
+                    netIncome2 += row[col2] || 0;
                 });
 
-                const grossProfit1 = revenue1 + cogs1;
-                const grossProfit2 = revenue2 + cogs2;
-                const operatingIncome1 = grossProfit1 + opex1;
-                const operatingIncome2 = grossProfit2 + opex2;
-                const netIncome1 = operatingIncome1 + otherIncome1 - taxes1;
-                const netIncome2 = operatingIncome2 + otherIncome2 - taxes2;
+                console.log(`Income Statement Net Income: ${year1}=${netIncome1.toFixed(2)}, ${year2}=${netIncome2.toFixed(2)}`);
 
+                // Return simple totals (no gross profit or operating income breakdown)
                 return {
-                    grossProfit: { [year1]: grossProfit1, [year2]: grossProfit2 },
-                    operatingIncome: { [year1]: operatingIncome1, [year2]: operatingIncome2 },
                     netIncome: { [year1]: netIncome1, [year2]: netIncome2 }
                 };
             }
@@ -381,8 +379,12 @@ class StatementGenerator {
 
             // Operating Activities
             cashFlowData.push({
-                category: 'Operating Activities',
-                subcategory: 'Net Income',
+                code0: 'CF',
+                name0: 'Cash Flow',
+                code1: 'OP',
+                name1: 'Operating Activities',
+                code2: '01',
+                name2: 'Net Income',
                 [col1]: netIncome1,
                 [col2]: netIncome2
             });
@@ -391,8 +393,12 @@ class StatementGenerator {
             balanceDetails.forEach(row => {
                 if (CategoryMatcher.isDepreciation(row.name2)) {
                     cashFlowData.push({
-                        category: 'Operating Activities',
-                        subcategory: row.name2,
+                        code0: 'CF',
+                        name0: 'Cash Flow',
+                        code1: 'OP',
+                        name1: 'Operating Activities',
+                        code2: '02',
+                        name2: row.name2,
                         [col1]: Math.abs(row.variance_amount || 0),
                         [col2]: Math.abs(row.variance_amount || 0)
                     });
@@ -405,8 +411,12 @@ class StatementGenerator {
                     const change = (row[col2] || 0) - (row[col1] || 0);
                     if (Math.abs(change) > 0) {
                         cashFlowData.push({
-                            category: 'Operating Activities',
-                            subcategory: `Change in ${row.name2}`,
+                            code0: 'CF',
+                            name0: 'Cash Flow',
+                            code1: 'OP',
+                            name1: 'Operating Activities',
+                            code2: '03',
+                            name2: `Change in ${row.name2}`,
                             [col1]: 0,
                             [col2]: -change // Negative because increase in assets uses cash
                         });
@@ -420,8 +430,12 @@ class StatementGenerator {
                     const change = (row[col2] || 0) - (row[col1] || 0);
                     if (Math.abs(change) > 0) {
                         cashFlowData.push({
-                            category: 'Investing Activities',
-                            subcategory: row.name2,
+                            code0: 'CF',
+                            name0: 'Cash Flow',
+                            code1: 'IN',
+                            name1: 'Investing Activities',
+                            code2: '01',
+                            name2: row.name2,
                             [col1]: 0,
                             [col2]: -change
                         });
@@ -435,8 +449,12 @@ class StatementGenerator {
                     const change = (row[col2] || 0) - (row[col1] || 0);
                     if (Math.abs(change) > 0) {
                         cashFlowData.push({
-                            category: 'Financing Activities',
-                            subcategory: row.name2,
+                            code0: 'CF',
+                            name0: 'Cash Flow',
+                            code1: 'FI',
+                            name1: 'Financing Activities',
+                            code2: '01',
+                            name2: row.name2,
                             [col1]: 0,
                             [col2]: change
                         });
