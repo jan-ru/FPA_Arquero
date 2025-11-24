@@ -560,18 +560,24 @@
                 </div>
                 
                 <!-- Right side: File status indicators -->
-                <div class="file-status-grid" style="flex: 0 0 auto; grid-template-columns: auto; gap: 8px;">
-                    <div class="file-status-item clickable" data-file="tb2024" style="min-width: 500px;">
-                        <span class="file-label">2024_BalansWinstverliesperperiode.xlsx</span>
-                        <span id="status-tb2024" class="status-indicator">⏳</span>
+                <div class="file-status-grid" style="flex: 0 0 auto; grid-template-columns: auto; gap: 12px;">
+                    <div class="file-status-container">
+                        <div class="file-status-item clickable" data-file="tb2024" style="min-width: 400px;">
+                            <span class="file-label" id="filename-tb2024">2024_BalansWinstverliesperperiode.xlsx</span>
+                            <span id="status-tb2024" class="status-indicator">⏳</span>
+                        </div>
+                        <div id="metrics-tb2024" class="file-metrics" style="margin-top: 4px; font-size: 11px; color: #666; display: none;">
+                            <!-- Metrics will be populated by JavaScript -->
+                        </div>
                     </div>
-                    <div class="file-status-item clickable" data-file="tb2025" style="min-width: 500px;">
-                        <span class="file-label">2025_BalansWinstverliesperperiode.xlsx</span>
-                        <span id="status-tb2025" class="status-indicator">⏳</span>
-                    </div>
-                    <div class="file-status-item clickable" data-file="tb2425" style="min-width: 240px;">
-                        <span class="file-label">Combined TB 2024+2025</span>
-                        <span id="status-tb2425" class="status-indicator">⏳</span>
+                    <div class="file-status-container">
+                        <div class="file-status-item clickable" data-file="tb2025" style="min-width: 400px;">
+                            <span class="file-label" id="filename-tb2025">2025_BalansWinstverliesperperiode.xlsx</span>
+                            <span id="status-tb2025" class="status-indicator">⏳</span>
+                        </div>
+                        <div id="metrics-tb2025" class="file-metrics" style="margin-top: 4px; font-size: 11px; color: #666; display: none;">
+                            <!-- Metrics will be populated by JavaScript -->
+                        </div>
                     </div>
                 </div>
             </div>

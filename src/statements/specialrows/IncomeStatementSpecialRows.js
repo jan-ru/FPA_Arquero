@@ -7,6 +7,7 @@
  * - NET INCOME at the end
  */
 
+import VarianceCalculator from '../../utils/VarianceCalculator.js';
 import { YEAR_CONFIG } from '../../constants.js';
 import Logger from '../../utils/Logger.js';
 
@@ -141,9 +142,7 @@ export class IncomeStatementSpecialRows {
      * @returns {Object} Row object
      */
     createBrutoMargeRow(amounts, year1, year2) {
-        const variance = amounts[year2] - amounts[year1];
-        const variancePercent = amounts[year1] !== 0 ?
-            ((amounts[year2] - amounts[year1]) / Math.abs(amounts[year1])) * 100 : 0;
+        const { amount, percent } = VarianceCalculator.calculateForYears(amounts, year1, year2);
 
         return {
             hierarchy: ['Bruto marge'],
@@ -154,8 +153,8 @@ export class IncomeStatementSpecialRows {
             name2: 'Bruto marge',
             amount_2024: amounts[year1],
             amount_2025: amounts[year2],
-            variance_amount: variance,
-            variance_percent: variancePercent,
+            variance_amount: amount,
+            variance_percent: percent,
             _isMetric: true,
             _rowType: 'metric'
         };
@@ -169,9 +168,7 @@ export class IncomeStatementSpecialRows {
      * @returns {Object} Row object
      */
     createTotaalBedrijfskostenRow(amounts, year1, year2) {
-        const variance = amounts[year2] - amounts[year1];
-        const variancePercent = amounts[year1] !== 0 ?
-            ((amounts[year2] - amounts[year1]) / Math.abs(amounts[year1])) * 100 : 0;
+        const { amount, percent } = VarianceCalculator.calculateForYears(amounts, year1, year2);
 
         return {
             hierarchy: ['Totaal bedrijfskosten'],
@@ -182,8 +179,8 @@ export class IncomeStatementSpecialRows {
             name2: 'Totaal bedrijfskosten',
             amount_2024: amounts[year1],
             amount_2025: amounts[year2],
-            variance_amount: variance,
-            variance_percent: variancePercent,
+            variance_amount: amount,
+            variance_percent: percent,
             _isMetric: true,
             _rowType: 'metric'
         };
@@ -197,9 +194,7 @@ export class IncomeStatementSpecialRows {
      * @returns {Object} Row object
      */
     createBedrijfsresultaatRow(amounts, year1, year2) {
-        const variance = amounts[year2] - amounts[year1];
-        const variancePercent = amounts[year1] !== 0 ?
-            ((amounts[year2] - amounts[year1]) / Math.abs(amounts[year1])) * 100 : 0;
+        const { amount, percent } = VarianceCalculator.calculateForYears(amounts, year1, year2);
 
         return {
             hierarchy: ['Bedrijfsresultaat'],
@@ -210,8 +205,8 @@ export class IncomeStatementSpecialRows {
             name2: 'Bedrijfsresultaat',
             amount_2024: amounts[year1],
             amount_2025: amounts[year2],
-            variance_amount: variance,
-            variance_percent: variancePercent,
+            variance_amount: amount,
+            variance_percent: percent,
             _isMetric: true,
             _rowType: 'metric'
         };
@@ -225,9 +220,7 @@ export class IncomeStatementSpecialRows {
      * @returns {Object} Row object
      */
     createResultaatVoorBelastingenRow(amounts, year1, year2) {
-        const variance = amounts[year2] - amounts[year1];
-        const variancePercent = amounts[year1] !== 0 ?
-            ((amounts[year2] - amounts[year1]) / Math.abs(amounts[year1])) * 100 : 0;
+        const { amount, percent } = VarianceCalculator.calculateForYears(amounts, year1, year2);
 
         return {
             hierarchy: ['Resultaat voor belastingen'],
@@ -238,8 +231,8 @@ export class IncomeStatementSpecialRows {
             name2: 'Resultaat voor belastingen',
             amount_2024: amounts[year1],
             amount_2025: amounts[year2],
-            variance_amount: variance,
-            variance_percent: variancePercent,
+            variance_amount: amount,
+            variance_percent: percent,
             _isMetric: true,
             _rowType: 'metric'
         };
@@ -253,9 +246,7 @@ export class IncomeStatementSpecialRows {
      * @returns {Object} Row object
      */
     createOperatingIncomeRow(amounts, year1, year2) {
-        const variance = amounts[year2] - amounts[year1];
-        const variancePercent = amounts[year1] !== 0 ?
-            ((amounts[year2] - amounts[year1]) / Math.abs(amounts[year1])) * 100 : 0;
+        const { amount, percent } = VarianceCalculator.calculateForYears(amounts, year1, year2);
 
         return {
             hierarchy: ['Operating Income'],
@@ -265,8 +256,8 @@ export class IncomeStatementSpecialRows {
             name2: 'Operating Income',
             amount_2024: amounts[year1],
             amount_2025: amounts[year2],
-            variance_amount: variance,
-            variance_percent: variancePercent,
+            variance_amount: amount,
+            variance_percent: percent,
             _isMetric: true,
             _rowType: 'metric'
         };
@@ -280,9 +271,7 @@ export class IncomeStatementSpecialRows {
      * @returns {Object} Row object
      */
     createResultaatNaBelastingenRow(amounts, year1, year2) {
-        const variance = amounts[year2] - amounts[year1];
-        const variancePercent = amounts[year1] !== 0 ?
-            ((amounts[year2] - amounts[year1]) / Math.abs(amounts[year1])) * 100 : 0;
+        const { amount, percent } = VarianceCalculator.calculateForYears(amounts, year1, year2);
 
         return {
             hierarchy: ['Resultaat na belastingen'],
@@ -293,8 +282,8 @@ export class IncomeStatementSpecialRows {
             name2: 'Resultaat na belastingen',
             amount_2024: amounts[year1],
             amount_2025: amounts[year2],
-            variance_amount: variance,
-            variance_percent: variancePercent,
+            variance_amount: amount,
+            variance_percent: percent,
             _isMetric: true,
             _rowType: 'total'
         };

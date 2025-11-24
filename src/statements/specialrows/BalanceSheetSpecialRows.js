@@ -8,6 +8,7 @@
  */
 
 import CategoryMatcher from '../../utils/CategoryMatcher.js';
+import VarianceCalculator from '../../utils/VarianceCalculator.js';
 import { YEAR_CONFIG } from '../../constants.js';
 
 export class BalanceSheetSpecialRows {
@@ -115,9 +116,7 @@ export class BalanceSheetSpecialRows {
      * @returns {Object} Row object
      */
     createResultaatBoekjaarRow(amounts, year1, year2) {
-        const variance = amounts[year2] - amounts[year1];
-        const variancePercent = amounts[year1] !== 0 ?
-            ((amounts[year2] - amounts[year1]) / Math.abs(amounts[year1])) * 100 : 0;
+        const { amount, percent } = VarianceCalculator.calculateForYears(amounts, year1, year2);
 
         return {
             hierarchy: ['Resultaat boekjaar'],
@@ -132,8 +131,8 @@ export class BalanceSheetSpecialRows {
             code3: '',
             amount_2024: amounts[year1],
             amount_2025: amounts[year2],
-            variance_amount: variance,
-            variance_percent: variancePercent,
+            variance_amount: amount,
+            variance_percent: percent,
             _isMetric: true,
             _rowType: 'metric'
         };
@@ -147,9 +146,7 @@ export class BalanceSheetSpecialRows {
      * @returns {Object} Row object
      */
     createTotalAssetsRow(totals, year1, year2) {
-        const variance = totals.year2 - totals.year1;
-        const variancePercent = totals.year1 !== 0 ?
-            ((totals.year2 - totals.year1) / Math.abs(totals.year1)) * 100 : 0;
+        const { amount, percent } = VarianceCalculator.calculateForTotals(totals);
 
         return {
             hierarchy: ['Totaal activa'],
@@ -160,8 +157,8 @@ export class BalanceSheetSpecialRows {
             name2: 'Totaal activa',
             amount_2024: totals.year1,
             amount_2025: totals.year2,
-            variance_amount: variance,
-            variance_percent: variancePercent,
+            variance_amount: amount,
+            variance_percent: percent,
             _isMetric: true,
             _rowType: 'total'
         };
@@ -175,9 +172,7 @@ export class BalanceSheetSpecialRows {
      * @returns {Object} Row object
      */
     createTotalPassivaRow(totals, year1, year2) {
-        const variance = totals.year2 - totals.year1;
-        const variancePercent = totals.year1 !== 0 ?
-            ((totals.year2 - totals.year1) / Math.abs(totals.year1)) * 100 : 0;
+        const { amount, percent } = VarianceCalculator.calculateForTotals(totals);
 
         return {
             hierarchy: ['Totaal passiva'],
@@ -188,8 +183,8 @@ export class BalanceSheetSpecialRows {
             name2: 'Totaal passiva',
             amount_2024: totals.year1,
             amount_2025: totals.year2,
-            variance_amount: variance,
-            variance_percent: variancePercent,
+            variance_amount: amount,
+            variance_percent: percent,
             _isMetric: true,
             _rowType: 'total'
         };

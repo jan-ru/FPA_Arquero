@@ -39,6 +39,23 @@ class UIController {
             '2024': null,
             '2025': null
         };
+
+        // Initialize UI with filenames from config
+        this.initializeFilenames();
+    }
+
+    /**
+     * Initialize filenames from config
+     */
+    initializeFilenames() {
+        const filename2024 = APP_CONFIG.excel.trialBalance2024;
+        const filename2025 = APP_CONFIG.excel.trialBalance2025;
+
+        const filenameElement2024 = document.getElementById('filename-tb2024');
+        const filenameElement2025 = document.getElementById('filename-tb2025');
+
+        if (filenameElement2024) filenameElement2024.textContent = filename2024;
+        if (filenameElement2025) filenameElement2025.textContent = filename2025;
     }
 
     /**
@@ -58,17 +75,27 @@ class UIController {
     // Update file status indicator
     updateFileStatus(fileId, status, message) {
         const statusElement = document.getElementById(`status-${fileId}`);
-        if (statusElement) {
-            if (status === 'success') {
-                statusElement.textContent = message ? `✅ ${message}` : '✅';
-                statusElement.style.color = '#28a745';
-            } else if (status === 'error') {
-                statusElement.textContent = '❌';
-                statusElement.style.color = '#dc3545';
-            } else if (status === 'loading') {
-                statusElement.textContent = '⏳';
-                statusElement.style.color = '#ffc107';
+        if (!statusElement) return;
+
+        const statusConfig = {
+            success: {
+                icon: UI_CONFIG.FILE_STATUS_ICONS.SUCCESS,
+                color: UI_CONFIG.STATUS_COLORS.SUCCESS
+            },
+            error: {
+                icon: UI_CONFIG.FILE_STATUS_ICONS.ERROR,
+                color: UI_CONFIG.STATUS_COLORS.ERROR
+            },
+            loading: {
+                icon: UI_CONFIG.FILE_STATUS_ICONS.LOADING,
+                color: UI_CONFIG.STATUS_COLORS.LOADING
             }
+        };
+
+        const config = statusConfig[status];
+        if (config) {
+            statusElement.textContent = message ? `${config.icon} ${message}` : config.icon;
+            statusElement.style.color = config.color;
         }
     }
 
@@ -244,10 +271,6 @@ class UIController {
             console.log(`Combined movements table created: ${combinedMovements.numRows()} rows`);
             console.log(`Combined balances table created: ${combinedBalances.numRows()} rows`);
 
-            // Update combined TB count
-            const combinedCount = movements2024.numRows() + balances2024.numRows() + movements2025.numRows() + balances2025.numRows();
-            this.updateFileStatus('tb2425', 'success', `(${combinedCount} total)`);
-
             // Get loaded years from DataStore
             const loadedYears = this.dataStore.getAllPeriods();
             console.log(`Loaded trial balance years: ${loadedYears.join(', ')}`);
@@ -322,6 +345,10 @@ class UIController {
             // Update status indicators to show error
             this.updateFileStatus('tb2024', 'error');
             this.updateFileStatus('tb2025', 'error');
+
+            // Hide metrics on error
+            this.hideFileMetrics('tb2024');
+            this.hideFileMetrics('tb2025');
 
             // Show validation container with error
             const validationContainer = document.getElementById('validation-messages');
@@ -692,6 +719,25 @@ class UIController {
         }
     }
 
+    /**
+     * Parse period value to get maximum period number
+     * @param {string} periodValue - Period value ('all', 'q1', 'p9', '9', etc.)
+     * @returns {number} Maximum period number
+     */
+    parsePeriodValue(periodValue) {
+        if (periodValue === 'all') {
+            return 12;
+        } else if (periodValue.toUpperCase().startsWith('Q')) {
+            // Quarter: Q1 = period 3, Q2 = 6, Q3 = 9, Q4 = 12
+            const quarter = parseInt(periodValue.substring(1));
+            return quarter * 3;
+        } else {
+            // Individual period (e.g., "9" or "p9")
+            const match = periodValue.match(/\d+/);
+            return match ? parseInt(match[0]) : 12;
+        }
+    }
+
     // Update file status with period-specific profit
     updateFileStatusProfit() {
         try {
@@ -703,28 +749,113 @@ class UIController {
             const year1 = YEAR_CONFIG.getYear(0);
             const year2 = YEAR_CONFIG.getYear(1);
 
-            // Calculate profit for selected period
-            const profit2024 = this.calculateProfitForPeriod(year1, periodValue);
-            const profit2025 = this.calculateProfitForPeriod(year2, periodValue);
-
-            // Build status messages with period label
-            const periodLabel = periodValue === 'all' ? 'All' : periodValue.toUpperCase();
-
-            // Update 2024 status
+            // Update 2024 metrics
             if (this.fileMetadata['2024']) {
-                const meta = this.fileMetadata['2024'];
-                const status2024 = `${meta.originalRows}R × ${meta.originalColumns}C → ${meta.longRows}R × ${meta.longColumns}C | Profit (${periodLabel}): €${this.formatNumber(profit2024)}`;
-                this.updateFileStatus('tb2024', 'success', status2024);
+                this.updateFileMetrics('tb2024', year1, periodValue);
+                this.updateFileStatus('tb2024', 'success', '');
             }
 
-            // Update 2025 status
+            // Update 2025 metrics
             if (this.fileMetadata['2025']) {
-                const meta = this.fileMetadata['2025'];
-                const status2025 = `${meta.originalRows}R × ${meta.originalColumns}C → ${meta.longRows}R × ${meta.longColumns}C | Profit (${periodLabel}): €${this.formatNumber(profit2025)}`;
-                this.updateFileStatus('tb2025', 'success', status2025);
+                this.updateFileMetrics('tb2025', year2, periodValue);
+                this.updateFileStatus('tb2025', 'success', '');
             }
         } catch (error) {
             console.warn('Error updating file status profit:', error);
+        }
+    }
+
+    /**
+     * Update file metrics display
+     * @param {string} fileId - File ID ('tb2024' or 'tb2025')
+     * @param {string} year - Year ('2024' or '2025')
+     * @param {string} periodValue - Period value ('all', 'q1', 'p9', etc.)
+     */
+    updateFileMetrics(fileId, year, periodValue) {
+        const metricsElement = document.getElementById(`metrics-${fileId}`);
+        if (!metricsElement) return;
+
+        const meta = this.fileMetadata[year];
+        if (!meta) return;
+
+        // Calculate debits and credits for BAL and PNL
+        const totals = this.calculateDebitCreditTotals(year, periodValue);
+
+        // Build metrics HTML
+        const metrics = [];
+
+        // Row/column counts
+        metrics.push(`${meta.originalRows}R × ${meta.originalColumns}C (wide) → ${meta.longRows}R × ${meta.longColumns}C (long)`);
+
+        // Debit/Credit totals
+        metrics.push(`BAL: DR €${this.formatNumber(totals.bal.debit)} | CR €${this.formatNumber(totals.bal.credit)}`);
+        metrics.push(`PNL: DR €${this.formatNumber(totals.pnl.debit)} | CR €${this.formatNumber(totals.pnl.credit)}`);
+
+        metricsElement.innerHTML = metrics.join('<br>');
+        metricsElement.style.display = 'block';
+    }
+
+    /**
+     * Hide file metrics
+     * @param {string} fileId - File ID ('tb2024' or 'tb2025')
+     */
+    hideFileMetrics(fileId) {
+        const metricsElement = document.getElementById(`metrics-${fileId}`);
+        if (metricsElement) {
+            metricsElement.style.display = 'none';
+        }
+    }
+
+    /**
+     * Calculate debit and credit totals for BAL and PNL
+     * @param {string} year - Year ('2024' or '2025')
+     * @param {string} periodValue - Period value ('all', 'q1', 'p9', etc.)
+     * @returns {Object} Totals object with bal and pnl properties
+     */
+    calculateDebitCreditTotals(year, periodValue) {
+        try {
+            // Get movements table for the year
+            const movements = this.dataStore.getMovementsTable(year);
+            if (!movements) {
+                return {
+                    bal: { debit: 0, credit: 0 },
+                    pnl: { debit: 0, credit: 0 }
+                };
+            }
+
+            // Filter by period if needed
+            let filtered = movements;
+            if (periodValue !== 'all') {
+                const periodNum = this.parsePeriodValue(periodValue);
+                filtered = movements
+                    .params({ maxPeriod: periodNum })
+                    .filter('(d, $) => d.period <= $.maxPeriod');
+            }
+
+            // Calculate totals for BAL (Balance Sheet) and PNL (Income Statement)
+            const balData = filtered.filter(d => d.statement_type === 'BS');
+            const pnlData = filtered.filter(d => d.statement_type === 'IS');
+
+            const balTotals = balData.rollup({
+                debit: aq.op.sum('debit'),
+                credit: aq.op.sum('credit')
+            }).objects()[0] || { debit: 0, credit: 0 };
+
+            const pnlTotals = pnlData.rollup({
+                debit: aq.op.sum('debit'),
+                credit: aq.op.sum('credit')
+            }).objects()[0] || { debit: 0, credit: 0 };
+
+            return {
+                bal: balTotals,
+                pnl: pnlTotals
+            };
+        } catch (error) {
+            console.warn('Error calculating debit/credit totals:', error);
+            return {
+                bal: { debit: 0, credit: 0 },
+                pnl: { debit: 0, credit: 0 }
+            };
         }
     }
 

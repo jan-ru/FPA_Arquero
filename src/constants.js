@@ -9,7 +9,9 @@ export const APP_CONFIG = {
     PERIODS_PER_YEAR: 12,
     DEFAULT_YEAR: '2024',
     DEFAULT_PERIOD: 'all',
-    VERSION: '0.9.0'
+    VERSION: '0.9.0',
+    ALL_PERIODS_VALUE: 12,        // Represents "all" periods (1-12)
+    ALL_PERIODS_CODE: 999         // Sentinel value for "all" periods in filters
 };
 
 // Statement Types
@@ -85,14 +87,25 @@ export const UI_CONFIG = {
     STATUS_COLORS: {
         INFO: '#007bff',              // Blue for info messages
         ERROR: '#dc3545',             // Red for errors
-        SUCCESS: '#28a745'            // Green for success
+        SUCCESS: '#28a745',           // Green for success
+        WARNING: '#ffc107',           // Yellow for warnings
+        LOADING: '#ffc107'            // Yellow for loading state
     },
 
     // Status Message Icons
     STATUS_ICONS: {
         INFO: '',                     // No icon for info
         ERROR: '❌ ',                 // Red X for errors
-        SUCCESS: '✅ '                // Green check for success
+        SUCCESS: '✅ ',               // Green check for success
+        WARNING: '⚠️ ',               // Warning symbol
+        LOADING: '⏳ '                // Hourglass for loading
+    },
+
+    // File Status Icons
+    FILE_STATUS_ICONS: {
+        SUCCESS: '✅',
+        ERROR: '❌',
+        LOADING: '⏳'
     },
 
     // Timing

@@ -8,6 +8,7 @@
  */
 
 import { YEAR_CONFIG } from '../../constants.js';
+import VarianceCalculator from '../../utils/VarianceCalculator.js';
 
 export class CashFlowStatementSpecialRows {
     /**
@@ -53,9 +54,7 @@ export class CashFlowStatementSpecialRows {
      * @returns {Object} Row object
      */
     createStartingCashRow(amounts, year1, year2) {
-        const variance = amounts[year2] - amounts[year1];
-        const variancePercent = amounts[year1] !== 0 ?
-            ((amounts[year2] - amounts[year1]) / Math.abs(amounts[year1])) * 100 : 0;
+        const { amount, percent } = VarianceCalculator.calculateForYears(amounts, year1, year2);
 
         return {
             hierarchy: ['Starting Cash (Σ)'],
@@ -66,8 +65,8 @@ export class CashFlowStatementSpecialRows {
             name2: 'Starting Cash (Σ)',
             amount_2024: amounts[year1],
             amount_2025: amounts[year2],
-            variance_amount: variance,
-            variance_percent: variancePercent,
+            variance_amount: amount,
+            variance_percent: percent,
             _isMetric: true,
             _rowType: 'metric'
         };
@@ -81,9 +80,7 @@ export class CashFlowStatementSpecialRows {
      * @returns {Object} Row object
      */
     createChangeInCashRow(amounts, year1, year2) {
-        const variance = amounts[year2] - amounts[year1];
-        const variancePercent = amounts[year1] !== 0 ?
-            ((amounts[year2] - amounts[year1]) / Math.abs(amounts[year1])) * 100 : 0;
+        const { amount, percent } = VarianceCalculator.calculateForYears(amounts, year1, year2);
 
         return {
             hierarchy: ['Change in Cash (Δ)'],
@@ -94,8 +91,8 @@ export class CashFlowStatementSpecialRows {
             name2: 'Change in Cash (Δ)',
             amount_2024: amounts[year1],
             amount_2025: amounts[year2],
-            variance_amount: variance,
-            variance_percent: variancePercent,
+            variance_amount: amount,
+            variance_percent: percent,
             _isMetric: true,
             _rowType: 'metric'
         };
@@ -109,9 +106,7 @@ export class CashFlowStatementSpecialRows {
      * @returns {Object} Row object
      */
     createEndingCashRow(amounts, year1, year2) {
-        const variance = amounts[year2] - amounts[year1];
-        const variancePercent = amounts[year1] !== 0 ?
-            ((amounts[year2] - amounts[year1]) / Math.abs(amounts[year1])) * 100 : 0;
+        const { amount, percent } = VarianceCalculator.calculateForYears(amounts, year1, year2);
 
         return {
             hierarchy: ['Ending Cash (Σ)'],
@@ -122,8 +117,8 @@ export class CashFlowStatementSpecialRows {
             name2: 'Ending Cash (Σ)',
             amount_2024: amounts[year1],
             amount_2025: amounts[year2],
-            variance_amount: variance,
-            variance_percent: variancePercent,
+            variance_amount: amount,
+            variance_percent: percent,
             _isMetric: true,
             _rowType: 'total'
         };

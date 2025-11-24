@@ -7,6 +7,7 @@
 
 import HierarchySorter from './HierarchySorter.js';
 import Logger from './Logger.js';
+import VarianceCalculator from './VarianceCalculator.js';
 
 export class HierarchyBuilder {
     /**
@@ -60,8 +61,7 @@ export class HierarchyBuilder {
         // Calculate variance percentages
         result.forEach(node => {
             node.variance_amount = node.amount_2025 - node.amount_2024;
-            node.variance_percent = node.amount_2024 !== 0 ?
-                ((node.amount_2025 - node.amount_2024) / Math.abs(node.amount_2024)) * 100 : 0;
+            node.variance_percent = VarianceCalculator.calculatePercent(node.amount_2025 || 0, node.amount_2024 || 0);
         });
 
         Logger.debug('Built hierarchy tree:', {

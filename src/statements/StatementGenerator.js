@@ -17,7 +17,8 @@ import {
     YEAR_CONFIG,
     STATEMENT_TYPES,
     VALIDATION_CONFIG,
-    CATEGORY_DEFINITIONS
+    CATEGORY_DEFINITIONS,
+    APP_CONFIG
 } from '../constants.js';
 import CategoryMatcher from '../utils/CategoryMatcher.js';
 import VarianceCalculator from '../utils/VarianceCalculator.js';
@@ -32,7 +33,7 @@ class StatementGenerator {
 
     // Helper: Calculate variance percentage
     calculateVariancePercent(amt2024, amt2025) {
-        return amt2024 !== 0 ? ((amt2025 - amt2024) / Math.abs(amt2024)) * 100 : 0;
+        return VarianceCalculator.calculatePercent(amt2025, amt2024);
     }
 
     // Helper: Validate required data is loaded and return appropriate data based on view type
@@ -72,7 +73,7 @@ class StatementGenerator {
             variance_percent: d => {
                 const amt1 = d.amount_2024 || 0;
                 const amt2 = d.amount_2025 || 0;
-                return amt1 !== 0 ? ((amt2 - amt1) / Math.abs(amt1)) * 100 : 0;
+                return VarianceCalculator.calculatePercent(amt2, amt1);
             }
         });
     }
@@ -90,7 +91,7 @@ class StatementGenerator {
                 variance_percent: d => {
                     const total1 = aq.op.sum(d.amount_2024);
                     const total2 = aq.op.sum(d.amount_2025);
-                    return total1 !== 0 ? ((total2 - total1) / Math.abs(total1)) * 100 : 0;
+                    return VarianceCalculator.calculatePercent(total2, total1);
                 }
             });
     }
@@ -178,7 +179,7 @@ class StatementGenerator {
 
             // Helper function to parse period value (handles 'all', quarters 'Q1-Q4', and individual periods)
             const parsePeriod = (periodStr) => {
-                if (periodStr === 'all') return 999;
+                if (periodStr === 'all') return APP_CONFIG.ALL_PERIODS_CODE;
                 if (periodStr.startsWith('Q')) {
                     const quarter = parseInt(periodStr.substring(1));
                     return quarter * 3; // Q1=3, Q2=6, Q3=9, Q4=12
@@ -691,7 +692,7 @@ class StatementGenerator {
                             return amt2 === 0 ? 0 : null; // Return null for N/A cases
                         }
 
-                        return ((amt2 - amt1) / Math.abs(amt1)) * 100;
+                        return VarianceCalculator.calculatePercent(amt2, amt1);
                     }
                 });
 

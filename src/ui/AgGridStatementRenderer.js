@@ -249,8 +249,7 @@ class AgGridStatementRenderer {
         // Calculate variances
         hierarchyMap.forEach(node => {
             node.variance_amount = node.amount_2025 - node.amount_2024;
-            node.variance_percent = node.amount_2024 !== 0 ?
-                ((node.amount_2025 - node.amount_2024) / Math.abs(node.amount_2024)) * 100 : 0;
+            node.variance_percent = VarianceCalculator.calculatePercent(node.amount_2025 || 0, node.amount_2024 || 0);
         });
 
         // Convert to array and sort by code hierarchy (code0, code1, code2, then hierarchy path)
@@ -350,8 +349,7 @@ class AgGridStatementRenderer {
 
         if (insertIndex > 0) {
             const assetsVariance = totalAssetsYear2 - totalAssetsYear1;
-            const assetsVariancePercent = totalAssetsYear1 !== 0 ?
-                ((totalAssetsYear2 - totalAssetsYear1) / Math.abs(totalAssetsYear1)) * 100 : 0;
+            const assetsVariancePercent = VarianceCalculator.calculatePercent(totalAssetsYear2, totalAssetsYear1);
 
             // Insert Totaal activa row
             result.splice(insertIndex, 0, {
@@ -397,8 +395,7 @@ class AgGridStatementRenderer {
 
         // Append TOTAL LIABILITIES & EQUITY at end
         const leVariance = totalLEYear2 - totalLEYear1;
-        const leVariancePercent = totalLEYear1 !== 0 ?
-            ((totalLEYear2 - totalLEYear1) / Math.abs(totalLEYear1)) * 100 : 0;
+        const leVariancePercent = VarianceCalculator.calculatePercent(totalLEYear2, totalLEYear1);
 
         result.push({
             hierarchy: ['Totaal passiva'],
@@ -442,8 +439,7 @@ class AgGridStatementRenderer {
 
         if (cogsIndex >= 0 && metrics.grossProfit) {
             const gpVariance = metrics.grossProfit[year2] - metrics.grossProfit[year1];
-            const gpVariancePercent = metrics.grossProfit[year1] !== 0 ?
-                ((metrics.grossProfit[year2] - metrics.grossProfit[year1]) / Math.abs(metrics.grossProfit[year1])) * 100 : 0;
+            const gpVariancePercent = VarianceCalculator.calculatePercent(metrics.grossProfit[year2], metrics.grossProfit[year1]);
 
             // Insert Bruto marge subtotal
             result.splice(cogsIndex + 1, 0, {
@@ -498,8 +494,7 @@ class AgGridStatementRenderer {
 
         if (opexIndex >= 0 && metrics.operatingIncome) {
             const oiVariance = metrics.operatingIncome[year2] - metrics.operatingIncome[year1];
-            const oiVariancePercent = metrics.operatingIncome[year1] !== 0 ?
-                ((metrics.operatingIncome[year2] - metrics.operatingIncome[year1]) / Math.abs(metrics.operatingIncome[year1])) * 100 : 0;
+            const oiVariancePercent = VarianceCalculator.calculatePercent(metrics.operatingIncome[year2], metrics.operatingIncome[year1]);
 
             result.splice(opexIndex + 1, 0, {
                 hierarchy: ['Operating Income'],
@@ -519,8 +514,7 @@ class AgGridStatementRenderer {
         // 3. Append Net Income at bottom
         if (metrics.netIncome) {
             const niVariance = metrics.netIncome[year2] - metrics.netIncome[year1];
-            const niVariancePercent = metrics.netIncome[year1] !== 0 ?
-                ((metrics.netIncome[year2] - metrics.netIncome[year1]) / Math.abs(metrics.netIncome[year1])) * 100 : 0;
+            const niVariancePercent = VarianceCalculator.calculatePercent(metrics.netIncome[year2], metrics.netIncome[year1]);
 
             result.push({
                 hierarchy: ['NET INCOME'],
@@ -552,8 +546,7 @@ class AgGridStatementRenderer {
         // Starting Cash
         if (metrics.startingCash) {
             const scVariance = metrics.startingCash[year2] - metrics.startingCash[year1];
-            const scVariancePercent = metrics.startingCash[year1] !== 0 ?
-                ((metrics.startingCash[year2] - metrics.startingCash[year1]) / Math.abs(metrics.startingCash[year1])) * 100 : 0;
+            const scVariancePercent = VarianceCalculator.calculatePercent(metrics.startingCash[year2], metrics.startingCash[year1]);
 
             result.push({
                 hierarchy: ['Cash Reconciliation', 'Starting Cash'],
@@ -594,8 +587,7 @@ class AgGridStatementRenderer {
         // Ending Cash
         if (metrics.endingCash) {
             const ecVariance = metrics.endingCash[year2] - metrics.endingCash[year1];
-            const ecVariancePercent = metrics.endingCash[year1] !== 0 ?
-                ((metrics.endingCash[year2] - metrics.endingCash[year1]) / Math.abs(metrics.endingCash[year1])) * 100 : 0;
+            const ecVariancePercent = VarianceCalculator.calculatePercent(metrics.endingCash[year2], metrics.endingCash[year1]);
 
             result.push({
                 hierarchy: ['Cash Reconciliation', 'Ending Cash'],
@@ -753,7 +745,7 @@ class AgGridStatementRenderer {
             return sum + (row.data.amount_2025 || 0);
         }, 0);
 
-        return total1 !== 0 ? ((total2 - total1) / Math.abs(total1)) * 100 : 0;
+        return VarianceCalculator.calculatePercent(total2, total1);
     }
 
     // Get row class for styling (not used with rowClassRules)
