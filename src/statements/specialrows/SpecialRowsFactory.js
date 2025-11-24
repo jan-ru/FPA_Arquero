@@ -7,6 +7,7 @@
 
 import BalanceSheetSpecialRows from './BalanceSheetSpecialRows.js';
 import IncomeStatementSpecialRows from './IncomeStatementSpecialRows.js';
+import CashFlowStatementSpecialRows from './CashFlowStatementSpecialRows.js';
 
 export class SpecialRowsFactory {
     /**
@@ -23,6 +24,8 @@ export class SpecialRowsFactory {
                 return new BalanceSheetSpecialRows();
             case 'IS':
                 return new IncomeStatementSpecialRows();
+            case 'CF':
+                return new CashFlowStatementSpecialRows();
             default:
                 return new NoSpecialRows();
         }

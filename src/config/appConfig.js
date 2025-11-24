@@ -33,8 +33,8 @@ export const APP_CONFIG = {
         largeFileThreshold: 5 * 1024 * 1024, // 5 MB
 
         // Expected file names
-        trialBalance2024: '2024_BalansWinstverliesperperiode.xlsx',
-        trialBalance2025: '2025_BalansWinstverliesperperiode.xlsx'
+        trialBalance2024: '2024_BalansenWinstverliesperperiode.xlsx',
+        trialBalance2025: '2025_BalansenWinstverliesperperiode.xlsx'
     },
 
     /**

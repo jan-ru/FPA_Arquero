@@ -20,6 +20,7 @@ export class BalanceSheetSpecialRows {
     insert(data, statementData) {
         const result = [...data];
         const totals = statementData.totals?.objects() || [];
+        const metrics = statementData.metrics;
         const year1 = YEAR_CONFIG.getYear(0);
         const year2 = YEAR_CONFIG.getYear(1);
 
@@ -40,11 +41,23 @@ export class BalanceSheetSpecialRows {
             result.splice(insertIndex + 1, 0, this.createSpacerRow('SPACER_1'));
         }
 
-        // Calculate Total Liabilities & Equity
+        // Insert Resultaat boekjaar at the end of Equity section (before liabilities)
+        // Find the last equity row (code1 in 60-69 range) or first liability row (code1 >= 70)
+        const liabilityIndex = this.findFirstLiabilityIndex(result);
+
+        if (liabilityIndex >= 0 && metrics?.netIncome) {
+            result.splice(liabilityIndex, 0, this.createResultaatBoekjaarRow(metrics.netIncome, year1, year2));
+        }
+
+        // Calculate Total Liabilities & Equity (including net income)
         const totalLE = this.calculateTotalLiabilitiesEquity(totals);
+        const totalLEWithIncome = {
+            year1: totalLE.year1 + (metrics?.netIncome?.[year1] || 0),
+            year2: totalLE.year2 + (metrics?.netIncome?.[year2] || 0)
+        };
 
         // Append Totaal passiva at end
-        result.push(this.createTotalPassivaRow(totalLE, year1, year2));
+        result.push(this.createTotalPassivaRow(totalLEWithIncome, year1, year2));
 
         return result;
     }
@@ -79,6 +92,51 @@ export class BalanceSheetSpecialRows {
             }
         });
         return { year1, year2 };
+    }
+
+    /**
+     * Find the first liability row (code1 >= 70)
+     * This is where we'll insert Resultaat boekjaar (at end of equity, before liabilities)
+     * @param {Array<Object>} data - Statement data
+     * @returns {number} Index or -1 if not found
+     */
+    findFirstLiabilityIndex(data) {
+        return data.findIndex(row => {
+            const code1 = parseInt(row.code1);
+            return !isNaN(code1) && code1 >= 70;
+        });
+    }
+
+    /**
+     * Create Resultaat boekjaar row
+     * @param {Object} amounts - Net income amounts
+     * @param {string} year1 - First year
+     * @param {string} year2 - Second year
+     * @returns {Object} Row object
+     */
+    createResultaatBoekjaarRow(amounts, year1, year2) {
+        const variance = amounts[year2] - amounts[year1];
+        const variancePercent = amounts[year1] !== 0 ?
+            ((amounts[year2] - amounts[year1]) / Math.abs(amounts[year1])) * 100 : 0;
+
+        return {
+            hierarchy: ['Resultaat boekjaar'],
+            level: 0,
+            label: 'Resultaat boekjaar',
+            name0: '',
+            name1: '',
+            name2: 'Resultaat boekjaar',
+            code0: '6',
+            code1: '69',
+            code2: '69999',
+            code3: '',
+            amount_2024: amounts[year1],
+            amount_2025: amounts[year2],
+            variance_amount: variance,
+            variance_percent: variancePercent,
+            _isMetric: true,
+            _rowType: 'metric'
+        };
     }
 
     /**

@@ -149,7 +149,8 @@
             border-radius: 4px;
             border-left: 3px solid #667eea;
             transition: all 0.3s ease;
-            font-size: 12px;
+            font-size: 11px;
+            font-weight: normal;
         }
 
         .file-status-item.clickable {
@@ -604,14 +605,15 @@
                     </select>
 
                     <label style="font-size: 13px; color: #4a5568; font-weight: 500; margin-left: 10px;">Comparisons:</label>
-                    <select id="comparison-selector" style="padding: 8px 16px; border-radius: 4px; border: 1px solid #e2e8f0; background: white; color: #4a5568; cursor: pointer; font-size: 13px; font-weight: 500;" disabled>
-                        <option value="yoy">YoY</option>
-                        <option value="ltm">LTM</option>
-                        <option value="mom">MoM</option>
+                    <select id="comparison-selector" style="padding: 8px 16px; border-radius: 4px; border: 1px solid #e2e8f0; background: white; color: #4a5568; cursor: pointer; font-size: 13px; font-weight: 500;">
+                        <option value="yoy" selected>YoY (Year-over-Year)</option>
+                        <option value="ltm">LTM (Last Twelve Months)</option>
+                        <option value="mom">MoM (Month-over-Month)</option>
                     </select>
 
                     <label style="font-size: 13px; color: #4a5568; font-weight: 500; margin-left: 10px;">Performance:</label>
-                    <select id="performance-selector" style="padding: 8px 16px; border-radius: 4px; border: 1px solid #e2e8f0; background: white; color: #4a5568; cursor: pointer; font-size: 13px; font-weight: 500;" disabled>
+                    <select id="performance-selector" style="padding: 8px 16px; border-radius: 4px; border: 1px solid #e2e8f0; background: white; color: #4a5568; cursor: pointer; font-size: 13px; font-weight: 500;">
+                        <option value="none">None</option>
                         <option value="budget-actual">Budget vs Actual</option>
                         <option value="forecast-actual">Forecast vs Actual</option>
                         <option value="budget-forecast">Budget vs Forecast</option>
@@ -640,62 +642,38 @@
 
             <!-- Period and Variance Controls -->
             <div style="display: flex; gap: 20px; align-items: flex-start; margin-bottom: 15px; padding: 12px; background: #f7fafc; border-radius: 6px; flex-wrap: wrap;">
-                <!-- Year 1 Controls -->
+                <!-- Single Period Selector (2025) - automatically compares to same period in 2024 -->
                 <div style="display: flex; gap: 8px; align-items: center;">
-                    <label style="font-size: 13px; color: #2c5282; font-weight: 600; min-width: 70px;">Period 1:</label>
-                    <select id="period-2024-header" class="period-dropdown-header" style="padding: 6px 10px; border-radius: 4px; border: 1px solid #cbd5e0; background: white; font-size: 12px;">
-                        <optgroup label="2024">
-                            <option value="2024-all" selected>2024 (All)</option>
-                            <option value="2024-Q1">2024 (Q1)</option>
-                            <option value="2024-Q2">2024 (Q2)</option>
-                            <option value="2024-Q3">2024 (Q3)</option>
-                            <option value="2024-Q4">2024 (Q4)</option>
-                            <option value="2024-1">2024 (P1)</option>
-                            <option value="2024-2">2024 (P2)</option>
-                            <option value="2024-3">2024 (P3)</option>
-                            <option value="2024-4">2024 (P4)</option>
-                            <option value="2024-5">2024 (P5)</option>
-                            <option value="2024-6">2024 (P6)</option>
-                            <option value="2024-7">2024 (P7)</option>
-                            <option value="2024-8">2024 (P8)</option>
-                            <option value="2024-9">2024 (P9)</option>
-                            <option value="2024-10">2024 (P10)</option>
-                            <option value="2024-11">2024 (P11)</option>
-                            <option value="2024-12">2024 (P12)</option>
-                        </optgroup>
+                    <label style="font-size: 13px; color: #2c5282; font-weight: 600; min-width: 80px;">Period (2025):</label>
+                    <select id="period-selector" class="period-dropdown-header" style="padding: 6px 10px; border-radius: 4px; border: 1px solid #cbd5e0; background: white; font-size: 12px;">
+                        <option value="all" selected>All (Year-to-Date)</option>
+                        <option value="Q1">Q1 (Jan-Mar)</option>
+                        <option value="Q2">Q2 (Apr-Jun)</option>
+                        <option value="Q3">Q3 (Jul-Sep)</option>
+                        <option value="Q4">Q4 (Oct-Dec)</option>
+                        <option value="1">P1 (January)</option>
+                        <option value="2">P2 (February)</option>
+                        <option value="3">P3 (March)</option>
+                        <option value="4">P4 (April)</option>
+                        <option value="5">P5 (May)</option>
+                        <option value="6">P6 (June)</option>
+                        <option value="7">P7 (July)</option>
+                        <option value="8">P8 (August)</option>
+                        <option value="9">P9 (September)</option>
+                        <option value="10">P10 (October)</option>
+                        <option value="11">P11 (November)</option>
+                        <option value="12">P12 (December)</option>
                     </select>
                 </div>
 
-                <!-- Year 2 Controls -->
+                <!-- Variance Controls -->
                 <div style="display: flex; gap: 8px; align-items: center;">
-                    <label style="font-size: 13px; color: #2c5282; font-weight: 600; min-width: 70px;">Period 2:</label>
-                    <select id="period-2025-header" class="period-dropdown-header" style="padding: 6px 10px; border-radius: 4px; border: 1px solid #cbd5e0; background: white; font-size: 12px;">
-                        <optgroup label="2025">
-                            <option value="2025-all" selected>2025 (All)</option>
-                            <option value="2025-Q1">2025 (Q1)</option>
-                            <option value="2025-Q2">2025 (Q2)</option>
-                            <option value="2025-Q3">2025 (Q3)</option>
-                            <option value="2025-Q4">2025 (Q4)</option>
-                            <option value="2025-1">2025 (P1)</option>
-                            <option value="2025-2">2025 (P2)</option>
-                            <option value="2025-3">2025 (P3)</option>
-                            <option value="2025-4">2025 (P4)</option>
-                            <option value="2025-5">2025 (P5)</option>
-                            <option value="2025-6">2025 (P6)</option>
-                            <option value="2025-7">2025 (P7)</option>
-                            <option value="2025-8">2025 (P8)</option>
-                            <option value="2025-9">2025 (P9)</option>
-                            <option value="2025-10">2025 (P10)</option>
-                            <option value="2025-11">2025 (P11)</option>
-                            <option value="2025-12">2025 (P12)</option>
-                        </optgroup>
-                    </select>
                     <label style="font-size: 12px; color: #4a5568;">Variance:</label>
-                    <select id="variance-2-header" style="padding: 6px 10px; border-radius: 4px; border: 1px solid #cbd5e0; background: white; font-size: 12px;">
+                    <select id="variance-selector" style="padding: 6px 10px; border-radius: 4px; border: 1px solid #cbd5e0; background: white; font-size: 12px;">
                         <option value="none">None</option>
                         <option value="amount">Amount</option>
                         <option value="percent">Percent</option>
-                        <option value="both">Both</option>
+                        <option value="both" selected>Both</option>
                     </select>
                 </div>
             </div>

@@ -36,15 +36,20 @@ class StatementGenerator {
     }
 
     // Helper: Validate required data is loaded and return appropriate data based on view type
-    validateRequiredData() {
+    validateRequiredData(statementType = null) {
         // Determine view type from UI dropdown (if available, otherwise default to cumulative)
         let viewType = 'cumulative';
         if (typeof document !== 'undefined') {
             viewType = document.getElementById('view-type')?.value || 'cumulative';
         }
 
-        // Get appropriate combined data based on view type
-        const combinedData = viewType === 'period'
+        // Income Statement ALWAYS uses movements (never balances)
+        // For cumulative view, we'll sum movements up to the selected period
+        // For period view, we'll show individual period movements
+        // Balance Sheet uses balances for cumulative view, movements for period view
+        const useMovements = statementType === STATEMENT_TYPES.INCOME_STATEMENT || viewType === 'period';
+
+        const combinedData = useMovements
             ? this.dataStore.getCombinedMovements()
             : this.dataStore.getCombinedBalances();
 
@@ -151,7 +156,7 @@ class StatementGenerator {
     // Consolidated statement generation method
     generateStatement(statementType, options = {}) {
         try {
-            const combinedMovements = this.validateRequiredData();
+            const combinedMovements = this.validateRequiredData(statementType);
 
             Logger.debug('=== DEBUGGING COLUMNS ===');
             Logger.debug('Combined movements columns:', combinedMovements.columnNames());
@@ -191,19 +196,41 @@ class StatementGenerator {
             const yearInt2 = parseInt(yearStr2);
             const periodInt2 = parsePeriod(periodStr2);
 
+            // Determine view type from UI dropdown
+            let viewType = 'cumulative';
+            if (typeof document !== 'undefined') {
+                viewType = document.getElementById('view-type')?.value || 'cumulative';
+            }
+
             // Filter data based on selected year-period combinations
             if (periodYear1Value !== `${year1}-all` || periodYear2Value !== `${year2}-all`) {
-                filtered = filtered
-                    .params({
-                        yearInt1: yearInt1,
-                        periodInt1: periodInt1,
-                        yearInt2: yearInt2,
-                        periodInt2: periodInt2
-                    })
-                    .filter(d =>
-                        (d.year === yearInt1 && d.period <= periodInt1) ||
-                        (d.year === yearInt2 && d.period <= periodInt2)
-                    );
+                if (viewType === 'period') {
+                    // Period view: Show only the specific period (exact match)
+                    filtered = filtered
+                        .params({
+                            yearInt1: yearInt1,
+                            periodInt1: periodInt1,
+                            yearInt2: yearInt2,
+                            periodInt2: periodInt2
+                        })
+                        .filter(d =>
+                            (d.year === yearInt1 && d.period === periodInt1) ||
+                            (d.year === yearInt2 && d.period === periodInt2)
+                        );
+                } else {
+                    // Cumulative view: Show all periods up to selected period (<=)
+                    filtered = filtered
+                        .params({
+                            yearInt1: yearInt1,
+                            periodInt1: periodInt1,
+                            yearInt2: yearInt2,
+                            periodInt2: periodInt2
+                        })
+                        .filter(d =>
+                            (d.year === yearInt1 && d.period <= periodInt1) ||
+                            (d.year === yearInt2 && d.period <= periodInt2)
+                        );
+                }
             }
 
             // Use conditional aggregation to get both columns in one pass (no join needed!)
@@ -256,7 +283,9 @@ class StatementGenerator {
 
             // Add statement-specific calculations
             if (options.calculateMetrics) {
-                result.metrics = options.calculateMetrics(categoryTotals);
+                // Pass withVariances (account-level data) instead of processedData
+                // This has the proper amount_2024/amount_2025 columns after aggregation
+                result.metrics = options.calculateMetrics(categoryTotals, withVariances);
             }
 
             if (options.validateBalance) {
@@ -282,6 +311,15 @@ class StatementGenerator {
             name: 'Balance Sheet',
             [`period${year1}`]: options[`period${year1}`],
             [`period${year2}`]: options[`period${year2}`],
+            calculateMetrics: (categoryTotals, rawFilteredData) => {
+                // Get net income from Income Statement for the same periods
+                const incomeStatement = this.generateIncomeStatement(options);
+                const netIncome = incomeStatement.metrics?.netIncome || {};
+
+                return {
+                    netIncome: netIncome
+                };
+            },
             validateBalance: (categoryTotals) => {
                 // Use latest year for balance validation
                 const latestYear = YEAR_CONFIG.getYear(YEAR_CONFIG.yearCount - 1);
@@ -326,28 +364,107 @@ class StatementGenerator {
             orderBy: true,
             [`period${year1}`]: options[`period${year1}`],
             [`period${year2}`]: options[`period${year2}`],
-            calculateMetrics: (categoryTotals) => {
+            calculateMetrics: (categoryTotals, rawFilteredData) => {
                 // Use YEAR_CONFIG for dynamic year references
                 const year1 = YEAR_CONFIG.getYear(0);
                 const year2 = YEAR_CONFIG.getYear(1);
                 const col1 = YEAR_CONFIG.getAmountColumn(year1);
                 const col2 = YEAR_CONFIG.getAmountColumn(year2);
 
-                // Simple roll-up: sum ALL Income Statement categories
-                // No need for complex category matching - just add everything up
                 const totals = categoryTotals.objects();
                 let netIncome1 = 0;
                 let netIncome2 = 0;
 
+                // Calculate net income from category totals
                 totals.forEach(row => {
                     netIncome1 += row[col1] || 0;
                     netIncome2 += row[col2] || 0;
                 });
 
-                console.log(`Income Statement Net Income: ${year1}=${netIncome1.toFixed(2)}, ${year2}=${netIncome2.toFixed(2)}`);
+                // Calculate Revenue and COGS from account-level aggregated data
+                // This ensures we capture ALL accounts with code1=500 and code1=510
+                // using the same aggregated amounts that appear in the statement
+                let revenue1 = 0;
+                let revenue2 = 0;
+                let cogs1 = 0;
+                let cogs2 = 0;
 
-                // Return simple totals (no gross profit or operating income breakdown)
+                if (rawFilteredData) {
+                    const rawData = rawFilteredData.objects();
+                    rawData.forEach(row => {
+                        // Use amount_2024 and amount_2025 from aggregated data
+                        const amount1 = row.amount_2024 || 0;
+                        const amount2 = row.amount_2025 || 0;
+
+                        // Identify Revenue (Netto-omzet) by code1 = 500
+                        if (row.code1 === '500' || row.code1 === 500) {
+                            revenue1 += amount1;
+                            revenue2 += amount2;
+                        }
+
+                        // Identify COGS (Kostprijs van de omzet) by code1 = 510
+                        if (row.code1 === '510' || row.code1 === 510) {
+                            cogs1 += amount1;
+                            cogs2 += amount2;
+                        }
+                    });
+                }
+
+                // Calculate Bruto Marge (Gross Margin) = Revenue + COGS
+                // Note: COGS is already negative, so we add it
+                const grossProfit1 = revenue1 + cogs1;
+                const grossProfit2 = revenue2 + cogs2;
+
+                // Calculate Total Operating Costs (Totaal bedrijfskosten) from code1=520
+                let opCosts1 = 0;
+                let opCosts2 = 0;
+                let taxes1 = 0;
+                let taxes2 = 0;
+
+                if (rawFilteredData) {
+                    const rawData = rawFilteredData.objects();
+                    rawData.forEach(row => {
+                        const amount1 = row.amount_2024 || 0;
+                        const amount2 = row.amount_2025 || 0;
+
+                        // Identify Operating Costs (Bedrijfslasten) by code1 = 520
+                        if (row.code1 === '520' || row.code1 === 520) {
+                            opCosts1 += amount1;
+                            opCosts2 += amount2;
+                        }
+
+                        // Identify Taxes (Belastingen) by code1 = 550
+                        if (row.code1 === '550' || row.code1 === 550) {
+                            taxes1 += amount1;
+                            taxes2 += amount2;
+                        }
+                    });
+                }
+
+                // Calculate Bedrijfsresultaat (Operating Result) = Bruto Marge + Operating Costs
+                // Note: Operating costs are negative, so we add them
+                const operatingResult1 = grossProfit1 + opCosts1;
+                const operatingResult2 = grossProfit2 + opCosts2;
+
+                // Calculate Resultaat voor belastingen (Result before taxes) = Net Income - Taxes
+                // Note: We subtract taxes to get the result before taxes were deducted
+                const resultBeforeTax1 = netIncome1 - taxes1;
+                const resultBeforeTax2 = netIncome2 - taxes2;
+
+                console.log(`Income Statement - Revenue: ${year1}=${revenue1.toFixed(2)}, ${year2}=${revenue2.toFixed(2)}`);
+                console.log(`Income Statement - COGS: ${year1}=${cogs1.toFixed(2)}, ${year2}=${cogs2.toFixed(2)}`);
+                console.log(`Income Statement - Bruto Marge: ${year1}=${grossProfit1.toFixed(2)}, ${year2}=${grossProfit2.toFixed(2)}`);
+                console.log(`Income Statement - Operating Costs: ${year1}=${opCosts1.toFixed(2)}, ${year2}=${opCosts2.toFixed(2)}`);
+                console.log(`Income Statement - Bedrijfsresultaat: ${year1}=${operatingResult1.toFixed(2)}, ${year2}=${operatingResult2.toFixed(2)}`);
+                console.log(`Income Statement - Taxes: ${year1}=${taxes1.toFixed(2)}, ${year2}=${taxes2.toFixed(2)}`);
+                console.log(`Income Statement - Result before tax: ${year1}=${resultBeforeTax1.toFixed(2)}, ${year2}=${resultBeforeTax2.toFixed(2)}`);
+                console.log(`Income Statement - Net Income: ${year1}=${netIncome1.toFixed(2)}, ${year2}=${netIncome2.toFixed(2)}`);
+
                 return {
+                    grossProfit: { [year1]: grossProfit1, [year2]: grossProfit2 },
+                    operatingCosts: { [year1]: opCosts1, [year2]: opCosts2 },
+                    operatingResult: { [year1]: operatingResult1, [year2]: operatingResult2 },
+                    resultBeforeTax: { [year1]: resultBeforeTax1, [year2]: resultBeforeTax2 },
                     netIncome: { [year1]: netIncome1, [year2]: netIncome2 }
                 };
             }

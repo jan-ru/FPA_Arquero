@@ -187,13 +187,13 @@ Deno.test("IncomeStatementSpecialRows.createOperatingIncomeRow - creates correct
     assertEquals(row._rowType, 'metric');
 });
 
-Deno.test("IncomeStatementSpecialRows.createNetIncomeRow - creates correct row", () => {
+Deno.test("IncomeStatementSpecialRows.createResultaatNaBelastingenRow - creates correct row", () => {
     const handler = new IncomeStatementSpecialRows();
     const amounts = { '2024': 300, '2025': 350 };
 
-    const row = handler.createNetIncomeRow(amounts, '2024', '2025');
+    const row = handler.createResultaatNaBelastingenRow(amounts, '2024', '2025');
 
-    assertEquals(row.label, 'NET INCOME');
+    assertEquals(row.label, 'Resultaat na belastingen');
     assertEquals(row.amount_2024, 300);
     assertEquals(row.amount_2025, 350);
     assertEquals(row._rowType, 'total');
@@ -204,6 +204,7 @@ Deno.test("IncomeStatementSpecialRows.insert - inserts metric rows", () => {
     const data = [
         { label: 'Netto-omzet' },
         { label: 'Kostprijs van de omzet' },
+        { label: 'Bedrijfslasten', code1: '520' },
         { label: 'Personeelskosten' }
     ];
     const statementData = {
@@ -223,8 +224,8 @@ Deno.test("IncomeStatementSpecialRows.insert - inserts metric rows", () => {
     const brutoMargeRow = result.find(r => r.label === 'Bruto marge');
     assertExists(brutoMargeRow);
 
-    // Check for NET INCOME
-    const netIncomeRow = result.find(r => r.label === 'NET INCOME');
+    // Check for Resultaat na belastingen
+    const netIncomeRow = result.find(r => r.label === 'Resultaat na belastingen');
     assertExists(netIncomeRow);
 });
 
@@ -251,8 +252,8 @@ Deno.test("IncomeStatementSpecialRows.insert - handles missing gross profit", ()
 
     const result = handler.insert(data, statementData);
 
-    // Should still insert NET INCOME but not Bruto marge
-    const netIncomeRow = result.find(r => r.label === 'NET INCOME');
+    // Should still insert Resultaat na belastingen but not Bruto marge
+    const netIncomeRow = result.find(r => r.label === 'Resultaat na belastingen');
     assertExists(netIncomeRow);
 
     const brutoMargeRow = result.find(r => r.label === 'Bruto marge');

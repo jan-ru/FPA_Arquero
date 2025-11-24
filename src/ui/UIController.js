@@ -33,6 +33,12 @@ class UIController {
         // Use centralized config for defaults
         this.currentStatementType = this.mapStatementType(APP_CONFIG.statements.defaultType);
         this.currentStatementData = null;
+
+        // Store metadata for file status display
+        this.fileMetadata = {
+            '2024': null,
+            '2025': null
+        };
     }
 
     /**
@@ -200,10 +206,13 @@ class UIController {
             this.dataStore.setFactTable(movements2024, '2024', 'movements');
             this.dataStore.setFactTable(balances2024, '2024', 'balances');
 
-            // Format status: Wide dimensions → Long dimensions | Profit
-            const totalLongRows2024 = movements2024.numRows() + balances2024.numRows();
-            const status2024 = `${metadata2024.rows}R × ${metadata2024.columns}C → ${totalLongRows2024}R × ${movements2024.columnNames().length}C | Profit: €${this.formatNumber(metadata2024.cumulativeProfit)}`;
-            this.updateFileStatus('tb2024', 'success', status2024);
+            // Store metadata for later use
+            this.fileMetadata['2024'] = {
+                originalRows: metadata2024.rows,
+                originalColumns: metadata2024.columns,
+                longRows: movements2024.numRows() + balances2024.numRows(),
+                longColumns: movements2024.columnNames().length
+            };
 
             // Step 2: Load trial balance for 2025 (movements and balances with hierarchy included)
             this.showLoadingMessage('Loading 2025 trial balance...');
@@ -213,10 +222,16 @@ class UIController {
             this.dataStore.setFactTable(movements2025, '2025', 'movements');
             this.dataStore.setFactTable(balances2025, '2025', 'balances');
 
-            // Format status: Wide dimensions → Long dimensions | Profit
-            const totalLongRows2025 = movements2025.numRows() + balances2025.numRows();
-            const status2025 = `${metadata2025.rows}R × ${metadata2025.columns}C → ${totalLongRows2025}R × ${movements2025.columnNames().length}C | Profit: €${this.formatNumber(metadata2025.cumulativeProfit)}`;
-            this.updateFileStatus('tb2025', 'success', status2025);
+            // Store metadata for later use
+            this.fileMetadata['2025'] = {
+                originalRows: metadata2025.rows,
+                originalColumns: metadata2025.columns,
+                longRows: movements2025.numRows() + balances2025.numRows(),
+                longColumns: movements2025.columnNames().length
+            };
+
+            // Update file status with initial profit (for "all" period)
+            this.updateFileStatusProfit();
 
             // Step 3: Create combined data tables for both years (movements and balances)
             this.showLoadingMessage('Combining data...');
@@ -266,17 +281,7 @@ class UIController {
                     // Path not available
                 }
 
-                const file1 = APP_CONFIG.excel.trialBalance2024;
-                const file2 = APP_CONFIG.excel.trialBalance2025;
-                statusText.innerHTML = `
-                    <div style="line-height: 1.5;">
-                        <div style="margin-bottom: 4px;"><strong>📁 Directory:</strong> ${pathDisplay}</div>
-                        <div style="font-size: 0.9em; color: #666;">
-                            <div>• ${file1}</div>
-                            <div>• ${file2}</div>
-                        </div>
-                    </div>
-                `;
+                statusText.innerHTML = `<strong>📁 Directory:</strong> ${pathDisplay}`;
                 statusText.style.color = '#28a745';
             }
 
@@ -407,13 +412,38 @@ class UIController {
             const year1 = YEAR_CONFIG.getYear(0);
             const year2 = YEAR_CONFIG.getYear(1);
 
-            // Get period selections from header dropdowns (fallback to config defaults if not found)
-            const periodYear1 = document.getElementById(`period-${year1}-header`)?.value || APP_CONFIG.statements.defaultPeriod1;
-            const periodYear2 = document.getElementById(`period-${year2}-header`)?.value || APP_CONFIG.statements.defaultPeriod2;
-            const periodOptions = {
-                [`period${year1}`]: periodYear1,
-                [`period${year2}`]: periodYear2
-            };
+            // Get period selection (applies to 2025)
+            const periodValue = document.getElementById('period-selector')?.value || 'all';
+
+            // Get comparison type (YoY, LTM, MoM)
+            const comparisonType = document.getElementById('comparison-selector')?.value || 'yoy';
+
+            // Build period options based on comparison type
+            let periodOptions;
+
+            if (comparisonType === 'yoy') {
+                // Year-over-Year: Same period for both years
+                periodOptions = {
+                    [`period${year1}`]: `${year1}-${periodValue}`,
+                    [`period${year2}`]: `${year2}-${periodValue}`
+                };
+            } else if (comparisonType === 'ltm') {
+                // Last Twelve Months:
+                // 2025 column shows last 12 months ending at selected period
+                // 2024 column shows prior 12 months ending at same period
+                periodOptions = {
+                    [`period${year1}`]: `${year1}-all`, // TODO: Implement rolling 12-month calculation
+                    [`period${year2}`]: `${year2}-all`, // TODO: Implement rolling 12-month calculation
+                    isLTM: true,
+                    ltmEndPeriod: periodValue
+                };
+            } else {
+                // Default to YoY
+                periodOptions = {
+                    [`period${year1}`]: `${year1}-${periodValue}`,
+                    [`period${year2}`]: `${year2}-${periodValue}`
+                };
+            }
 
             let statementData;
             let statementName;
@@ -619,6 +649,85 @@ class UIController {
         previewDiv.style.display = 'block';
     }
 
+    // Calculate profit for a specific period
+    calculateProfitForPeriod(year, periodValue) {
+        try {
+            const movementsTable = this.dataStore.getMovementsTable(year);
+            if (!movementsTable) return 0;
+
+            // Determine which periods to include based on periodValue
+            let filtered;
+            if (periodValue === 'all') {
+                // All periods (1-12)
+                filtered = movementsTable
+                    .filter(d => d.statement_type === 'IS')
+                    .filter(d => d.period >= 1 && d.period <= 12);
+            } else if (periodValue.startsWith('Q')) {
+                // Quarter: Q1 = periods 1-3, Q2 = 4-6, Q3 = 7-9, Q4 = 10-12
+                const quarter = parseInt(periodValue.substring(1));
+                const startPeriod = (quarter - 1) * 3 + 1;
+                const endPeriod = quarter * 3;
+                filtered = movementsTable
+                    .filter(d => d.statement_type === 'IS')
+                    .params({ start: startPeriod, end: endPeriod })
+                    .filter('(d, $) => d.period >= $.start && d.period <= $.end');
+            } else {
+                // Individual period (e.g., "9" for P9)
+                const period = parseInt(periodValue);
+                filtered = movementsTable
+                    .filter(d => d.statement_type === 'IS')
+                    .params({ maxPeriod: period })
+                    .filter('(d, $) => d.period >= 1 && d.period <= $.maxPeriod');
+            }
+
+            // Calculate total
+            const isAccounts = filtered.rollup({ total: d => aq.op.sum(d.movement_amount) });
+
+            // Movement amounts are already sign-flipped during data load, so we can use directly
+            const profit = isAccounts.numRows() > 0 ? isAccounts.get('total', 0) : 0;
+            return profit || 0;
+        } catch (error) {
+            console.warn(`Error calculating profit for ${year} ${periodValue}:`, error);
+            return 0;
+        }
+    }
+
+    // Update file status with period-specific profit
+    updateFileStatusProfit() {
+        try {
+            // Get current period selection
+            const periodSelector = document.getElementById('period-selector');
+            const periodValue = periodSelector?.value || 'all';
+
+            // Get years from config
+            const year1 = YEAR_CONFIG.getYear(0);
+            const year2 = YEAR_CONFIG.getYear(1);
+
+            // Calculate profit for selected period
+            const profit2024 = this.calculateProfitForPeriod(year1, periodValue);
+            const profit2025 = this.calculateProfitForPeriod(year2, periodValue);
+
+            // Build status messages with period label
+            const periodLabel = periodValue === 'all' ? 'All' : periodValue.toUpperCase();
+
+            // Update 2024 status
+            if (this.fileMetadata['2024']) {
+                const meta = this.fileMetadata['2024'];
+                const status2024 = `${meta.originalRows}R × ${meta.originalColumns}C → ${meta.longRows}R × ${meta.longColumns}C | Profit (${periodLabel}): €${this.formatNumber(profit2024)}`;
+                this.updateFileStatus('tb2024', 'success', status2024);
+            }
+
+            // Update 2025 status
+            if (this.fileMetadata['2025']) {
+                const meta = this.fileMetadata['2025'];
+                const status2025 = `${meta.originalRows}R × ${meta.originalColumns}C → ${meta.longRows}R × ${meta.longColumns}C | Profit (${periodLabel}): €${this.formatNumber(profit2025)}`;
+                this.updateFileStatus('tb2025', 'success', status2025);
+            }
+        } catch (error) {
+            console.warn('Error updating file status profit:', error);
+        }
+    }
+
     // Setup event listeners
     setupEventListeners() {
         document.getElementById('select-input-dir').addEventListener('click', () => {
@@ -634,38 +743,32 @@ class UIController {
             });
         }
 
-        // Period dropdowns - re-render on change
-        const period2024Dropdown = document.getElementById('period-2024-header');
-        if (period2024Dropdown) {
-            period2024Dropdown.addEventListener('change', () => {
+        // Period selector - re-render on change
+        const periodSelector = document.getElementById('period-selector');
+        if (periodSelector) {
+            periodSelector.addEventListener('change', () => {
+                if (this.currentStatementType) {
+                    this.generateAndDisplayStatement(this.currentStatementType);
+                }
+                // Update file status profit for the new period
+                this.updateFileStatusProfit();
+            });
+        }
+
+        // Comparison selector - re-render on change (YoY vs LTM)
+        const comparisonSelector = document.getElementById('comparison-selector');
+        if (comparisonSelector) {
+            comparisonSelector.addEventListener('change', () => {
                 if (this.currentStatementType) {
                     this.generateAndDisplayStatement(this.currentStatementType);
                 }
             });
         }
 
-        const period2025Dropdown = document.getElementById('period-2025-header');
-        if (period2025Dropdown) {
-            period2025Dropdown.addEventListener('change', () => {
-                if (this.currentStatementType) {
-                    this.generateAndDisplayStatement(this.currentStatementType);
-                }
-            });
-        }
-
-        // Variance mode dropdowns - re-render on change
-        const variance1Dropdown = document.getElementById('variance-1-header');
-        if (variance1Dropdown) {
-            variance1Dropdown.addEventListener('change', () => {
-                if (this.currentStatementType) {
-                    this.generateAndDisplayStatement(this.currentStatementType);
-                }
-            });
-        }
-
-        const variance2Dropdown = document.getElementById('variance-2-header');
-        if (variance2Dropdown) {
-            variance2Dropdown.addEventListener('change', () => {
+        // Variance selector - re-render on change
+        const varianceSelector = document.getElementById('variance-selector');
+        if (varianceSelector) {
+            varianceSelector.addEventListener('change', () => {
                 if (this.currentStatementType) {
                     this.generateAndDisplayStatement(this.currentStatementType);
                 }

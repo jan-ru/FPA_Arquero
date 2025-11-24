@@ -9,7 +9,7 @@ export const APP_CONFIG = {
     PERIODS_PER_YEAR: 12,
     DEFAULT_YEAR: '2024',
     DEFAULT_PERIOD: 'all',
-    VERSION: '2.8.0'
+    VERSION: '0.9.0'
 };
 
 // Statement Types
@@ -229,6 +229,6 @@ export const HIERARCHY_CODES = {
     PASSIVA_KORTE_TERMIJN: [80, 90],
 
     // Special account codes for mapping
-    IS_BUITENGEWONE: { code1: '54', code2: '54010', name: 'Buitengewone baten en lasten' },
+    IS_BUITENGEWONE: { code1: '540', code2: '54010', name: 'Buitengewone baten en lasten' },
     BS_KORTLOPENDE_SCHULDEN: { code1: '80', code2: '08080', name: 'Overige kortlopende schulden' }
 };

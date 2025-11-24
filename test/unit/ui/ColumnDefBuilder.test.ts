@@ -171,13 +171,18 @@ Deno.test("ColumnDefBuilder.getPeriodLabel - returns year when no dropdown", () 
     delete globalThis.document;
 });
 
-Deno.test("ColumnDefBuilder.getPeriodLabel - returns dropdown text when available", () => {
+Deno.test("ColumnDefBuilder.getPeriodLabel - returns dropdown text with view indicator", () => {
     globalThis.document = {
         getElementById: (id) => {
-            if (id === 'period-2024-header') {
+            if (id === 'period-selector') {
                 return {
                     selectedIndex: 0,
-                    options: [{ text: '2024 (All)' }]
+                    options: [{ text: 'All (Year-to-Date)' }]
+                };
+            }
+            if (id === 'view-type') {
+                return {
+                    value: 'cumulative'
                 };
             }
             return null;
@@ -187,7 +192,7 @@ Deno.test("ColumnDefBuilder.getPeriodLabel - returns dropdown text when availabl
     const builder = new ColumnDefBuilder('BS', '2024', '2025');
     const label = builder.getPeriodLabel('2024');
 
-    assertEquals(label, '2024 (All)');
+    assertEquals(label, '2024 All (Σ)');
 
     delete globalThis.document;
 });

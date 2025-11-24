@@ -5,6 +5,72 @@ All notable changes to the Financial Statement Generator will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2025-01-24
+
+### Added - Enhanced Financial Statements with Dutch Accounting Standards
+
+- **Income Statement Special Rows**:
+  - Added "Bruto marge" (Gross Margin) calculated as Revenue (code1=500) + COGS (code1=510)
+  - Added "Bedrijfsresultaat" (Operating Result) calculated as Bruto marge + Operating costs (code1=520)
+  - Added "Resultaat voor belastingen" (Result before taxes) before tax line (code1=550)
+  - Renamed "NET INCOME" to "Resultaat na belastingen" (Result after taxes)
+  - All calculations use code-based logic for reliability
+
+- **Balance Sheet Integration**:
+  - Added "Resultaat boekjaar" (Net Income for the year) to Equity section
+  - Net income automatically retrieved from Income Statement
+  - Balance Sheet now balances correctly: Assets = Liabilities + Equity + Net Income
+  - Positioned at end of Equity (code1=69) before Liabilities start (code1=70)
+
+- **Cash Flow Statement Special Rows**:
+  - Added "Starting Cash (Σ)" - cumulative balance from Balance Sheet
+  - Added "Change in Cash (Δ)" - period movement from cash flow activities
+  - Added "Ending Cash (Σ)" - cumulative balance at end of period
+  - Cash reconciliation: Starting Cash + Change = Ending Cash
+
+- **View Type Indicators**:
+  - Added (Σ) symbol for cumulative amounts in column headers
+  - Added (Δ) symbol for period amounts in column headers
+  - Cash Flow: Symbols on row labels instead of headers (mixed cumulative/period data)
+  - Dynamic headers update based on View selection (Cumulative vs Period)
+
+- **Period View Support**:
+  - Fixed period view to show exact period amounts (not cumulative)
+  - Cumulative view: filters periods using `<=` (up to selected period)
+  - Period view: filters periods using `===` (exact period match)
+  - Works correctly for all period selections (P1-P12, Q1-Q4, All)
+
+- **Dynamic File Status**:
+  - File status profit now updates based on selected period
+  - Shows period-specific profit for validation
+  - Uses Arquero `.params()` for proper period filtering
+  - Displays as "Profit (P9): €X,XXX" or "Profit (All): €X,XXX"
+
+### Fixed
+
+- **Bruto Marge Calculation**: Changed from subtraction to addition (COGS is already negative)
+- **Buitengewone baten en lasten** sorting: Changed code1 from '54' to '540' for proper sort order
+- **Period View Data**: Fixed to show individual period amounts instead of cumulative
+- **Arquero Closure Issues**: Replaced arrow functions with `.params()` and string expressions
+- **Balance Sheet Balance**: Now includes net income in equity section
+
+### Changed
+
+- **UI Improvements**:
+  - File status buttons: Reduced font size to 11px and removed bold styling
+  - Removed redundant file name list below "Directory: input"
+  - Cleaner, more compact file status display
+
+- **Code Structure**:
+  - Removed "Totaal bedrijfskosten" special row (duplicated Bedrijfslasten total)
+  - Added `CashFlowStatementSpecialRows.js` for Cash Flow specific rows
+  - Updated `SpecialRowsFactory` to support Cash Flow statement type
+  - Improved sorting with 3-digit code1 values for Income Statement categories
+
+### Performance
+
+- **Enabled Performance Selector**: Added "None" option and enabled dropdown (placeholder for future Budget/Forecast comparisons)
+
 ## [3.0.0] - 2025-11-22
 
 ### Added - Major ag-Grid Migration

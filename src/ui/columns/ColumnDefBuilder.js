@@ -38,8 +38,8 @@ export class ColumnDefBuilder {
         // Get UI settings
         const period1Label = this.getPeriodLabel(this.year1);
         const period2Label = this.getPeriodLabel(this.year2);
-        const variance1Mode = document.getElementById('variance-1-header')?.value || 'none';
-        const variance2Mode = document.getElementById('variance-2-header')?.value || 'none';
+        // Use the single variance selector for all variance columns
+        const varianceMode = document.getElementById('variance-selector')?.value || 'none';
 
         const columns = [
             this.buildCategoryColumn(),
@@ -47,19 +47,11 @@ export class ColumnDefBuilder {
             this.buildAmountColumn('amount_2025', period2Label)
         ];
 
-        // Add variance columns for Year 1 (if configured)
-        if (variance1Mode === 'amount' || variance1Mode === 'both') {
-            columns.push(this.buildVarianceAmountColumn('variance_amount_1', true));
-        }
-        if (variance1Mode === 'percent' || variance1Mode === 'both') {
-            columns.push(this.buildVariancePercentColumn('variance_percent_1', true));
-        }
-
-        // Add variance columns for Year 2 (default variance)
-        if (variance2Mode === 'amount' || variance2Mode === 'both') {
+        // Add variance columns (comparing 2025 to 2024)
+        if (varianceMode === 'amount' || varianceMode === 'both') {
             columns.push(this.buildVarianceAmountColumn('variance_amount', false));
         }
-        if (variance2Mode === 'percent' || variance2Mode === 'both') {
+        if (varianceMode === 'percent' || varianceMode === 'both') {
             columns.push(this.buildVariancePercentColumn('variance_percent', false));
         }
 
@@ -149,9 +141,24 @@ export class ColumnDefBuilder {
      * @returns {string} Period label
      */
     getPeriodLabel(year) {
-        const dropdown = document.getElementById(`period-${year}-header`);
-        if (dropdown) {
-            return dropdown.options[dropdown.selectedIndex].text;
+        const periodSelector = document.getElementById('period-selector');
+        const viewTypeSelector = document.getElementById('view-type');
+
+        if (periodSelector) {
+            const periodText = periodSelector.options[periodSelector.selectedIndex].text;
+            // Extract just the period part (e.g., "All (Year-to-Date)" -> "All", "P9 (September)" -> "P9")
+            const periodPart = periodText.split(' ')[0];
+
+            // Cash Flow shows both cumulative and period amounts in same column, so no indicator
+            if (this.statementType === 'CF' || this.statementType === 'cash-flow') {
+                return `${year} ${periodPart}`;
+            }
+
+            // Add view type indicator for BS and IS
+            const viewType = viewTypeSelector?.value || 'cumulative';
+            const viewIndicator = viewType === 'cumulative' ? '(Σ)' : '(Δ)';
+
+            return `${year} ${periodPart} ${viewIndicator}`;
         }
         return year;
     }
