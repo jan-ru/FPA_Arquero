@@ -8,7 +8,7 @@
  */
 
 import CategoryMatcher from '../../utils/CategoryMatcher.js';
-import VarianceCalculator from '../../utils/VarianceCalculator.js';
+import VarianceCalculator from '../../utils/VarianceCalculator.ts';
 import { YEAR_CONFIG } from '../../constants.js';
 
 export class BalanceSheetSpecialRows {

@@ -7,7 +7,7 @@
  * - NET INCOME at the end
  */
 
-import VarianceCalculator from '../../utils/VarianceCalculator.js';
+import VarianceCalculator from '../../utils/VarianceCalculator.ts';
 import { YEAR_CONFIG } from '../../constants.js';
 import Logger from '../../utils/Logger.js';
 

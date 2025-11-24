@@ -1,0 +1,55 @@
+{
+  "compilerOptions": {
+    /* Language and Environment */
+    "target": "ES2020",                          // Modern JavaScript features
+    "lib": ["ES2020", "DOM"],                    // Include DOM types for browser
+    "module": "ES2020",                          // Use ES modules (same as current .js files)
+    "moduleResolution": "node",                  // Node-style module resolution
+
+    /* JavaScript Support - Enable gradual migration */
+    "allowJs": true,                             // Allow .js files to be compiled
+    "checkJs": false,                            // Don't type-check .js files (yet)
+
+    /* Emit */
+    "outDir": "./dist",                          // Output directory for compiled files
+    "sourceMap": true,                           // Generate .map files for debugging
+    "declaration": true,                         // Generate .d.ts files
+    "declarationMap": true,                      // Generate .d.ts.map files
+    "noEmit": true,                              // Don't emit files (we'll use for checking only)
+
+    /* Interop Constraints */
+    "esModuleInterop": true,                     // Better CommonJS/ES6 interop
+    "allowSyntheticDefaultImports": true,        // Allow default imports from modules
+    "forceConsistentCasingInFileNames": true,    // Enforce consistent file name casing
+    "isolatedModules": true,                     // Ensure each file can be transpiled independently
+
+    /* Type Checking - Start lenient, gradually increase */
+    "strict": false,                             // Disable strict mode initially
+    "noImplicitAny": false,                      // Allow implicit any (for now)
+    "strictNullChecks": false,                   // Allow null/undefined (for now)
+    "strictFunctionTypes": false,                // Lenient function types (for now)
+    "strictBindCallApply": false,                // Lenient bind/call/apply (for now)
+    "noImplicitThis": false,                     // Allow implicit this (for now)
+
+    /* Additional Checks - Enable helpful warnings */
+    "noUnusedLocals": true,                      // Report unused local variables
+    "noUnusedParameters": true,                  // Report unused function parameters
+    "noImplicitReturns": true,                   // Ensure all code paths return a value
+    "noFallthroughCasesInSwitch": true,         // Report fallthrough cases in switch
+
+    /* Skip Lib Check */
+    "skipLibCheck": true                         // Skip type checking of .d.ts files
+  },
+
+  "include": [
+    "src/**/*",                                  // Include all source files
+    "test/**/*"                                  // Include test files
+  ],
+
+  "exclude": [
+    "node_modules",                              // Exclude dependencies
+    "dist",                                      // Exclude output directory
+    "**/*.spec.ts",                              // Exclude test files from build
+    "**/*.test.ts"
+  ]
+}

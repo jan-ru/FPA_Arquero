@@ -1,0 +1,41 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "lib": ["deno.window"],
+    "strict": false,
+    "noImplicitAny": false,
+    "strictNullChecks": false
+  },
+  "lint": {
+    "files": {
+      "include": ["src/", "test/"]
+    },
+    "rules": {
+      "tags": ["recommended"]
+    }
+  },
+  "fmt": {
+    "files": {
+      "include": ["src/", "test/"]
+    },
+    "options": {
+      "useTabs": false,
+      "lineWidth": 100,
+      "indentWidth": 4,
+      "singleQuote": true,
+      "proseWrap": "preserve"
+    }
+  },
+  "test": {
+    "include": ["test/"]
+  },
+  "tasks": {
+    "test": "deno test --allow-read test/unit/",
+    "test:watch": "deno test --allow-read --watch test/unit/",
+    "test:coverage": "deno test --allow-read --coverage=coverage test/unit/",
+    "check": "deno check src/**/*.ts",
+    "lint": "deno lint src/ test/",
+    "fmt": "deno fmt src/ test/",
+    "fmt:check": "deno fmt --check src/ test/"
+  }
+}

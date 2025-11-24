@@ -12,36 +12,61 @@
 
 import { UI_CONFIG } from '../constants.js';
 
+// Type definitions
+export type MessageType = 'info' | 'error' | 'success' | 'warning';
+export type FileStatus = 'success' | 'error' | 'loading';
+
+export interface MessageConfig {
+    readonly icon: string;
+    readonly color: string;
+}
+
+export interface ValidationMessages {
+    readonly errors?: string[];
+    readonly warnings?: string[];
+}
+
+export interface FileStatusUpdate {
+    readonly status: FileStatus;
+    readonly message?: string;
+}
+
+export interface FileStatusMap {
+    [fileId: string]: FileStatusUpdate;
+}
+
 export class StatusMessageService {
+    private loadingStatusElement: HTMLElement | null = null;
+    private inputDirStatusElement: HTMLElement | null = null;
+
     /**
      * Create a new StatusMessageService
      */
     constructor() {
-        this.loadingStatusElement = null;
-        this.inputDirStatusElement = null;
+        // Initialize to null, will be set in initialize()
     }
 
     /**
      * Initialize DOM element references
      * Should be called after DOM is ready
      */
-    initialize() {
+    initialize(): void {
         this.loadingStatusElement = document.getElementById('loading-status');
         this.inputDirStatusElement = document.getElementById('input-dir-status');
     }
 
     /**
      * Show a status message in the loading status area
-     * @param {string} message - Message to display
-     * @param {'info'|'error'|'success'|'warning'} type - Message type
+     * @param message - Message to display
+     * @param type - Message type
      */
-    showMessage(message, type = 'info') {
+    showMessage(message: string, type: MessageType = 'info'): void {
         if (!this.loadingStatusElement) {
             console.warn('Loading status element not initialized');
             return;
         }
 
-        const config = {
+        const config: Record<MessageType, MessageConfig> = {
             info: {
                 icon: UI_CONFIG.STATUS_ICONS.INFO,
                 color: UI_CONFIG.STATUS_COLORS.INFO
@@ -67,40 +92,40 @@ export class StatusMessageService {
 
     /**
      * Show loading message
-     * @param {string} message - Loading message
+     * @param message - Loading message
      */
-    showLoading(message) {
+    showLoading(message: string): void {
         this.showMessage(message, 'info');
     }
 
     /**
      * Show error message
-     * @param {string} message - Error message
+     * @param message - Error message
      */
-    showError(message) {
+    showError(message: string): void {
         this.showMessage(message, 'error');
     }
 
     /**
      * Show success message
-     * @param {string} message - Success message
+     * @param message - Success message
      */
-    showSuccess(message) {
+    showSuccess(message: string): void {
         this.showMessage(message, 'success');
     }
 
     /**
      * Show warning message
-     * @param {string} message - Warning message
+     * @param message - Warning message
      */
-    showWarning(message) {
+    showWarning(message: string): void {
         this.showMessage(message, 'warning');
     }
 
     /**
      * Clear the status message
      */
-    clearMessage() {
+    clearMessage(): void {
         if (this.loadingStatusElement) {
             this.loadingStatusElement.textContent = '';
         }
@@ -108,10 +133,10 @@ export class StatusMessageService {
 
     /**
      * Update directory status display
-     * @param {string} pathDisplay - Path to display
-     * @param {boolean} success - Whether selection was successful
+     * @param pathDisplay - Path to display
+     * @param success - Whether selection was successful
      */
-    updateDirectoryStatus(pathDisplay, success = true) {
+    updateDirectoryStatus(pathDisplay: string, success: boolean = true): void {
         if (!this.inputDirStatusElement) {
             console.warn('Input directory status element not initialized');
             return;
@@ -125,18 +150,18 @@ export class StatusMessageService {
 
     /**
      * Update file status indicator
-     * @param {string} fileId - File ID (e.g., 'tb2024', 'tb2025')
-     * @param {'success'|'error'|'loading'} status - Status type
-     * @param {string} [message] - Optional message to display
+     * @param fileId - File ID (e.g., 'tb2024', 'tb2025')
+     * @param status - Status type
+     * @param message - Optional message to display
      */
-    updateFileStatus(fileId, status, message = '') {
+    updateFileStatus(fileId: string, status: FileStatus, message: string = ''): void {
         const statusElement = document.getElementById(`status-${fileId}`);
         if (!statusElement) {
             console.warn(`File status element not found: status-${fileId}`);
             return;
         }
 
-        const statusConfig = {
+        const statusConfig: Record<FileStatus, MessageConfig> = {
             success: {
                 icon: UI_CONFIG.FILE_STATUS_ICONS.SUCCESS,
                 color: UI_CONFIG.STATUS_COLORS.SUCCESS
@@ -160,14 +185,14 @@ export class StatusMessageService {
 
     /**
      * Show multiple file statuses
-     * @param {Object} statuses - Object with fileId as keys and {status, message} as values
+     * @param statuses - Object with fileId as keys and {status, message} as values
      * @example
      * showFileStatuses({
      *   'tb2024': { status: 'success', message: 'Loaded' },
      *   'tb2025': { status: 'loading' }
      * })
      */
-    updateFileStatuses(statuses) {
+    updateFileStatuses(statuses: FileStatusMap): void {
         for (const [fileId, { status, message }] of Object.entries(statuses)) {
             this.updateFileStatus(fileId, status, message);
         }
@@ -175,11 +200,9 @@ export class StatusMessageService {
 
     /**
      * Update validation messages display
-     * @param {Object} validation - Validation result object
-     * @param {string[]} validation.errors - Array of error messages
-     * @param {string[]} validation.warnings - Array of warning messages
+     * @param validation - Validation result object
      */
-    updateValidationMessages(validation) {
+    updateValidationMessages(validation: ValidationMessages): void {
         const validationContainer = document.getElementById('validation-messages');
         const errorsContainer = document.getElementById('validation-errors');
         const warningsContainer = document.getElementById('validation-warnings');
@@ -194,7 +217,7 @@ export class StatusMessageService {
 
         // Display errors
         if (validation.errors && validation.errors.length > 0) {
-            validation.errors.forEach(error => {
+            validation.errors.forEach((error: string) => {
                 const errorDiv = document.createElement('div');
                 errorDiv.className = 'validation-error-item';
                 errorDiv.textContent = '❌ ' + error;
@@ -204,7 +227,7 @@ export class StatusMessageService {
 
         // Display warnings
         if (validation.warnings && validation.warnings.length > 0) {
-            validation.warnings.forEach(warning => {
+            validation.warnings.forEach((warning: string) => {
                 const warningDiv = document.createElement('div');
                 warningDiv.className = 'validation-warning-item';
                 warningDiv.textContent = '⚠️ ' + warning;

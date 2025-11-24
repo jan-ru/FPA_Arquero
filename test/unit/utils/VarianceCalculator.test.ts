@@ -5,7 +5,7 @@
  */
 
 import { assertEquals, assertAlmostEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
-import VarianceCalculator from "../../../src/utils/VarianceCalculator.js";
+import VarianceCalculator from "../../../src/utils/VarianceCalculator.ts";
 
 Deno.test("VarianceCalculator.calculate - basic positive variance", () => {
     const result = VarianceCalculator.calculate(120, 100);

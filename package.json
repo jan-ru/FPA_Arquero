@@ -1,0 +1,27 @@
+{
+  "name": "financial-statement-generator",
+  "version": "0.9.0",
+  "description": "Financial Statement Generator with Dutch Accounting Standards",
+  "type": "module",
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "type-check:watch": "tsc --noEmit --watch",
+    "test": "deno test --allow-read test/unit/",
+    "test:watch": "deno test --allow-read --watch test/unit/",
+    "test:coverage": "deno test --allow-read --coverage=coverage test/unit/ && deno coverage coverage"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.3"
+  },
+  "keywords": [
+    "financial",
+    "accounting",
+    "statements",
+    "balance-sheet",
+    "income-statement",
+    "cash-flow"
+  ],
+  "author": "",
+  "license": "MIT"
+}

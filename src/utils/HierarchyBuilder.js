@@ -7,7 +7,7 @@
 
 import HierarchySorter from './HierarchySorter.js';
 import Logger from './Logger.js';
-import VarianceCalculator from './VarianceCalculator.js';
+import VarianceCalculator from './VarianceCalculator.ts';
 
 export class HierarchyBuilder {
     /**
