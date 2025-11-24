@@ -22,6 +22,10 @@ import AgGridStatementRenderer from './AgGridStatementRenderer.js';
 import { UI_CONFIG, UI_STATEMENT_TYPES } from '../constants.js';
 import { YEAR_CONFIG } from '../constants.js';
 import APP_CONFIG from '../config/appConfig.js';
+import FileSelectionService from '../services/FileSelectionService.js';
+import StatusMessageService from '../services/StatusMessageService.js';
+import FileMetricsService from '../services/FileMetricsService.js';
+import ValidationService from '../services/ValidationService.js';
 
 class UIController {
     constructor() {
@@ -40,8 +44,17 @@ class UIController {
             '2025': null
         };
 
+        // Initialize services
+        this.fileSelectionService = new FileSelectionService(this.dataLoader);
+        this.statusMessageService = new StatusMessageService();
+        this.fileMetricsService = new FileMetricsService(this.dataStore);
+        this.validationService = new ValidationService(this.statementGenerator);
+
         // Initialize UI with filenames from config
         this.initializeFilenames();
+
+        // Initialize status message service DOM references
+        this.statusMessageService.initialize();
     }
 
     /**
@@ -72,152 +85,46 @@ class UIController {
         return mapping[configType] || UI_STATEMENT_TYPES.INCOME_STATEMENT;
     }
 
-    // Update file status indicator
+    // Update file status indicator - delegate to service
     updateFileStatus(fileId, status, message) {
-        const statusElement = document.getElementById(`status-${fileId}`);
-        if (!statusElement) return;
-
-        const statusConfig = {
-            success: {
-                icon: UI_CONFIG.FILE_STATUS_ICONS.SUCCESS,
-                color: UI_CONFIG.STATUS_COLORS.SUCCESS
-            },
-            error: {
-                icon: UI_CONFIG.FILE_STATUS_ICONS.ERROR,
-                color: UI_CONFIG.STATUS_COLORS.ERROR
-            },
-            loading: {
-                icon: UI_CONFIG.FILE_STATUS_ICONS.LOADING,
-                color: UI_CONFIG.STATUS_COLORS.LOADING
-            }
-        };
-
-        const config = statusConfig[status];
-        if (config) {
-            statusElement.textContent = message ? `${config.icon} ${message}` : config.icon;
-            statusElement.style.color = config.color;
-        }
+        this.statusMessageService.updateFileStatus(fileId, status, message);
     }
 
-    // Unified status message display
+    // Unified status message display - delegate to service
     showStatusMessage(message, type = 'info') {
-        const loadingStatus = document.getElementById('loading-status');
-        if (!loadingStatus) return;
-
-        const statusConfig = {
-            info: {
-                icon: UI_CONFIG.STATUS_ICONS.INFO,
-                color: UI_CONFIG.STATUS_COLORS.INFO
-            },
-            error: {
-                icon: UI_CONFIG.STATUS_ICONS.ERROR,
-                color: UI_CONFIG.STATUS_COLORS.ERROR
-            },
-            success: {
-                icon: UI_CONFIG.STATUS_ICONS.SUCCESS,
-                color: UI_CONFIG.STATUS_COLORS.SUCCESS
-            }
-        };
-
-        const { icon, color } = statusConfig[type] || statusConfig.info;
-        loadingStatus.textContent = icon + message;
-        loadingStatus.style.color = color;
+        this.statusMessageService.showMessage(message, type);
     }
 
-    // Convenience methods
+    // Convenience methods - delegate to service
     showLoadingMessage(message) {
-        this.showStatusMessage(message, 'info');
+        this.statusMessageService.showLoading(message);
     }
 
     showErrorMessage(message) {
-        this.showStatusMessage(message, 'error');
+        this.statusMessageService.showError(message);
     }
 
     showSuccessMessage(message) {
-        this.showStatusMessage(message, 'success');
+        this.statusMessageService.showSuccess(message);
     }
 
-    // Handle input directory selection
+    // Handle input directory selection - delegate to service
     async handleSelectInputDirectory() {
-        try {
-            await this.dataLoader.selectInputDirectory();
-            const statusText = document.getElementById('input-dir-status');
-            const dirHandle = this.dataLoader.inputDirHandle;
-            const dirName = dirHandle.name;
+        const result = await this.fileSelectionService.selectAndValidateDirectory();
 
-            // Try to get full path (if available in browser)
-            let pathDisplay = dirName;
-            try {
-                if (dirHandle.resolve) {
-                    const path = await dirHandle.resolve(dirHandle);
-                    if (path && path.length > 0) {
-                        pathDisplay = path.join('/');
-                    }
-                }
-            } catch (e) {
-                // Path not available, use directory name only
-            }
-
-            statusText.textContent = `📁 ${pathDisplay}`;
-            statusText.style.color = '#28a745';
-
-            // Check if directory is named "input"
-            if (dirName.toLowerCase() !== 'input') {
-                const errorMsg = `Directory must be named "input" (current: "${dirName}")`;
-                this.showErrorMessage(errorMsg);
-                console.error(errorMsg);
-                return;
-            }
-
-            console.log('Directory named "input" detected, checking for files...');
-
-            // Check if required files exist
-            const filesExist = await this.checkRequiredFilesExist();
-
-            if (!filesExist) {
-                const errorMsg = 'Required files not found in directory. Please ensure the directory contains the trial balance files.';
-                this.showErrorMessage(errorMsg);
-                console.error(errorMsg);
-                return;
-            }
-
-            console.log('Required files found, loading...');
-            // Automatically load files
-            await this.handleLoadAllFiles();
-
-        } catch (error) {
-            // If user canceled the dialog, don't show an error message
-            if (error.name === 'AbortError') {
-                console.log('Directory selection was canceled');
-                return;
-            }
-
-            this.showErrorMessage(error.message);
+        if (result.canceled) {
+            console.log('Directory selection was canceled');
+            return;
         }
-    }
 
-    // Check if required files exist in the selected directory
-    async checkRequiredFilesExist() {
-        try {
-            const requiredFiles = [
-                APP_CONFIG.excel.trialBalance2024,
-                APP_CONFIG.excel.trialBalance2025
-            ];
-
-            for (const filename of requiredFiles) {
-                try {
-                    await this.dataLoader.inputDirHandle.getFileHandle(filename);
-                } catch (error) {
-                    console.log(`File not found: ${filename}`);
-                    return false;
-                }
-            }
-
-            return true;
-        } catch (error) {
-            console.error('Error checking files:', error);
-            return false;
+        if (!result.success) {
+            this.statusMessageService.showError(result.error);
+            return;
         }
+
+        this.statusMessageService.updateDirectoryStatus(result.pathDisplay, true);
+        console.log('Required files found, loading...');
+        await this.handleLoadAllFiles();
     }
 
     // Load all files
@@ -347,84 +254,17 @@ class UIController {
             this.updateFileStatus('tb2025', 'error');
 
             // Hide metrics on error
-            this.hideFileMetrics('tb2024');
-            this.hideFileMetrics('tb2025');
+            this.fileMetricsService.hideFileMetrics('tb2024');
+            this.fileMetricsService.hideFileMetrics('tb2025');
 
-            // Show validation container with error
-            const validationContainer = document.getElementById('validation-messages');
-            const errorsContainer = document.getElementById('validation-errors');
-
-            if (validationContainer && errorsContainer) {
-                errorsContainer.innerHTML = '';
-                const errorDiv = document.createElement('div');
-                errorDiv.className = 'validation-error-item';
-                errorDiv.innerHTML = `<strong>Loading Error:</strong> ${userMessage}`;
-                errorsContainer.appendChild(errorDiv);
-                validationContainer.style.display = 'block';
-            }
+            // Show validation container with error - delegate to service
+            this.validationService.displayError(userMessage);
         }
     }
 
-    // Validate data and display results
+    // Validate data and display results - delegate to service
     validateAndDisplayResults() {
-        const validation = this.statementGenerator.validateData();
-        const validationContainer = document.getElementById('validation-messages');
-        const errorsContainer = document.getElementById('validation-errors');
-        const warningsContainer = document.getElementById('validation-warnings');
-
-        // Clear previous messages
-        errorsContainer.innerHTML = '';
-        warningsContainer.innerHTML = '';
-
-        // Display Afrondingsverschil replacements
-        if (window.afrondingsReplacements && window.afrondingsReplacements.length > 0) {
-            window.afrondingsReplacements.forEach(replacement => {
-                const infoDiv = document.createElement('div');
-                infoDiv.className = 'validation-warning-item';
-                infoDiv.innerHTML = `ℹ️ <strong>Account replaced:</strong> ${replacement}`;
-                warningsContainer.appendChild(infoDiv);
-            });
-        }
-
-        // Display errors
-        if (validation.errors.length > 0) {
-            validation.errors.forEach(error => {
-                const errorDiv = document.createElement('div');
-                errorDiv.className = 'validation-error-item';
-                errorDiv.textContent = '❌ ' + error;
-                errorsContainer.appendChild(errorDiv);
-            });
-        }
-
-        // Display warnings
-        if (validation.warnings.length > 0) {
-            validation.warnings.forEach(warning => {
-                const warningDiv = document.createElement('div');
-                warningDiv.className = 'validation-warning-item';
-                warningDiv.textContent = '⚠️ ' + warning;
-                warningsContainer.appendChild(warningDiv);
-            });
-        }
-
-        // Display unmapped accounts if any
-        if (validation.unmappedAccounts.length > 0) {
-            const unmappedDiv = document.createElement('div');
-            unmappedDiv.className = 'validation-warning-item';
-            unmappedDiv.innerHTML = `
-                <strong>Unmapped Accounts (${validation.unmappedAccounts.length}):</strong>
-                <div class="unmapped-accounts-list">
-                    ${validation.unmappedAccounts.join(', ')}
-                </div>
-            `;
-            warningsContainer.appendChild(unmappedDiv);
-        }
-
-        // Show validation container if there are any messages
-        if (validation.errors.length > 0 || validation.warnings.length > 0) {
-            validationContainer.style.display = 'block';
-        } else {
-            validationContainer.style.display = 'none';
-        }
+        this.validationService.validateAndDisplay();
     }
 
     // Generate and display statement
@@ -676,66 +516,18 @@ class UIController {
         previewDiv.style.display = 'block';
     }
 
-    // Calculate profit for a specific period
+    // Calculate profit for a specific period - delegate to service
     calculateProfitForPeriod(year, periodValue) {
-        try {
-            const movementsTable = this.dataStore.getMovementsTable(year);
-            if (!movementsTable) return 0;
-
-            // Determine which periods to include based on periodValue
-            let filtered;
-            if (periodValue === 'all') {
-                // All periods (1-12)
-                filtered = movementsTable
-                    .filter(d => d.statement_type === 'IS')
-                    .filter(d => d.period >= 1 && d.period <= 12);
-            } else if (periodValue.startsWith('Q')) {
-                // Quarter: Q1 = periods 1-3, Q2 = 4-6, Q3 = 7-9, Q4 = 10-12
-                const quarter = parseInt(periodValue.substring(1));
-                const startPeriod = (quarter - 1) * 3 + 1;
-                const endPeriod = quarter * 3;
-                filtered = movementsTable
-                    .filter(d => d.statement_type === 'IS')
-                    .params({ start: startPeriod, end: endPeriod })
-                    .filter('(d, $) => d.period >= $.start && d.period <= $.end');
-            } else {
-                // Individual period (e.g., "9" for P9)
-                const period = parseInt(periodValue);
-                filtered = movementsTable
-                    .filter(d => d.statement_type === 'IS')
-                    .params({ maxPeriod: period })
-                    .filter('(d, $) => d.period >= 1 && d.period <= $.maxPeriod');
-            }
-
-            // Calculate total
-            const isAccounts = filtered.rollup({ total: d => aq.op.sum(d.movement_amount) });
-
-            // Movement amounts are already sign-flipped during data load, so we can use directly
-            const profit = isAccounts.numRows() > 0 ? isAccounts.get('total', 0) : 0;
-            return profit || 0;
-        } catch (error) {
-            console.warn(`Error calculating profit for ${year} ${periodValue}:`, error);
-            return 0;
-        }
+        return this.fileMetricsService.calculateProfitForPeriod(year, periodValue);
     }
 
     /**
-     * Parse period value to get maximum period number
+     * Parse period value to get maximum period number - delegate to service
      * @param {string} periodValue - Period value ('all', 'q1', 'p9', '9', etc.)
      * @returns {number} Maximum period number
      */
     parsePeriodValue(periodValue) {
-        if (periodValue === 'all') {
-            return 12;
-        } else if (periodValue.toUpperCase().startsWith('Q')) {
-            // Quarter: Q1 = period 3, Q2 = 6, Q3 = 9, Q4 = 12
-            const quarter = parseInt(periodValue.substring(1));
-            return quarter * 3;
-        } else {
-            // Individual period (e.g., "9" or "p9")
-            const match = periodValue.match(/\d+/);
-            return match ? parseInt(match[0]) : 12;
-        }
+        return this.fileMetricsService.parsePeriodValue(periodValue);
     }
 
     // Update file status with period-specific profit
@@ -751,111 +543,25 @@ class UIController {
 
             // Update 2024 metrics
             if (this.fileMetadata['2024']) {
-                this.updateFileMetrics('tb2024', year1, periodValue);
-                this.updateFileStatus('tb2024', 'success', '');
+                this.fileMetricsService.updateFileMetrics(
+                    'tb2024', year1, periodValue,
+                    this.fileMetadata['2024'],
+                    this.formatNumber.bind(this)
+                );
+                this.statusMessageService.updateFileStatus('tb2024', 'success', '');
             }
 
             // Update 2025 metrics
             if (this.fileMetadata['2025']) {
-                this.updateFileMetrics('tb2025', year2, periodValue);
-                this.updateFileStatus('tb2025', 'success', '');
+                this.fileMetricsService.updateFileMetrics(
+                    'tb2025', year2, periodValue,
+                    this.fileMetadata['2025'],
+                    this.formatNumber.bind(this)
+                );
+                this.statusMessageService.updateFileStatus('tb2025', 'success', '');
             }
         } catch (error) {
             console.warn('Error updating file status profit:', error);
-        }
-    }
-
-    /**
-     * Update file metrics display
-     * @param {string} fileId - File ID ('tb2024' or 'tb2025')
-     * @param {string} year - Year ('2024' or '2025')
-     * @param {string} periodValue - Period value ('all', 'q1', 'p9', etc.)
-     */
-    updateFileMetrics(fileId, year, periodValue) {
-        const metricsElement = document.getElementById(`metrics-${fileId}`);
-        if (!metricsElement) return;
-
-        const meta = this.fileMetadata[year];
-        if (!meta) return;
-
-        // Calculate debits and credits for BAL and PNL
-        const totals = this.calculateDebitCreditTotals(year, periodValue);
-
-        // Build metrics HTML
-        const metrics = [];
-
-        // Row/column counts
-        metrics.push(`${meta.originalRows}R × ${meta.originalColumns}C (wide) → ${meta.longRows}R × ${meta.longColumns}C (long)`);
-
-        // Debit/Credit totals
-        metrics.push(`BAL: DR €${this.formatNumber(totals.bal.debit)} | CR €${this.formatNumber(totals.bal.credit)}`);
-        metrics.push(`PNL: DR €${this.formatNumber(totals.pnl.debit)} | CR €${this.formatNumber(totals.pnl.credit)}`);
-
-        metricsElement.innerHTML = metrics.join('<br>');
-        metricsElement.style.display = 'block';
-    }
-
-    /**
-     * Hide file metrics
-     * @param {string} fileId - File ID ('tb2024' or 'tb2025')
-     */
-    hideFileMetrics(fileId) {
-        const metricsElement = document.getElementById(`metrics-${fileId}`);
-        if (metricsElement) {
-            metricsElement.style.display = 'none';
-        }
-    }
-
-    /**
-     * Calculate debit and credit totals for BAL and PNL
-     * @param {string} year - Year ('2024' or '2025')
-     * @param {string} periodValue - Period value ('all', 'q1', 'p9', etc.)
-     * @returns {Object} Totals object with bal and pnl properties
-     */
-    calculateDebitCreditTotals(year, periodValue) {
-        try {
-            // Get movements table for the year
-            const movements = this.dataStore.getMovementsTable(year);
-            if (!movements) {
-                return {
-                    bal: { debit: 0, credit: 0 },
-                    pnl: { debit: 0, credit: 0 }
-                };
-            }
-
-            // Filter by period if needed
-            let filtered = movements;
-            if (periodValue !== 'all') {
-                const periodNum = this.parsePeriodValue(periodValue);
-                filtered = movements
-                    .params({ maxPeriod: periodNum })
-                    .filter('(d, $) => d.period <= $.maxPeriod');
-            }
-
-            // Calculate totals for BAL (Balance Sheet) and PNL (Income Statement)
-            const balData = filtered.filter(d => d.statement_type === 'BS');
-            const pnlData = filtered.filter(d => d.statement_type === 'IS');
-
-            const balTotals = balData.rollup({
-                debit: aq.op.sum('debit'),
-                credit: aq.op.sum('credit')
-            }).objects()[0] || { debit: 0, credit: 0 };
-
-            const pnlTotals = pnlData.rollup({
-                debit: aq.op.sum('debit'),
-                credit: aq.op.sum('credit')
-            }).objects()[0] || { debit: 0, credit: 0 };
-
-            return {
-                bal: balTotals,
-                pnl: pnlTotals
-            };
-        } catch (error) {
-            console.warn('Error calculating debit/credit totals:', error);
-            return {
-                bal: { debit: 0, credit: 0 },
-                pnl: { debit: 0, credit: 0 }
-            };
         }
     }
 
