@@ -495,7 +495,7 @@ class StatementGenerator {
             // Calculate changes in Balance Sheet items (working capital changes)
             const cashFlowData = [];
 
-            // Operating Activities
+            // Operating Activities - Net Income
             cashFlowData.push({
                 code0: 'CF',
                 name0: 'Cash Flow',
@@ -507,36 +507,89 @@ class StatementGenerator {
                 [col2]: netIncome2
             });
 
-            // Add back non-cash expenses (depreciation, amortization)
+            // Adjustments for non-cash items - Depreciation
             balanceDetails.forEach(row => {
                 if (CategoryMatcher.isDepreciation(row.name2)) {
+                    // Calculate change in depreciation between periods
+                    const change1 = (row[col1] || 0);
+                    const change2 = (row[col2] || 0);
                     cashFlowData.push({
                         code0: 'CF',
                         name0: 'Cash Flow',
                         code1: '10',
                         name1: 'Operating Activities',
                         code2: '02',
-                        name2: row.name2,
-                        [col1]: Math.abs(row.variance_amount || 0),
-                        [col2]: Math.abs(row.variance_amount || 0)
+                        name2: 'Adjustments for non-cash items',
+                        code3: '01',
+                        name3: row.name2,
+                        [col1]: Math.abs(change1),
+                        [col2]: Math.abs(change2)
                     });
                 }
             });
 
-            // Changes in working capital (current assets and liabilities)
+            // Working Capital Changes
+            // 1. Changes in Voorraden (code1=30 - Inventory)
             balanceDetails.forEach(row => {
-                if (CategoryMatcher.isCurrentAsset(row.name1)) {
-                    const change = (row[col2] || 0) - (row[col1] || 0);
-                    if (Math.abs(change) > 0) {
+                if (row.code1 === '30') {
+                    const change1 = 0; // No prior period comparison yet
+                    const change2 = (row[col2] || 0) - (row[col1] || 0);
+                    if (Math.abs(change2) > 0.01) { // Only show if meaningful change
                         cashFlowData.push({
                             code0: 'CF',
                             name0: 'Cash Flow',
                             code1: '10',
                             name1: 'Operating Activities',
                             code2: '03',
-                            name2: `Change in ${row.name2}`,
-                            [col1]: 0,
-                            [col2]: -change // Negative because increase in assets uses cash
+                            name2: 'Working Capital Changes',
+                            code3: '01',
+                            name3: `Change in ${row.name2 || row.name1}`,
+                            [col1]: change1,
+                            [col2]: -change2 // Negative because increase in assets uses cash
+                        });
+                    }
+                }
+            });
+
+            // 2. Changes in Vorderingen (code1=40 - Receivables)
+            balanceDetails.forEach(row => {
+                if (row.code1 === '40') {
+                    const change1 = 0;
+                    const change2 = (row[col2] || 0) - (row[col1] || 0);
+                    if (Math.abs(change2) > 0.01) {
+                        cashFlowData.push({
+                            code0: 'CF',
+                            name0: 'Cash Flow',
+                            code1: '10',
+                            name1: 'Operating Activities',
+                            code2: '03',
+                            name2: 'Working Capital Changes',
+                            code3: '02',
+                            name3: `Change in ${row.name2 || row.name1}`,
+                            [col1]: change1,
+                            [col2]: -change2
+                        });
+                    }
+                }
+            });
+
+            // 3. Changes in Kortlopende schulden (code1=80 - Short-term liabilities)
+            balanceDetails.forEach(row => {
+                if (row.code1 === '80') {
+                    const change1 = 0;
+                    const change2 = (row[col2] || 0) - (row[col1] || 0);
+                    if (Math.abs(change2) > 0.01) {
+                        cashFlowData.push({
+                            code0: 'CF',
+                            name0: 'Cash Flow',
+                            code1: '10',
+                            name1: 'Operating Activities',
+                            code2: '03',
+                            name2: 'Working Capital Changes',
+                            code3: '03',
+                            name3: `Change in ${row.name2 || row.name1}`,
+                            [col1]: change1,
+                            [col2]: change2 // Positive because increase in liabilities provides cash
                         });
                     }
                 }
