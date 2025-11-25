@@ -24,6 +24,7 @@ import CategoryMatcher from '../utils/CategoryMatcher.js';
 import VarianceCalculator from '../utils/VarianceCalculator.js';
 import Logger from '../utils/Logger.js';
 import AccountSignHandler from '../utils/AccountSignHandler.js';
+import LTMCalculator from '../utils/LTMCalculator.js';
 
 class StatementGenerator {
     constructor(dataStore) {
@@ -203,8 +204,81 @@ class StatementGenerator {
                 viewType = document.getElementById('view-type')?.value || 'cumulative';
             }
 
-            // Filter data based on selected year-period combinations
-            if (periodYear1Value !== `${year1}-all` || periodYear2Value !== `${year2}-all`) {
+            // Initialize LTM label storage
+            let ltmLabel1 = null;
+            let ltmLabel2 = null;
+
+            // Check for LTM (Latest Twelve Months) selection
+            const isLTM1 = periodStr1 === YEAR_CONFIG.LTM.OPTION_VALUE;
+            const isLTM2 = periodStr2 === YEAR_CONFIG.LTM.OPTION_VALUE;
+
+            if (isLTM1 || isLTM2) {
+                // Get available years from dataStore
+                const availableYears = this.dataStore.getMovementsTable('2024') && this.dataStore.getMovementsTable('2025')
+                    ? [2024, 2025]
+                    : this.dataStore.getMovementsTable('2025')
+                    ? [2025]
+                    : this.dataStore.getMovementsTable('2024')
+                    ? [2024]
+                    : [];
+
+                // Calculate LTM info
+                const ltmInfo = LTMCalculator.calculateLTMInfo(
+                    filtered,
+                    availableYears,
+                    YEAR_CONFIG.LTM.MONTHS_COUNT
+                );
+
+                // Handle LTM for column 1
+                if (isLTM1) {
+                    filtered = ltmInfo.filteredData;
+                    ltmLabel1 = ltmInfo.label;
+
+                    // Display warning if incomplete data
+                    if (!ltmInfo.availability.complete) {
+                        console.warn(`LTM Column 1: ${ltmInfo.availability.message}`);
+                        if (typeof document !== 'undefined') {
+                            const warningEl = document.getElementById('ltm-warning');
+                            if (warningEl) {
+                                warningEl.textContent = `⚠️ ${ltmInfo.availability.message}`;
+                                warningEl.style.display = 'block';
+                            }
+                        }
+                    }
+                }
+
+                // Handle LTM for column 2 (if different from column 1)
+                if (isLTM2 && !isLTM1) {
+                    // If only column 2 is LTM, use the filtered data
+                    filtered = ltmInfo.filteredData;
+                    ltmLabel2 = ltmInfo.label;
+
+                    // Display warning if incomplete data
+                    if (!ltmInfo.availability.complete) {
+                        console.warn(`LTM Column 2: ${ltmInfo.availability.message}`);
+                        if (typeof document !== 'undefined') {
+                            const warningEl = document.getElementById('ltm-warning');
+                            if (warningEl) {
+                                warningEl.textContent = `⚠️ ${ltmInfo.availability.message}`;
+                                warningEl.style.display = 'block';
+                            }
+                        }
+                    }
+                } else if (isLTM2 && isLTM1) {
+                    // Both columns are LTM - use same label
+                    ltmLabel2 = ltmInfo.label;
+                }
+
+                Logger.debug('LTM filtering applied:', {
+                    label1: ltmLabel1,
+                    label2: ltmLabel2,
+                    ranges: ltmInfo.ranges,
+                    availability: ltmInfo.availability
+                });
+            }
+
+            // Filter data based on selected year-period combinations (skip if LTM already applied)
+            if (!isLTM1 && !isLTM2 && (periodYear1Value !== `${year1}-all` || periodYear2Value !== `${year2}-all`)) {
                 if (viewType === 'period') {
                     // Period view: Show only the specific period (exact match)
                     filtered = filtered
@@ -281,6 +355,14 @@ class StatementGenerator {
                 details: withVariances,
                 totals: categoryTotals
             };
+
+            // Add LTM labels if LTM was used
+            if (ltmLabel1 || ltmLabel2) {
+                result.ltmLabels = {
+                    column1: ltmLabel1,
+                    column2: ltmLabel2
+                };
+            }
 
             // Add statement-specific calculations
             if (options.calculateMetrics) {
