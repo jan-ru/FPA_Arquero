@@ -82,17 +82,24 @@ export class FileMetricsService {
             }
 
             // Calculate totals for BAL (Balance Sheet) and PNL (Income Statement)
-            const balData = filtered.filter((d) => d.statement_type === 'BS');
-            const pnlData = filtered.filter((d) => d.statement_type === 'IS');
+            // First derive debit/credit columns from movement_amount
+            const withDebitCredit = filtered.derive({
+                debit: (d) => d.movement_amount > 0 ? d.movement_amount : 0,
+                credit: (d) => d.movement_amount < 0 ? Math.abs(d.movement_amount) : 0
+            });
 
+            const balData = withDebitCredit.filter((d) => d.statement_type === 'BS');
+            const pnlData = withDebitCredit.filter((d) => d.statement_type === 'IS');
+
+            // Now sum the derived columns
             const balTotals = balData.rollup({
-                debit: aq.op.sum('debit'),
-                credit: aq.op.sum('credit')
+                debit: (d) => aq.op.sum(d.debit),
+                credit: (d) => aq.op.sum(d.credit)
             }).objects()[0] || { debit: 0, credit: 0 };
 
             const pnlTotals = pnlData.rollup({
-                debit: aq.op.sum('debit'),
-                credit: aq.op.sum('credit')
+                debit: (d) => aq.op.sum(d.debit),
+                credit: (d) => aq.op.sum(d.credit)
             }).objects()[0] || { debit: 0, credit: 0 };
 
             return {
