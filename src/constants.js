@@ -200,6 +200,15 @@ export const YEAR_CONFIG = {
     // Get default period value for a year
     getDefaultPeriod(year) {
         return `${year}-all`;
+    },
+
+    // LTM (Latest Twelve Months) Configuration
+    LTM: {
+        ENABLED: true,
+        MONTHS_COUNT: 12,
+        DEFAULT_LABEL: 'LTM',
+        OPTION_VALUE: 'ltm',
+        DISPLAY_NAME: 'LTM (Latest 12 Months)'
     }
 };
 
