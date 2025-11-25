@@ -64,6 +64,24 @@ async function loadConfig() {
 }
 
 /**
+ * Load and display version from package.json
+ */
+async function loadVersion() {
+    try {
+        const response = await fetch('package.json');
+        const packageData = await response.json();
+        const versionElement = document.getElementById('app-version');
+        if (versionElement && packageData.version) {
+            versionElement.textContent = `v${packageData.version}`;
+        }
+        return packageData.version;
+    } catch (error) {
+        console.warn('Could not load version from package.json:', error);
+        return '3.0.0'; // Fallback version
+    }
+}
+
+/**
  * Initialize the application
  * - Checks browser compatibility
  * - Loads configuration
@@ -74,6 +92,9 @@ async function init() {
     console.log('Financial Statement Generator initialized');
     console.log('Arquero loaded:', typeof aq !== 'undefined');
     console.log('ExcelJS loaded:', typeof ExcelJS !== 'undefined');
+
+    // Load and display version
+    await loadVersion();
 
     // Check browser compatibility
     if (!window.showDirectoryPicker) {

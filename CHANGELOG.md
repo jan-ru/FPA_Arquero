@@ -5,6 +5,64 @@ All notable changes to the Financial Statement Generator will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added - TypeScript Migration & Code Quality
+
+- **TypeScript Support**:
+  - Migrated `VarianceCalculator` to TypeScript with comprehensive type definitions
+  - Migrated all 4 service classes to TypeScript:
+    - `FileSelectionService.ts` (5 interfaces for directory selection/validation)
+    - `StatusMessageService.ts` (6 types/interfaces for message handling)
+    - `FileMetricsService.ts` (8 types/interfaces for metrics calculation)
+    - `ValidationService.ts` (6 interfaces for validation display)
+  - Added `deno.json` for native Deno TypeScript support
+  - Added `tsconfig.json` for IDE/editor support
+  - Configured gradual migration with `allowJs: true`
+
+- **Service Layer Architecture** (Phase 1 - Month 1):
+  - Extracted 4 specialized service classes from `UIController` (777 lines)
+  - `FileSelectionService`: Directory selection and validation logic
+  - `StatusMessageService`: Centralized UI status message handling
+  - `FileMetricsService`: File metrics calculation (debit/credit totals, profit)
+  - `ValidationService`: Data validation and display logic
+  - Reduced `UIController` from 968 → 673 lines (30% reduction)
+
+- **Code Quality Improvements** (Week 1-2):
+  - Enhanced `VarianceCalculator` utility with 5 methods for DRY compliance
+  - Eliminated 30+ duplicate variance calculations across codebase
+  - Added `UI_CONFIG.FILE_STATUS_ICONS` and `STATUS_COLORS.LOADING/WARNING`
+  - Added `APP_CONFIG.ALL_PERIODS_CODE` to replace magic number 999
+  - Updated 8 files to use consolidated variance utility
+
+- **Dynamic Version Display**:
+  - Version now reads from `package.json` automatically
+  - Added `loadVersion()` function in `app.js`
+  - Updated HTML to use dynamic `#app-version` element
+  - Eliminates need to manually update version in multiple places
+
+### Changed
+
+- **Code Organization**:
+  - 204 automated tests passing ✅
+  - All TypeScript files maintain backward compatibility with `.js` imports for browser
+  - Service classes follow Single Responsibility Principle
+  - Improved testability and modularity
+
+### Technical Details
+
+- **TypeScript Configuration**:
+  - Using Deno's native TypeScript support (no build step for tests)
+  - Browser compatibility: `.ts` files copied to `.js` for direct browser loading
+  - Type-safe interfaces for all service interactions
+  - Comprehensive type definitions for better IDE support
+
+- **Architecture Improvements**:
+  - Separation of concerns across service layer
+  - UIController now acts as orchestrator rather than god object
+  - Services are independently testable and reusable
+  - Reduced code duplication by ~76 lines
+
 ## [0.9.0] - 2025-01-24
 
 ### Added - Enhanced Financial Statements with Dutch Accounting Standards

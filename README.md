@@ -1,7 +1,17 @@
 # Financial Statement Generator
-**Version 0.0.1**
+**Version 0.9.0**
 
 A browser-based application that transforms trial balance data into professional financial statements including Balance Sheet, Income Statement, and Cash Flow Statement.
+
+## Recent Updates (v0.9.0+)
+
+- **TypeScript Migration**: Core utilities and service layer migrated to TypeScript with comprehensive type definitions
+- **Service Layer Architecture**: Extracted 4 specialized services from UIController (30% code reduction)
+- **Code Quality**: Enhanced VarianceCalculator utility, eliminated 30+ duplicate calculations
+- **Dynamic Versioning**: Version now reads from package.json automatically
+- **96 Unit Tests**: Comprehensive test coverage (68.3%) with Deno test runner
+
+See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
 
 ## Features
 
@@ -18,7 +28,8 @@ A browser-based application that transforms trial balance data into professional
 
 - **ag-Grid Community**: Professional data grid for statement display
 - **Arquero**: Data manipulation and transformation
-- **Vanilla JavaScript**: No framework dependencies, all processing client-side
+- **TypeScript + JavaScript**: Gradual TypeScript migration with ES6 modules
+- **Deno**: Native TypeScript runtime for testing (96 unit tests, 68.3% coverage)
 - **HTML5/CSS3**: Modern web standards
 - **File System Access API**: Direct directory access in compatible browsers
 
@@ -68,10 +79,12 @@ Create an `input` directory with the following Excel files:
 financial-statement-generator/
 ├── index.html                  # Main HTML file (imports from src/)
 ├── config.json                 # Configuration (file names, directories)
+├── package.json                # Version and project metadata
+├── deno.json                   # Deno TypeScript configuration
+├── tsconfig.json               # TypeScript IDE configuration
 ├── README.md                   # This file
 ├── CHANGELOG.md                # Version history
-├── run_tests.sh                # Test runner script
-├── src/                        # Application modules (ES6)
+├── src/                        # Application modules (ES6 + TypeScript)
 │   ├── app.js                  # Main application entry point
 │   ├── constants.js            # All application constants
 │   ├── data/                   # Data management
@@ -79,13 +92,22 @@ financial-statement-generator/
 │   │   └── DataLoader.js       # Excel file loading/parsing
 │   ├── utils/                  # Utility classes
 │   │   ├── CategoryMatcher.js  # Financial category pattern matching
-│   │   └── VarianceCalculator.js # Variance calculations
+│   │   └── VarianceCalculator.ts/.js # Variance calculations (TypeScript)
+│   ├── services/               # Service layer (TypeScript)
+│   │   ├── FileSelectionService.ts/.js # Directory selection
+│   │   ├── StatusMessageService.ts/.js # UI status messages
+│   │   ├── FileMetricsService.ts/.js   # File metrics calculation
+│   │   └── ValidationService.ts/.js    # Data validation
 │   ├── statements/             # Financial statement generation
-│   │   └── StatementGenerator.js # BS, IS, CF generation logic
+│   │   ├── StatementGenerator.js # BS, IS, CF generation logic
+│   │   └── specialrows/        # Special row insertion
+│   │       ├── BalanceSheetSpecialRows.js
+│   │       ├── IncomeStatementSpecialRows.js
+│   │       └── CashFlowStatementSpecialRows.js
 │   ├── export/                 # Export functionality
 │   │   └── ExportHandler.js    # Excel export (deprecated)
 │   └── ui/                     # UI components
-│       ├── UIController.js     # Main UI controller
+│       ├── UIController.js     # Main UI orchestrator
 │       ├── AgGridStatementRenderer.js # ag-Grid renderer
 │       └── InteractiveUI.js    # Legacy HTML renderer (deprecated)
 ├── test/                       # Testing directory
@@ -222,12 +244,52 @@ Edit `config.json` to customize file names and directories:
 - Memory usage remains stable
 - Export operations complete in 1-3 seconds
 
+## Development
+
+### Running Tests
+
+The project uses Deno for running TypeScript tests:
+
+```bash
+# Run all unit tests
+deno test --allow-read test/unit/
+
+# Run tests with coverage
+deno test --allow-read --coverage=coverage test/unit/
+deno coverage coverage
+
+# Run tests in watch mode (auto-rerun on file changes)
+deno test --allow-read --watch test/unit/
+
+# Type-check TypeScript files
+deno check src/**/*.ts
+```
+
+**Test Suite**: 96 unit tests with 68.3% line coverage and 96.1% branch coverage
+
+### TypeScript Development
+
+The project is gradually migrating to TypeScript:
+- `.ts` files contain TypeScript source code with type definitions
+- `.js` files are copies for browser compatibility (browsers can't load .ts directly)
+- Deno provides native TypeScript support for testing
+- `deno.json` configures TypeScript compilation options
+- `tsconfig.json` provides IDE/editor support
+
+**Migrated to TypeScript**:
+- `VarianceCalculator.ts` - Variance calculation utility
+- `FileSelectionService.ts` - Directory selection and validation
+- `StatusMessageService.ts` - UI status messages
+- `FileMetricsService.ts` - File metrics calculation
+- `ValidationService.ts` - Data validation
+
 ## Architecture
 
-### Modular Design (v2.8.0+)
-The application is now organized into ES6 modules for better maintainability and testing:
-- **Main entry**: `index.html` (669 lines) imports from `src/app.js`
-- **Modules**: 11 JavaScript files in `src/` directory
+### Modular Design (v0.9.0+)
+The application is organized into ES6 modules with TypeScript for better maintainability:
+- **Main entry**: `index.html` imports from `src/app.js`
+- **Modules**: TypeScript + JavaScript files in `src/` directory
+- **Service Layer**: 4 specialized services extracted from UIController (30% code reduction)
 - **Tests**: 96 unit tests covering core business logic
 - **External dependencies**: CDN libraries (ag-Grid, Arquero, ExcelJS)
 - **Test coverage**: 68.3% line coverage, 96.1% branch coverage
@@ -235,6 +297,11 @@ The application is now organized into ES6 modules for better maintainability and
 ### Key Components
 - **DataStore** (`src/data/DataStore.js`): Manages trial balance and date dimension data (Singleton pattern)
 - **DataLoader** (`src/data/DataLoader.js`): Handles Excel file loading via File System Access API
+- **Services** (`src/services/*.ts`): Specialized service layer (TypeScript)
+  - `FileSelectionService` - Directory selection/validation
+  - `StatusMessageService` - UI status messaging
+  - `FileMetricsService` - Metrics calculation
+  - `ValidationService` - Data validation
 - **StatementGenerator** (`src/statements/StatementGenerator.js`): Transforms trial balance into financial statements
 - **AgGridStatementRenderer** (`src/ui/AgGridStatementRenderer.js`): Renders statements using ag-Grid
 - **UIController** (`src/ui/UIController.js`): Coordinates user interactions and data flow

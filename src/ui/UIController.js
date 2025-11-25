@@ -22,10 +22,10 @@ import AgGridStatementRenderer from './AgGridStatementRenderer.js';
 import { UI_CONFIG, UI_STATEMENT_TYPES } from '../constants.js';
 import { YEAR_CONFIG } from '../constants.js';
 import APP_CONFIG from '../config/appConfig.js';
-import FileSelectionService from '../services/FileSelectionService.ts';
-import StatusMessageService from '../services/StatusMessageService.ts';
-import FileMetricsService from '../services/FileMetricsService.ts';
-import ValidationService from '../services/ValidationService.ts';
+import FileSelectionService from '../services/FileSelectionService.js';
+import StatusMessageService from '../services/StatusMessageService.js';
+import FileMetricsService from '../services/FileMetricsService.js';
+import ValidationService from '../services/ValidationService.js';
 
 class UIController {
     constructor() {
