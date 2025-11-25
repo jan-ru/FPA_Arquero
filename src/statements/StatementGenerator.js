@@ -73,7 +73,7 @@ class StatementGenerator {
             variance_percent: d => {
                 const amt1 = d.amount_2024 || 0;
                 const amt2 = d.amount_2025 || 0;
-                return VarianceCalculator.calculatePercent(amt2, amt1);
+                return amt1 !== 0 ? ((amt2 - amt1) / Math.abs(amt1)) * 100 : 0;
             }
         });
     }
@@ -91,7 +91,7 @@ class StatementGenerator {
                 variance_percent: d => {
                     const total1 = aq.op.sum(d.amount_2024);
                     const total2 = aq.op.sum(d.amount_2025);
-                    return VarianceCalculator.calculatePercent(total2, total1);
+                    return total1 !== 0 ? ((total2 - total1) / Math.abs(total1)) * 100 : 0;
                 }
             });
     }
@@ -692,7 +692,7 @@ class StatementGenerator {
                             return amt2 === 0 ? 0 : null; // Return null for N/A cases
                         }
 
-                        return VarianceCalculator.calculatePercent(amt2, amt1);
+                        return ((amt2 - amt1) / Math.abs(amt1)) * 100;
                     }
                 });
 
