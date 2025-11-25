@@ -611,21 +611,22 @@ class StatementGenerator {
             const netChange1 = operating1 + investing1 + financing1;
             const netChange2 = operating2 + investing2 + financing2;
 
-            // Get starting cash from Balance Sheet (cash and cash equivalents)
-            let startingCash1 = 0, startingCash2 = 0;
+            // Get ending cash from Balance Sheet for both periods
+            let endingCash1 = 0, endingCash2 = 0;
             balanceDetails.forEach(row => {
                 if (row.name2) {
                     const subcategoryLower = row.name2.toLowerCase();
                     if (CATEGORY_DEFINITIONS.CASH.some(cat => subcategoryLower.includes(cat))) {
-                        startingCash1 += row[col1] || 0;
-                        startingCash2 += row[col2] || 0;
+                        endingCash1 += row[col1] || 0;
+                        endingCash2 += row[col2] || 0;
                     }
                 }
             });
 
-            // Calculate ending cash
-            const endingCash1 = startingCash1 + netChange1;
-            const endingCash2 = startingCash2 + netChange2;
+            // Calculate starting cash (reverse calculation from ending cash)
+            // Starting Cash = Ending Cash - Net Change
+            const startingCash1 = endingCash1 - netChange1;
+            const startingCash2 = endingCash2 - netChange2;
 
             return {
                 details: withVariances,
