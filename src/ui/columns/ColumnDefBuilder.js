@@ -18,6 +18,8 @@ export class ColumnDefBuilder {
         this.year2 = year2;
         this.formatCurrency = null; // Will be set from renderer
         this.varianceRenderer = null; // Will be set from renderer
+        this.ltmLabel1 = null; // LTM label for column 1
+        this.ltmLabel2 = null; // LTM label for column 2
     }
 
     /**
@@ -31,13 +33,32 @@ export class ColumnDefBuilder {
     }
 
     /**
+     * Set LTM labels for column headers
+     * @param {string|null} label1 - LTM label for column 1
+     * @param {string|null} label2 - LTM label for column 2
+     */
+    setLTMLabels(label1, label2) {
+        this.ltmLabel1 = label1;
+        this.ltmLabel2 = label2;
+    }
+
+    /**
      * Build complete column definitions
      * @returns {Array<Object>} Array of column definitions
      */
     build() {
         // Get UI settings
-        const period1Label = this.getPeriodLabel(this.year1);
-        const period2Label = this.getPeriodLabel(this.year2);
+        let period1Label = this.getPeriodLabel(this.year1);
+        let period2Label = this.getPeriodLabel(this.year2);
+
+        // Override with LTM labels if they are set
+        if (this.ltmLabel1) {
+            period1Label = this.ltmLabel1;
+        }
+        if (this.ltmLabel2) {
+            period2Label = this.ltmLabel2;
+        }
+
         // Use the single variance selector for all variance columns
         const varianceMode = document.getElementById('variance-selector')?.value || 'none';
 

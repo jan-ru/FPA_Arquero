@@ -657,6 +657,7 @@
                 <div style="display: flex; gap: 8px; align-items: center;">
                     <label style="font-size: 13px; color: #2c5282; font-weight: 600; min-width: 80px;">Period (2025):</label>
                     <select id="period-selector" class="period-dropdown-header" style="padding: 6px 10px; border-radius: 4px; border: 1px solid #cbd5e0; background: white; font-size: 12px;">
+                        <option value="ltm">LTM (Latest 12 Months)</option>
                         <option value="all" selected>All (Year-to-Date)</option>
                         <option value="Q1">Q1 (Jan-Mar)</option>
                         <option value="Q2">Q2 (Apr-Jun)</option>
@@ -688,6 +689,9 @@
                     </select>
                 </div>
             </div>
+
+            <!-- LTM Warning Message -->
+            <div id="ltm-warning" style="display: none; padding: 10px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; color: #856404; font-size: 13px; margin-bottom: 15px;"></div>
 
             <!-- ag-Grid container -->
             <div id="ag-grid-container" class="ag-theme-alpine" style="width: 100%;"></div>

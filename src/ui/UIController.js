@@ -285,17 +285,31 @@ class UIController {
             // Get comparison type (YoY, LTM, MoM)
             const comparisonType = document.getElementById('comparison-selector')?.value || 'yoy';
 
-            // Build period options based on comparison type
+            // Build period options based on comparison type and period selection
             let periodOptions;
 
-            if (comparisonType === 'yoy') {
+            // Check if LTM is selected in period dropdown
+            if (periodValue === 'ltm' || periodValue === YEAR_CONFIG.LTM?.OPTION_VALUE) {
+                // LTM (Latest Twelve Months) selected
+                // Both columns show LTM data
+                periodOptions = {
+                    [`period${year1}`]: `${year1}-ltm`,
+                    [`period${year2}`]: `${year2}-ltm`
+                };
+
+                // Hide LTM warning if it was showing
+                const ltmWarning = document.getElementById('ltm-warning');
+                if (ltmWarning) {
+                    ltmWarning.style.display = 'none';
+                }
+            } else if (comparisonType === 'yoy') {
                 // Year-over-Year: Same period for both years
                 periodOptions = {
                     [`period${year1}`]: `${year1}-${periodValue}`,
                     [`period${year2}`]: `${year2}-${periodValue}`
                 };
             } else if (comparisonType === 'ltm') {
-                // Last Twelve Months:
+                // Last Twelve Months (from comparison selector):
                 // 2025 column shows last 12 months ending at selected period
                 // 2024 column shows prior 12 months ending at same period
                 periodOptions = {

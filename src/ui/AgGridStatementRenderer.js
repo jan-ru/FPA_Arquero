@@ -615,6 +615,15 @@ class AgGridStatementRenderer {
             (value, params) => this.formatCurrency(value, params),
             (params) => this.varianceRenderer(params)
         );
+
+        // Pass LTM labels if available
+        if (this.currentStatementData && this.currentStatementData.ltmLabels) {
+            builder.setLTMLabels(
+                this.currentStatementData.ltmLabels.column1,
+                this.currentStatementData.ltmLabels.column2
+            );
+        }
+
         return builder.build();
 
         // OLD IMPLEMENTATION KEPT FOR REFERENCE - CAN BE REMOVED AFTER TESTING
