@@ -557,8 +557,13 @@
                     </div>
                     <span id="input-dir-status" class="status-text"></span>
                     <div id="loading-status" class="loading-status"></div>
+
+                    <!-- Dev info section (shown only when dev mode is on) - positioned below controls -->
+                    <div id="dev-info" style="display: none; margin-top: 8px; padding: 8px; background: #f0f4f8; border-radius: 4px; font-size: 11px; color: #666;">
+                        <!-- Library versions will be populated by JavaScript -->
+                    </div>
                 </div>
-                
+
                 <!-- Right side: File status indicators -->
                 <div style="flex: 0 0 auto; display: flex; gap: 15px;">
                     <div class="file-status-container">
@@ -579,11 +584,6 @@
                             <!-- Metrics will be populated by JavaScript -->
                         </div>
                     </div>
-                </div>
-
-                <!-- Dev info section (shown only when dev mode is on) -->
-                <div id="dev-info" style="display: none; margin-top: 10px; padding: 8px; background: #f0f4f8; border-radius: 4px; font-size: 11px; color: #666;">
-                    <!-- Library versions will be populated by JavaScript -->
                 </div>
             </div>
             
