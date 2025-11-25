@@ -8,7 +8,7 @@
  */
 
 import { YEAR_CONFIG } from '../../constants.js';
-import VarianceCalculator from '../../utils/VarianceCalculator.ts';
+import VarianceCalculator from '../../utils/VarianceCalculator.js';
 
 export class CashFlowStatementSpecialRows {
     /**

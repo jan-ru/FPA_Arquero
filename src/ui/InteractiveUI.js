@@ -15,7 +15,7 @@
  */
 
 import CategoryMatcher from '../utils/CategoryMatcher.js';
-import VarianceCalculator from '../utils/VarianceCalculator.ts';
+import VarianceCalculator from '../utils/VarianceCalculator.js';
 import {
     YEAR_CONFIG,
     UI_CONFIG,

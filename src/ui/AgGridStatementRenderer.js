@@ -12,7 +12,7 @@
  */
 
 import CategoryMatcher from '../utils/CategoryMatcher.js';
-import VarianceCalculator from '../utils/VarianceCalculator.ts';
+import VarianceCalculator from '../utils/VarianceCalculator.js';
 import Logger from '../utils/Logger.js';
 import HierarchyBuilder from '../utils/HierarchyBuilder.js';
 import SpecialRowsFactory from '../statements/specialrows/SpecialRowsFactory.js';
