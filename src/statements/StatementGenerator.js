@@ -222,12 +222,30 @@ class StatementGenerator {
                     ? [2024]
                     : [];
 
+                // Validate that we have data for LTM calculation
+                if (availableYears.length === 0) {
+                    throw new Error('No data available for LTM calculation. Please load trial balance files first.');
+                }
+
+                if (filtered.numRows() === 0) {
+                    throw new Error('No movements data available for LTM calculation. The selected statement type may not have any data.');
+                }
+
                 // Calculate LTM info
                 const ltmInfo = LTMCalculator.calculateLTMInfo(
                     filtered,
                     availableYears,
                     YEAR_CONFIG.LTM.MONTHS_COUNT
                 );
+
+                // Validate that LTM calculation returned data
+                if (!ltmInfo || !ltmInfo.filteredData || ltmInfo.filteredData.numRows() === 0) {
+                    Logger.warn('LTM calculation returned no data', {
+                        availableYears,
+                        latestPeriod: ltmInfo?.latest,
+                        ranges: ltmInfo?.ranges
+                    });
+                }
 
                 // Handle LTM for column 1
                 if (isLTM1) {
