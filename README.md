@@ -18,10 +18,11 @@ See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
 - **Single-Page Application**: No installation required, runs entirely in the browser
 - **Professional Data Grid**: Built with ag-Grid Community Edition for fast, responsive display
 - **Multi-Period Analysis**: Compare any two periods (year, quarter, or month) with automatic variance calculations
-- **Flexible Period Selection**: Choose from yearly (All), quarterly (Q1-Q4), or monthly (P1-P12) periods
+- **Flexible Period Selection**: Choose from yearly (All), quarterly (Q1-Q4), monthly (P1-P12), or **LTM (Latest 12 Months)**
+- **LTM (Latest Twelve Months)**: Rolling 12-month analysis that automatically spans fiscal year boundaries
 - **Dynamic Variance Columns**: Configurable variance display (Amount, Percent, or Both)
-- **CSV Export**: Export current statement to CSV (opens in Excel)
-- **Data Validation**: Automatic detection of unmapped accounts and balance verification
+- **CSV Export**: Export current statement to CSV (opens in Excel) with LTM labels
+- **Data Validation**: Automatic detection of unmapped accounts and balance verification with LTM data availability warnings
 - **Modern UI**: Clean, responsive design with professional styling
 
 ## Technology Stack
@@ -61,7 +62,12 @@ Create an `input` directory with the following Excel files:
 ### 3. View Financial Statements
 
 - **Statement Selector**: Use the dropdown to switch between Balance Sheet, Income Statement, and Cash Flow Statement
-- **Period Selection**: Choose periods for comparison (supports Year, Quarter, or Month)
+- **Period Selection**: Choose periods for comparison (supports Year, Quarter, Month, or LTM)
+- **LTM (Latest 12 Months)**: Select "LTM" from the period dropdown to view rolling 12-month data
+  - Automatically calculates the most recent 12 consecutive months
+  - Spans fiscal year boundaries (e.g., 2024 P7-P12 + 2025 P1-P6)
+  - Displays period range in column headers (e.g., "LTM (2024 P7 - 2025 P6)")
+  - Shows warnings if fewer than 12 months of data are available
 - **Variance Columns**: Configure what variance data to display (Amount/Percent/Both/None)
 - **Detail Level**: Toggle between "All Levels" (expanded) and "Summary Only" (collapsed)
 - **Row Hierarchy**: Data is organized by code hierarchy (code0 → code1 → code2 → code3)

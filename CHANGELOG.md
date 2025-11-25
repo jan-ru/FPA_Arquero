@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - LTM (Latest Twelve Months) Feature
+
+- **LTM Period Selection** (v3.2):
+  - Added "LTM (Latest 12 Months)" option to period dropdown
+  - Automatic calculation of rolling 12-month periods
+  - Supports cross-fiscal-year periods (e.g., 2024 P7-P12 + 2025 P1-P6)
+  - Dynamic period range display in column headers
+  - LTM labels in CSV exports
+
+- **LTMCalculator Utility**:
+  - Created `src/utils/LTMCalculator.js` with 6 core methods
+  - `getLatestAvailablePeriod()` - Find most recent data period
+  - `calculateLTMRange()` - Calculate 12-month period ranges
+  - `filterMovementsForLTM()` - Filter data for LTM periods
+  - `generateLTMLabel()` - Create display labels
+  - `hasCompleteData()` - Validate data availability
+  - `calculateLTMInfo()` - Convenience method for complete workflow
+  - 29 unit tests with 100% coverage
+
+- **LTM Integration**:
+  - Updated `StatementGenerator` to detect and process LTM selections
+  - Added LTM filtering branch in period logic
+  - LTM labels stored in statement result object
+  - Updated `UIController` to handle 'ltm' period value
+  - Updated `ColumnDefBuilder` to display LTM labels in headers
+  - Updated `AgGridStatementRenderer` to pass LTM labels
+
+- **LTM Validation**:
+  - Data availability checks before LTM calculation
+  - Warning display for incomplete data (< 12 months)
+  - Clear error messages for missing data
+  - Debug logging for troubleshooting
+
+- **LTM Testing**:
+  - 8 integration tests covering full LTM workflow
+  - Tests for year boundaries, statement types, incomplete data
+  - Edge case testing (empty data, single year, P12 boundary)
+  - All tests passing (37 total: 29 unit + 8 integration)
+
 ### Added - TypeScript Migration & Code Quality
 
 - **TypeScript Support**:
