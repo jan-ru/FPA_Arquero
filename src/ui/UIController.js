@@ -510,8 +510,8 @@ class UIController {
             }
         };
 
-        // Create the grid
-        new agGrid.Grid(gridDiv, gridOptions);
+        // Create the grid using v31 API
+        agGrid.createGrid(gridDiv, gridOptions);
 
         previewDiv.style.display = 'block';
     }

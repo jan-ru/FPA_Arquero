@@ -88,8 +88,8 @@ class AgGridStatementRenderer {
             this.gridApi.destroy();
         }
 
-        // Create new grid
-        new agGrid.Grid(this.gridDiv, gridOptions);
+        // Create new grid using v31 API
+        this.gridApi = agGrid.createGrid(this.gridDiv, gridOptions);
     }
 
     // Prepare data for ag-Grid
