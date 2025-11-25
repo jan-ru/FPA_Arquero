@@ -139,24 +139,30 @@ export class FileMetricsService {
      * @param {FileMetadata} metadata - File metadata (originalRows, originalColumns, longRows, longColumns)
      * @param {StatementTotals} totals - Debit/credit totals {bal: {debit, credit}, pnl: {debit, credit}}
      * @param {function(number): string} formatNumber - Number formatting function
+     * @param {boolean} showDetails - Whether to show detailed metrics (controlled by DEV toggle)
      * @returns {string} HTML string for metrics display
      */
-    buildMetricsHTML(metadata, totals, formatNumber) {
+    buildMetricsHTML(metadata, totals, formatNumber, showDetails = true) {
         const metrics = [];
 
-        // Row/column counts
-        metrics.push(
-            `${metadata.originalRows}R × ${metadata.originalColumns}C (wide) → ` +
-            `${metadata.longRows}R × ${metadata.longColumns}C (long)`
-        );
+        if (showDetails) {
+            // Row/column counts (only in dev mode)
+            metrics.push(
+                `${metadata.originalRows}R × ${metadata.originalColumns}C (wide) → ` +
+                `${metadata.longRows}R × ${metadata.longColumns}C (long)`
+            );
 
-        // Debit/Credit totals
-        metrics.push(
-            `BAL: DR €${formatNumber(totals.bal.debit)} | CR €${formatNumber(totals.bal.credit)}`
-        );
-        metrics.push(
-            `PNL: DR €${formatNumber(totals.pnl.debit)} | CR €${formatNumber(totals.pnl.credit)}`
-        );
+            // Debit/Credit totals with delta (only in dev mode)
+            const balDelta = totals.bal.debit - totals.bal.credit;
+            const pnlDelta = totals.pnl.debit - totals.pnl.credit;
+
+            metrics.push(
+                `BAL: DR ${formatNumber(totals.bal.debit)} | CR ${formatNumber(totals.bal.credit)} | Δ ${formatNumber(balDelta)}`
+            );
+            metrics.push(
+                `PNL: DR ${formatNumber(totals.pnl.debit)} | CR ${formatNumber(totals.pnl.credit)} | Δ ${formatNumber(pnlDelta)}`
+            );
+        }
 
         return metrics.join('<br>');
     }
@@ -168,9 +174,10 @@ export class FileMetricsService {
      * @param {PeriodValue} periodValue - Period value ('all', 'q1', 'p9', etc.)
      * @param {FileMetadata} metadata - File metadata
      * @param {function(number): string} formatNumber - Number formatting function
+     * @param {boolean} showDetails - Whether to show detailed metrics (controlled by DEV toggle)
      * @returns {void}
      */
-    updateFileMetrics(fileId, year, periodValue, metadata, formatNumber) {
+    updateFileMetrics(fileId, year, periodValue, metadata, formatNumber, showDetails = true) {
         const metricsElement = document.getElementById(`metrics-${fileId}`);
         if (!metricsElement) return;
 
@@ -183,9 +190,9 @@ export class FileMetricsService {
         const totals = this.calculateDebitCreditTotals(year, periodValue);
 
         // Build and display metrics HTML
-        const metricsHTML = this.buildMetricsHTML(metadata, totals, formatNumber);
+        const metricsHTML = this.buildMetricsHTML(metadata, totals, formatNumber, showDetails);
         metricsElement.innerHTML = metricsHTML;
-        metricsElement.style.display = 'block';
+        metricsElement.style.display = showDetails ? 'block' : 'none';
     }
 
     /**

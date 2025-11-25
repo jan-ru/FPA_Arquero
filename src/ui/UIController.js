@@ -541,12 +541,17 @@ class UIController {
             const year1 = YEAR_CONFIG.getYear(0);
             const year2 = YEAR_CONFIG.getYear(1);
 
+            // Check if dev mode is enabled
+            const devToggle = document.getElementById('dev-toggle');
+            const showDetails = devToggle ? devToggle.checked : true;
+
             // Update 2024 metrics
             if (this.fileMetadata['2024']) {
                 this.fileMetricsService.updateFileMetrics(
                     'tb2024', year1, periodValue,
                     this.fileMetadata['2024'],
-                    this.formatNumber.bind(this)
+                    this.formatNumber.bind(this),
+                    showDetails
                 );
                 this.statusMessageService.updateFileStatus('tb2024', 'success', '');
             }
@@ -556,7 +561,8 @@ class UIController {
                 this.fileMetricsService.updateFileMetrics(
                     'tb2025', year2, periodValue,
                     this.fileMetadata['2025'],
-                    this.formatNumber.bind(this)
+                    this.formatNumber.bind(this),
+                    showDetails
                 );
                 this.statusMessageService.updateFileStatus('tb2025', 'success', '');
             }
@@ -571,6 +577,23 @@ class UIController {
             console.log('Select Directory button clicked');
             this.handleSelectInputDirectory();
         });
+
+        // Dev toggle - show/hide metrics and dev info
+        const devToggle = document.getElementById('dev-toggle');
+        if (devToggle) {
+            devToggle.addEventListener('change', () => {
+                const showDetails = devToggle.checked;
+                const devInfo = document.getElementById('dev-info');
+
+                // Show/hide dev info section
+                if (devInfo) {
+                    devInfo.style.display = showDetails ? 'block' : 'none';
+                }
+
+                // Update metrics display
+                this.updateFileStatusProfit();
+            });
+        }
 
         // Statement selector dropdown
         const statementSelector = document.getElementById('statement-selector');

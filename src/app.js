@@ -82,6 +82,37 @@ async function loadVersion() {
 }
 
 /**
+ * Display library versions in dev info section
+ */
+function showLibraryVersions() {
+    const devInfo = document.getElementById('dev-info');
+    if (!devInfo) return;
+
+    const versions = [];
+
+    // ag-Grid version
+    if (typeof agGrid !== 'undefined' && agGrid.VERSION) {
+        versions.push(`ag-Grid Community: ${agGrid.VERSION}`);
+    }
+
+    // Arquero version
+    if (typeof aq !== 'undefined' && aq.version) {
+        versions.push(`Arquero: ${aq.version}`);
+    }
+
+    // ExcelJS doesn't expose version easily, so we'll note it's loaded
+    if (typeof ExcelJS !== 'undefined') {
+        versions.push(`ExcelJS: loaded`);
+    }
+
+    // Application version
+    const appVersion = document.getElementById('app-version')?.textContent || 'unknown';
+    versions.push(`App: ${appVersion}`);
+
+    devInfo.innerHTML = '<strong>Libraries:</strong> ' + versions.join(' | ');
+}
+
+/**
  * Initialize the application
  * - Checks browser compatibility
  * - Loads configuration
@@ -95,6 +126,9 @@ async function init() {
 
     // Load and display version
     await loadVersion();
+
+    // Show library versions in dev mode
+    showLibraryVersions();
 
     // Check browser compatibility
     if (!window.showDirectoryPicker) {
