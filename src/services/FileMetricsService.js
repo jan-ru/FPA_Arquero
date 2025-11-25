@@ -10,73 +10,58 @@
  * Extracted from UIController to improve separation of concerns
  */
 
-// Type definitions
-export interface DebitCreditTotals {
-    readonly debit: number;
-    readonly credit: number;
-}
+/**
+ * @typedef {Object} DebitCreditTotals
+ * @property {number} debit
+ * @property {number} credit
+ */
 
-export interface StatementTotals {
-    readonly bal: DebitCreditTotals;
-    readonly pnl: DebitCreditTotals;
-}
+/**
+ * @typedef {Object} StatementTotals
+ * @property {DebitCreditTotals} bal
+ * @property {DebitCreditTotals} pnl
+ */
 
-export interface FileMetadata {
-    readonly originalRows: number;
-    readonly originalColumns: number;
-    readonly longRows: number;
-    readonly longColumns: number;
-}
+/**
+ * @typedef {Object} FileMetadata
+ * @property {number} originalRows
+ * @property {number} originalColumns
+ * @property {number} longRows
+ * @property {number} longColumns
+ */
 
-export interface FileMetadataMap {
-    [year: string]: FileMetadata;
-}
+/**
+ * @typedef {Object.<string, FileMetadata>} FileMetadataMap
+ */
 
-export type PeriodValue = 'all' | string; // 'all', 'q1', 'p9', '9', etc.
-export type Year = '2024' | '2025';
-export type FileId = 'tb2024' | 'tb2025';
+/**
+ * @typedef {'all' | string} PeriodValue - 'all', 'q1', 'p9', '9', etc.
+ */
 
-// DataStore interface (minimal typing for what we need)
-interface MovementsTable {
-    params(params: Record<string, number>): MovementsTable;
-    filter(predicate: string | ((row: MovementRow) => boolean)): MovementsTable;
-    rollup(ops: Record<string, unknown>): {
-        objects(): DebitCreditTotals[];
-        numRows(): number;
-        get(column: string, index: number): number;
-    };
-}
+/**
+ * @typedef {'2024' | '2025'} Year
+ */
 
-interface MovementRow {
-    readonly statement_type: 'BS' | 'IS';
-    readonly period: number;
-    readonly debit: number;
-    readonly credit: number;
-    readonly movement_amount: number;
-}
-
-interface DataStore {
-    getMovementsTable(year: Year): MovementsTable | null;
-}
+/**
+ * @typedef {'tb2024' | 'tb2025'} FileId
+ */
 
 export class FileMetricsService {
-    private readonly dataStore: DataStore;
-
     /**
      * Create a new FileMetricsService
-     * @param dataStore - DataStore instance for accessing data
+     * @param {Object} dataStore - DataStore instance for accessing data
      */
-    constructor(dataStore: DataStore) {
+    constructor(dataStore) {
         this.dataStore = dataStore;
     }
 
     /**
      * Calculate debit and credit totals for BAL and PNL
-     * @param year - Year ('2024' or '2025')
-     * @param periodValue - Period value ('all', 'q1', 'p9', etc.)
-     * @returns Totals object with bal and pnl properties
+     * @param {Year} year - Year ('2024' or '2025')
+     * @param {PeriodValue} periodValue - Period value ('all', 'q1', 'p9', etc.)
+     * @returns {StatementTotals} Totals object with bal and pnl properties
      */
-    calculateDebitCreditTotals(year: Year, periodValue: PeriodValue): StatementTotals {
+    calculateDebitCreditTotals(year, periodValue) {
         try {
             // Get movements table for the year
             const movements = this.dataStore.getMovementsTable(year);
@@ -97,17 +82,17 @@ export class FileMetricsService {
             }
 
             // Calculate totals for BAL (Balance Sheet) and PNL (Income Statement)
-            const balData = filtered.filter((d: MovementRow) => d.statement_type === 'BS');
-            const pnlData = filtered.filter((d: MovementRow) => d.statement_type === 'IS');
+            const balData = filtered.filter((d) => d.statement_type === 'BS');
+            const pnlData = filtered.filter((d) => d.statement_type === 'IS');
 
             const balTotals = balData.rollup({
-                debit: (aq as any).op.sum('debit'),
-                credit: (aq as any).op.sum('credit')
+                debit: aq.op.sum('debit'),
+                credit: aq.op.sum('credit')
             }).objects()[0] || { debit: 0, credit: 0 };
 
             const pnlTotals = pnlData.rollup({
-                debit: (aq as any).op.sum('debit'),
-                credit: (aq as any).op.sum('credit')
+                debit: aq.op.sum('debit'),
+                credit: aq.op.sum('credit')
             }).objects()[0] || { debit: 0, credit: 0 };
 
             return {
@@ -125,10 +110,10 @@ export class FileMetricsService {
 
     /**
      * Parse period value to get maximum period number
-     * @param periodValue - Period value ('all', 'q1', 'p9', '9', etc.)
-     * @returns Maximum period number
+     * @param {PeriodValue} periodValue - Period value ('all', 'q1', 'p9', '9', etc.)
+     * @returns {number} Maximum period number
      */
-    parsePeriodValue(periodValue: PeriodValue): number {
+    parsePeriodValue(periodValue) {
         if (periodValue === 'all') {
             return 12;
         } else if (periodValue.toUpperCase().startsWith('Q')) {
@@ -144,17 +129,13 @@ export class FileMetricsService {
 
     /**
      * Build metrics HTML for display
-     * @param metadata - File metadata (originalRows, originalColumns, longRows, longColumns)
-     * @param totals - Debit/credit totals {bal: {debit, credit}, pnl: {debit, credit}}
-     * @param formatNumber - Number formatting function
-     * @returns HTML string for metrics display
+     * @param {FileMetadata} metadata - File metadata (originalRows, originalColumns, longRows, longColumns)
+     * @param {StatementTotals} totals - Debit/credit totals {bal: {debit, credit}, pnl: {debit, credit}}
+     * @param {function(number): string} formatNumber - Number formatting function
+     * @returns {string} HTML string for metrics display
      */
-    buildMetricsHTML(
-        metadata: FileMetadata,
-        totals: StatementTotals,
-        formatNumber: (value: number) => string
-    ): string {
-        const metrics: string[] = [];
+    buildMetricsHTML(metadata, totals, formatNumber) {
+        const metrics = [];
 
         // Row/column counts
         metrics.push(
@@ -175,19 +156,14 @@ export class FileMetricsService {
 
     /**
      * Update file metrics display in DOM
-     * @param fileId - File ID ('tb2024' or 'tb2025')
-     * @param year - Year ('2024' or '2025')
-     * @param periodValue - Period value ('all', 'q1', 'p9', etc.)
-     * @param metadata - File metadata
-     * @param formatNumber - Number formatting function
+     * @param {FileId} fileId - File ID ('tb2024' or 'tb2025')
+     * @param {Year} year - Year ('2024' or '2025')
+     * @param {PeriodValue} periodValue - Period value ('all', 'q1', 'p9', etc.)
+     * @param {FileMetadata} metadata - File metadata
+     * @param {function(number): string} formatNumber - Number formatting function
+     * @returns {void}
      */
-    updateFileMetrics(
-        fileId: FileId,
-        year: Year,
-        periodValue: PeriodValue,
-        metadata: FileMetadata,
-        formatNumber: (value: number) => string
-    ): void {
+    updateFileMetrics(fileId, year, periodValue, metadata, formatNumber) {
         const metricsElement = document.getElementById(`metrics-${fileId}`);
         if (!metricsElement) return;
 
@@ -207,9 +183,10 @@ export class FileMetricsService {
 
     /**
      * Hide file metrics display
-     * @param fileId - File ID ('tb2024' or 'tb2025')
+     * @param {FileId} fileId - File ID ('tb2024' or 'tb2025')
+     * @returns {void}
      */
-    hideFileMetrics(fileId: FileId): void {
+    hideFileMetrics(fileId) {
         const metricsElement = document.getElementById(`metrics-${fileId}`);
         if (metricsElement) {
             metricsElement.style.display = 'none';
@@ -218,18 +195,14 @@ export class FileMetricsService {
 
     /**
      * Update all file metrics for given period
-     * @param fileMetadataMap - Map of year to metadata
-     * @param periodValue - Period value
-     * @param years - Array of years to update
-     * @param formatNumber - Number formatting function
+     * @param {FileMetadataMap} fileMetadataMap - Map of year to metadata
+     * @param {PeriodValue} periodValue - Period value
+     * @param {Year[]} years - Array of years to update
+     * @param {function(number): string} formatNumber - Number formatting function
+     * @returns {void}
      */
-    updateAllFileMetrics(
-        fileMetadataMap: FileMetadataMap,
-        periodValue: PeriodValue,
-        years: Year[],
-        formatNumber: (value: number) => string
-    ): void {
-        const fileIdMap: Record<Year, FileId> = {
+    updateAllFileMetrics(fileMetadataMap, periodValue, years, formatNumber) {
+        const fileIdMap = {
             '2024': 'tb2024',
             '2025': 'tb2025'
         };
@@ -246,42 +219,42 @@ export class FileMetricsService {
 
     /**
      * Calculate profit for a specific period
-     * @param year - Year ('2024' or '2025')
-     * @param periodValue - Period value ('all', 'q1', 'p9', etc.)
-     * @returns Calculated profit
+     * @param {Year} year - Year ('2024' or '2025')
+     * @param {PeriodValue} periodValue - Period value ('all', 'q1', 'p9', etc.)
+     * @returns {number} Calculated profit
      */
-    calculateProfitForPeriod(year: Year, periodValue: PeriodValue): number {
+    calculateProfitForPeriod(year, periodValue) {
         try {
             const movementsTable = this.dataStore.getMovementsTable(year);
             if (!movementsTable) return 0;
 
             // Determine which periods to include based on periodValue
-            let filtered: MovementsTable;
+            let filtered;
             if (periodValue === 'all') {
                 // All periods (1-12)
                 filtered = movementsTable
-                    .filter((d: MovementRow) => d.statement_type === 'IS')
-                    .filter((d: MovementRow) => d.period >= 1 && d.period <= 12);
+                    .filter((d) => d.statement_type === 'IS')
+                    .filter((d) => d.period >= 1 && d.period <= 12);
             } else if (periodValue.startsWith('Q')) {
                 // Quarter: Q1 = periods 1-3, Q2 = 4-6, Q3 = 7-9, Q4 = 10-12
                 const quarter = parseInt(periodValue.substring(1));
                 const startPeriod = (quarter - 1) * 3 + 1;
                 const endPeriod = quarter * 3;
                 filtered = movementsTable
-                    .filter((d: MovementRow) => d.statement_type === 'IS')
+                    .filter((d) => d.statement_type === 'IS')
                     .params({ start: startPeriod, end: endPeriod })
                     .filter('(d, $) => d.period >= $.start && d.period <= $.end');
             } else {
                 // Individual period (e.g., "9" for P9)
                 const period = parseInt(periodValue);
                 filtered = movementsTable
-                    .filter((d: MovementRow) => d.statement_type === 'IS')
+                    .filter((d) => d.statement_type === 'IS')
                     .params({ maxPeriod: period })
                     .filter('(d, $) => d.period >= 1 && d.period <= $.maxPeriod');
             }
 
             // Calculate total
-            const isAccounts = filtered.rollup({ total: (d: any) => (aq as any).op.sum(d.movement_amount) });
+            const isAccounts = filtered.rollup({ total: (d) => aq.op.sum(d.movement_amount) });
 
             // Movement amounts are already sign-flipped during data load, so we can use directly
             const profit = isAccounts.numRows() > 0 ? isAccounts.get('total', 0) : 0;

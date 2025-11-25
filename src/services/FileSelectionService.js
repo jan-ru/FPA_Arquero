@@ -12,55 +12,50 @@
 
 import APP_CONFIG from '../config/appConfig.js';
 
-// Interface definitions
-export interface DirectorySelection {
-    readonly dirHandle: FileSystemDirectoryHandle;
-    readonly dirName: string;
-    readonly pathDisplay: string;
-}
+/**
+ * @typedef {Object} DirectorySelection
+ * @property {FileSystemDirectoryHandle} dirHandle
+ * @property {string} dirName
+ * @property {string} pathDisplay
+ */
 
-export interface DirectoryValidation {
-    readonly valid: boolean;
-    readonly error: string | null;
-}
+/**
+ * @typedef {Object} DirectoryValidation
+ * @property {boolean} valid
+ * @property {string | null} error
+ */
 
-export interface RequiredFilesCheck {
-    readonly exists: boolean;
-    readonly missingFiles: string[];
-}
+/**
+ * @typedef {Object} RequiredFilesCheck
+ * @property {boolean} exists
+ * @property {string[]} missingFiles
+ */
 
-export interface SelectionResult {
-    readonly success: boolean;
-    readonly dirHandle?: FileSystemDirectoryHandle;
-    readonly dirName?: string;
-    readonly pathDisplay?: string;
-    readonly error?: string;
-    readonly canceled?: boolean;
-}
-
-// DataLoader interface (minimal typing for what we need)
-interface DataLoader {
-    selectInputDirectory(): Promise<void>;
-    inputDirHandle: FileSystemDirectoryHandle;
-}
+/**
+ * @typedef {Object} SelectionResult
+ * @property {boolean} success
+ * @property {FileSystemDirectoryHandle} [dirHandle]
+ * @property {string} [dirName]
+ * @property {string} [pathDisplay]
+ * @property {string} [error]
+ * @property {boolean} [canceled]
+ */
 
 export class FileSelectionService {
-    private readonly dataLoader: DataLoader;
-
     /**
      * Create a new FileSelectionService
-     * @param dataLoader - DataLoader instance for directory operations
+     * @param {Object} dataLoader - DataLoader instance for directory operations
      */
-    constructor(dataLoader: DataLoader) {
+    constructor(dataLoader) {
         this.dataLoader = dataLoader;
     }
 
     /**
      * Select input directory using File System Access API
-     * @returns Promise resolving to directory selection details
+     * @returns {Promise<DirectorySelection>} Promise resolving to directory selection details
      * @throws {Error} If user cancels or directory selection fails
      */
-    async selectDirectory(): Promise<DirectorySelection> {
+    async selectDirectory() {
         await this.dataLoader.selectInputDirectory();
 
         const dirHandle = this.dataLoader.inputDirHandle;
@@ -72,12 +67,12 @@ export class FileSelectionService {
 
     /**
      * Get formatted path display for directory
-     * @param dirHandle - Directory handle
-     * @param dirName - Directory name fallback
-     * @returns Promise resolving to formatted path or directory name
+     * @param {FileSystemDirectoryHandle} dirHandle - Directory handle
+     * @param {string} dirName - Directory name fallback
+     * @returns {Promise<string>} Promise resolving to formatted path or directory name
      * @private
      */
-    private async getPathDisplay(dirHandle: FileSystemDirectoryHandle, dirName: string): Promise<string> {
+    async getPathDisplay(dirHandle, dirName) {
         try {
             if (dirHandle.resolve) {
                 const path = await dirHandle.resolve(dirHandle);
@@ -93,10 +88,10 @@ export class FileSelectionService {
 
     /**
      * Validate that directory is named "input"
-     * @param dirName - Directory name to validate
-     * @returns Validation result with valid flag and optional error message
+     * @param {string} dirName - Directory name to validate
+     * @returns {DirectoryValidation} Validation result with valid flag and optional error message
      */
-    validateDirectoryName(dirName: string): DirectoryValidation {
+    validateDirectoryName(dirName) {
         const expectedName = 'input';
         const isValid = dirName.toLowerCase() === expectedName;
 
@@ -112,15 +107,15 @@ export class FileSelectionService {
 
     /**
      * Check if all required files exist in the selected directory
-     * @returns Promise resolving to check results with missing files list
+     * @returns {Promise<RequiredFilesCheck>} Promise resolving to check results with missing files list
      */
-    async checkRequiredFiles(): Promise<RequiredFilesCheck> {
+    async checkRequiredFiles() {
         const requiredFiles = [
             APP_CONFIG.excel.trialBalance2024,
             APP_CONFIG.excel.trialBalance2025
         ];
 
-        const missingFiles: string[] = [];
+        const missingFiles = [];
 
         for (const filename of requiredFiles) {
             try {
@@ -140,9 +135,9 @@ export class FileSelectionService {
 
     /**
      * Get list of required file names
-     * @returns Array of required file names
+     * @returns {string[]} Array of required file names
      */
-    getRequiredFileNames(): string[] {
+    getRequiredFileNames() {
         return [
             APP_CONFIG.excel.trialBalance2024,
             APP_CONFIG.excel.trialBalance2025
@@ -151,9 +146,9 @@ export class FileSelectionService {
 
     /**
      * Complete directory selection and validation workflow
-     * @returns Promise resolving to selection result with success flag and details
+     * @returns {Promise<SelectionResult>} Promise resolving to selection result with success flag and details
      */
-    async selectAndValidateDirectory(): Promise<SelectionResult> {
+    async selectAndValidateDirectory() {
         try {
             // Step 1: Select directory
             const { dirHandle, dirName, pathDisplay } = await this.selectDirectory();
@@ -186,7 +181,7 @@ export class FileSelectionService {
 
         } catch (error) {
             // User canceled the dialog
-            if ((error as Error).name === 'AbortError') {
+            if (error.name === 'AbortError') {
                 return {
                     success: false,
                     error: 'Directory selection canceled',
@@ -197,7 +192,7 @@ export class FileSelectionService {
             // Other errors
             return {
                 success: false,
-                error: (error as Error).message || 'Failed to select directory'
+                error: error.message || 'Failed to select directory'
             };
         }
     }

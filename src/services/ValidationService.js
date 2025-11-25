@@ -10,68 +10,57 @@
  * Extracted from UIController to improve separation of concerns
  */
 
-// Type definitions
-export interface ValidationResult {
-    readonly errors?: string[];
-    readonly warnings?: string[];
-}
+/**
+ * @typedef {Object} ValidationResult
+ * @property {string[]} [errors]
+ * @property {string[]} [warnings]
+ */
 
-export interface ValidationDisplayItem {
-    readonly message: string;
-    readonly icon: string;
-}
+/**
+ * @typedef {Object} ValidationDisplayItem
+ * @property {string} message
+ * @property {string} icon
+ */
 
-export interface ValidationDisplayData {
-    readonly errors: ValidationDisplayItem[];
-    readonly warnings: ValidationDisplayItem[];
-    readonly info: ValidationDisplayItem[];
-}
+/**
+ * @typedef {Object} ValidationDisplayData
+ * @property {ValidationDisplayItem[]} errors
+ * @property {ValidationDisplayItem[]} warnings
+ * @property {ValidationDisplayItem[]} info
+ */
 
-export interface ValidationSummary {
-    readonly errorCount: number;
-    readonly warningCount: number;
-    readonly infoCount: number;
-    readonly isValid: boolean;
-}
-
-// Window interface extension for global afrondingsReplacements
-declare global {
-    interface Window {
-        afrondingsReplacements?: string[];
-    }
-}
-
-// StatementGenerator interface (minimal typing for what we need)
-interface StatementGenerator {
-    validateData(): ValidationResult;
-}
+/**
+ * @typedef {Object} ValidationSummary
+ * @property {number} errorCount
+ * @property {number} warningCount
+ * @property {number} infoCount
+ * @property {boolean} isValid
+ */
 
 export class ValidationService {
-    private readonly statementGenerator: StatementGenerator;
-
     /**
      * Create a new ValidationService
-     * @param statementGenerator - Statement generator instance
+     * @param {Object} statementGenerator - Statement generator instance
      */
-    constructor(statementGenerator: StatementGenerator) {
+    constructor(statementGenerator) {
         this.statementGenerator = statementGenerator;
     }
 
     /**
      * Validate data and return results
-     * @returns Validation result with errors and warnings
+     * @returns {ValidationResult} Validation result with errors and warnings
      */
-    validateData(): ValidationResult {
+    validateData() {
         return this.statementGenerator.validateData();
     }
 
     /**
      * Prepare validation display data
-     * @param validation - Validation result
-     * @returns Prepared display data with errors, warnings, and info messages
+     * @param {ValidationResult} validation - Validation result
+     * @returns {ValidationDisplayData} Prepared display data with errors, warnings, and info messages
      */
-    prepareValidationDisplay(validation: ValidationResult): ValidationDisplayData {
-        const displayData: ValidationDisplayData = {
+    prepareValidationDisplay(validation) {
+        const displayData = {
             errors: [],
             warnings: [],
             info: []
@@ -79,7 +68,7 @@ export class ValidationService {
 
         // Add validation errors
         if (validation.errors && validation.errors.length > 0) {
-            displayData.errors = validation.errors.map((error: string): ValidationDisplayItem => ({
+            displayData.errors = validation.errors.map((error) => ({
                 message: error,
                 icon: '❌'
             }));
@@ -87,7 +76,7 @@ export class ValidationService {
 
         // Add validation warnings
         if (validation.warnings && validation.warnings.length > 0) {
-            displayData.warnings = validation.warnings.map((warning: string): ValidationDisplayItem => ({
+            displayData.warnings = validation.warnings.map((warning) => ({
                 message: warning,
                 icon: '⚠️'
             }));
@@ -95,7 +84,7 @@ export class ValidationService {
 
         // Add Afrondingsverschil replacement messages
         if (window.afrondingsReplacements && window.afrondingsReplacements.length > 0) {
-            window.afrondingsReplacements.forEach((replacement: string) => {
+            window.afrondingsReplacements.forEach((replacement) => {
                 displayData.info.push({
                     message: `Account replaced: ${replacement}`,
                     icon: 'ℹ️'
@@ -108,10 +97,10 @@ export class ValidationService {
 
     /**
      * Display validation results in the UI
-     * @param validation - Validation result
-     * @returns True if there are validation messages
+     * @param {ValidationResult} validation - Validation result
+     * @returns {boolean} True if there are validation messages
      */
-    displayValidationResults(validation: ValidationResult): boolean {
+    displayValidationResults(validation) {
         const validationContainer = document.getElementById('validation-messages');
         const errorsContainer = document.getElementById('validation-errors');
         const warningsContainer = document.getElementById('validation-warnings');
@@ -129,7 +118,7 @@ export class ValidationService {
 
         // Display info messages (Afrondingsverschil replacements)
         if (displayData.info.length > 0) {
-            displayData.info.forEach((item: ValidationDisplayItem) => {
+            displayData.info.forEach((item) => {
                 const infoDiv = document.createElement('div');
                 infoDiv.className = 'validation-warning-item';
                 infoDiv.innerHTML = `${item.icon} <strong>${item.message}</strong>`;
@@ -139,7 +128,7 @@ export class ValidationService {
 
         // Display errors
         if (displayData.errors.length > 0) {
-            displayData.errors.forEach((item: ValidationDisplayItem) => {
+            displayData.errors.forEach((item) => {
                 const errorDiv = document.createElement('div');
                 errorDiv.className = 'validation-error-item';
                 errorDiv.textContent = `${item.icon} ${item.message}`;
@@ -149,7 +138,7 @@ export class ValidationService {
 
         // Display warnings
         if (displayData.warnings.length > 0) {
-            displayData.warnings.forEach((item: ValidationDisplayItem) => {
+            displayData.warnings.forEach((item) => {
                 const warningDiv = document.createElement('div');
                 warningDiv.className = 'validation-warning-item';
                 warningDiv.textContent = `${item.icon} ${item.message}`;
@@ -168,17 +157,18 @@ export class ValidationService {
 
     /**
      * Validate and display results (convenience method)
-     * @returns True if there are validation messages
+     * @returns {boolean} True if there are validation messages
      */
-    validateAndDisplay(): boolean {
+    validateAndDisplay() {
         const validation = this.validateData();
         return this.displayValidationResults(validation);
     }
 
     /**
      * Clear validation messages from UI
+     * @returns {void}
      */
-    clearValidationMessages(): void {
+    clearValidationMessages() {
         const validationContainer = document.getElementById('validation-messages');
         const errorsContainer = document.getElementById('validation-errors');
         const warningsContainer = document.getElementById('validation-warnings');
@@ -190,9 +180,10 @@ export class ValidationService {
 
     /**
      * Display error in validation container
-     * @param errorMessage - Error message to display
+     * @param {string} errorMessage - Error message to display
+     * @returns {void}
      */
-    displayError(errorMessage: string): void {
+    displayError(errorMessage) {
         const validationContainer = document.getElementById('validation-messages');
         const errorsContainer = document.getElementById('validation-errors');
 
@@ -208,28 +199,28 @@ export class ValidationService {
 
     /**
      * Check if validation has errors
-     * @param validation - Validation result
-     * @returns True if there are errors
+     * @param {ValidationResult} validation - Validation result
+     * @returns {boolean} True if there are errors
      */
-    hasErrors(validation: ValidationResult): boolean {
+    hasErrors(validation) {
         return Boolean(validation && validation.errors && validation.errors.length > 0);
     }
 
     /**
      * Check if validation has warnings
-     * @param validation - Validation result
-     * @returns True if there are warnings
+     * @param {ValidationResult} validation - Validation result
+     * @returns {boolean} True if there are warnings
      */
-    hasWarnings(validation: ValidationResult): boolean {
+    hasWarnings(validation) {
         return Boolean(validation && validation.warnings && validation.warnings.length > 0);
     }
 
     /**
      * Get summary of validation results
-     * @param validation - Validation result
-     * @returns Summary with counts
+     * @param {ValidationResult} validation - Validation result
+     * @returns {ValidationSummary} Summary with counts
      */
-    getValidationSummary(validation: ValidationResult): ValidationSummary {
+    getValidationSummary(validation) {
         return {
             errorCount: validation?.errors?.length || 0,
             warningCount: validation?.warnings?.length || 0,
