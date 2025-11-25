@@ -499,7 +499,7 @@ class StatementGenerator {
             cashFlowData.push({
                 code0: 'CF',
                 name0: 'Cash Flow',
-                code1: 'OP',
+                code1: '10',
                 name1: 'Operating Activities',
                 code2: '01',
                 name2: 'Net Income',
@@ -513,7 +513,7 @@ class StatementGenerator {
                     cashFlowData.push({
                         code0: 'CF',
                         name0: 'Cash Flow',
-                        code1: 'OP',
+                        code1: '10',
                         name1: 'Operating Activities',
                         code2: '02',
                         name2: row.name2,
@@ -531,7 +531,7 @@ class StatementGenerator {
                         cashFlowData.push({
                             code0: 'CF',
                             name0: 'Cash Flow',
-                            code1: 'OP',
+                            code1: '10',
                             name1: 'Operating Activities',
                             code2: '03',
                             name2: `Change in ${row.name2}`,
@@ -550,7 +550,7 @@ class StatementGenerator {
                         cashFlowData.push({
                             code0: 'CF',
                             name0: 'Cash Flow',
-                            code1: 'IN',
+                            code1: '30',
                             name1: 'Investing Activities',
                             code2: '01',
                             name2: row.name2,
@@ -569,7 +569,7 @@ class StatementGenerator {
                         cashFlowData.push({
                             code0: 'CF',
                             name0: 'Cash Flow',
-                            code1: 'FI',
+                            code1: '20',
                             name1: 'Financing Activities',
                             code2: '01',
                             name2: row.name2,
