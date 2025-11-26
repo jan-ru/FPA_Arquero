@@ -120,7 +120,7 @@ export class BalanceSheetSpecialRows {
 
         return {
             hierarchy: ['Resultaat boekjaar'],
-            level: 0,
+            level: 2,  // Same indentation level as other equity detail items like "Overige reserves"
             label: 'Resultaat boekjaar',
             name0: '',
             name1: '',
@@ -133,8 +133,8 @@ export class BalanceSheetSpecialRows {
             amount_2025: amounts[year2],
             variance_amount: amount,
             variance_percent: percent,
-            _isMetric: true,
-            _rowType: 'metric'
+            _isMetric: false,  // Changed from true - not a metric row
+            _rowType: 'detail'  // Changed from 'metric' - regular detail row (not bold)
         };
     }
 

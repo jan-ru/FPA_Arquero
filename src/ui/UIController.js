@@ -399,12 +399,11 @@ class UIController {
             // Import the multi-statement export function
             const { exportMultipleStatementsToExcel } = await import('../export/excel-export.js');
 
-            // Get current period options for all statements
-            const period1 = this.getPeriodOptions('period1');
-            const period2 = this.getPeriodOptions('period2');
+            // Get current period options (same logic as generateAndDisplayStatement)
+            const periodOptions = this.buildPeriodOptions();
 
             // Generate all three statements
-            const statements = await this.generateAllStatementsForExport(period1, period2);
+            const statements = await this.generateAllStatementsForExport(periodOptions);
 
             // Export all statements to a single Excel file with multiple tabs
             await exportMultipleStatementsToExcel(statements, 'Financial_Statements');
@@ -417,8 +416,48 @@ class UIController {
         }
     }
 
+    // Build period options from current UI selections
+    buildPeriodOptions() {
+        const year1 = YEAR_CONFIG.getYear(0);
+        const year2 = YEAR_CONFIG.getYear(1);
+        const periodValue = document.getElementById('period-selector')?.value || 'all';
+        const comparisonType = document.getElementById('comparison-selector')?.value || 'yoy';
+
+        let periodOptions;
+
+        if (isLTMSelected(periodValue)) {
+            // LTM selected from period dropdown
+            periodOptions = {
+                [`period${year1}`]: `${year1}-ltm`,
+                [`period${year2}`]: `${year2}-ltm`
+            };
+        } else if (comparisonType === 'yoy') {
+            // Year-over-Year
+            periodOptions = {
+                [`period${year1}`]: `${year1}-${periodValue}`,
+                [`period${year2}`]: `${year2}-${periodValue}`
+            };
+        } else if (comparisonType === 'ltm') {
+            // LTM from comparison selector
+            periodOptions = {
+                [`period${year1}`]: `${year1}-all`,
+                [`period${year2}`]: `${year2}-all`,
+                isLTM: true,
+                ltmEndPeriod: periodValue
+            };
+        } else {
+            // Month-over-Month or default
+            periodOptions = {
+                [`period${year1}`]: `${year1}-${periodValue}`,
+                [`period${year2}`]: `${year2}-${periodValue}`
+            };
+        }
+
+        return periodOptions;
+    }
+
     // Generate all three statements for export (without rendering them)
-    async generateAllStatementsForExport(period1, period2) {
+    async generateAllStatementsForExport(periodOptions) {
         const statements = [];
         const statementTypes = [
             { type: 'balance-sheet', name: 'Balance Sheet' },
@@ -431,20 +470,11 @@ class UIController {
                 // Generate statement data
                 let statementData;
                 if (type === 'balance-sheet') {
-                    statementData = this.statementGenerator.generateBalanceSheet({
-                        period1,
-                        period2
-                    });
+                    statementData = this.statementGenerator.generateBalanceSheet(periodOptions);
                 } else if (type === 'income-statement') {
-                    statementData = this.statementGenerator.generateIncomeStatement({
-                        period1,
-                        period2
-                    });
+                    statementData = this.statementGenerator.generateIncomeStatement(periodOptions);
                 } else if (type === 'cash-flow') {
-                    statementData = this.statementGenerator.generateCashFlowStatement({
-                        period1,
-                        period2
-                    });
+                    statementData = this.statementGenerator.generateCashFlowStatement(periodOptions);
                 }
 
                 // Create a temporary grid to hold the data
