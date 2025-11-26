@@ -18,13 +18,20 @@ import {
     STATEMENT_TYPES,
     VALIDATION_CONFIG,
     CATEGORY_DEFINITIONS,
-    APP_CONFIG
+    APP_CONFIG,
+    isLTMSelected
 } from '../constants.js';
 import CategoryMatcher from '../utils/CategoryMatcher.js';
 import VarianceCalculator from '../utils/VarianceCalculator.js';
 import Logger from '../utils/Logger.js';
 import AccountSignHandler from '../utils/AccountSignHandler.js';
 import LTMCalculator from '../utils/LTMCalculator.js';
+import {
+    buildNormalModeSpec,
+    buildLTMModeSpec,
+    buildLTMCategoryTotalsSpec,
+    buildCategoryTotalsSpec
+} from '../utils/RollupSpecBuilder.js';
 
 class StatementGenerator {
     constructor(dataStore) {
@@ -79,22 +86,23 @@ class StatementGenerator {
         });
     }
 
-    // Helper: Calculate category totals
+    // Helper: Calculate category totals (Normal Mode - 2 columns)
     calculateCategoryTotals(combined) {
         // Note: Arquero requires static column names in rollup operations
         // We use amount_2024/amount_2025 as the column identifiers
+        const rollupSpec = buildCategoryTotalsSpec();
         return combined
             .groupby('name1')
-            .rollup({
-                amount_2024: d => aq.op.sum(d.amount_2024),
-                amount_2025: d => aq.op.sum(d.amount_2025),
-                variance_amount: d => aq.op.sum(d.variance_amount),
-                variance_percent: d => {
-                    const total1 = aq.op.sum(d.amount_2024);
-                    const total2 = aq.op.sum(d.amount_2025);
-                    return total1 !== 0 ? ((total2 - total1) / Math.abs(total1)) * 100 : 0;
-                }
-            });
+            .rollup(rollupSpec);
+    }
+
+    // Helper: Calculate category totals (LTM Mode - 12+ columns)
+    calculateLTMCategoryTotals(combined, ltmInfo, statementType) {
+        // Build rollup spec dynamically based on LTM ranges using RollupSpecBuilder
+        const rollupSpec = buildLTMCategoryTotalsSpec(ltmInfo.ranges, statementType);
+        return combined
+            .groupby('name1')
+            .rollup(rollupSpec);
     }
 
     // Detect unmapped accounts
@@ -209,10 +217,14 @@ class StatementGenerator {
             let ltmLabel2 = null;
 
             // Check for LTM (Latest Twelve Months) selection
-            const isLTM1 = periodStr1 === YEAR_CONFIG.LTM.OPTION_VALUE;
-            const isLTM2 = periodStr2 === YEAR_CONFIG.LTM.OPTION_VALUE;
+            const isLTM1 = isLTMSelected(periodStr1);
+            const isLTM2 = isLTMSelected(periodStr2);
+            const isLTMMode = isLTM1 || isLTM2;
 
-            if (isLTM1 || isLTM2) {
+            // Store LTM info for later use in column generation
+            let ltmInfo = null;
+
+            if (isLTMMode) {
                 // Get available years from dataStore
                 const availableYears = this.dataStore.getMovementsTable('2024') && this.dataStore.getMovementsTable('2025')
                     ? [2024, 2025]
@@ -221,6 +233,14 @@ class StatementGenerator {
                     : this.dataStore.getMovementsTable('2024')
                     ? [2024]
                     : [];
+
+                Logger.debug('LTM Calculation Debug', {
+                    availableYears,
+                    has2024: !!this.dataStore.getMovementsTable('2024'),
+                    has2025: !!this.dataStore.getMovementsTable('2025'),
+                    filteredRows: filtered.numRows(),
+                    statementType: this.statementType
+                });
 
                 // Validate that we have data for LTM calculation
                 if (availableYears.length === 0) {
@@ -232,11 +252,20 @@ class StatementGenerator {
                 }
 
                 // Calculate LTM info
-                const ltmInfo = LTMCalculator.calculateLTMInfo(
+                ltmInfo = LTMCalculator.calculateLTMInfo(
                     filtered,
                     availableYears,
                     YEAR_CONFIG.LTM.MONTHS_COUNT
                 );
+
+                Logger.debug('LTM Info Calculated', {
+                    latest: ltmInfo.latest,
+                    ranges: ltmInfo.ranges,
+                    label: ltmInfo.label,
+                    filteredDataRows: ltmInfo.filteredData?.numRows(),
+                    complete: ltmInfo.availability.complete,
+                    message: ltmInfo.availability.message
+                });
 
                 // Validate that LTM calculation returned data
                 if (!ltmInfo || !ltmInfo.filteredData || ltmInfo.filteredData.numRows() === 0) {
@@ -326,29 +355,37 @@ class StatementGenerator {
                 }
             }
 
-            // Use conditional aggregation to get both columns in one pass (no join needed!)
-            // Include level codes for proper sorting
+            // Use conditional aggregation to get columns
+            // For LTM mode: create 12 dynamic period columns
+            // For normal mode: create 2 year columns
             // For Income Statement, flip the sign to show revenue as positive
             // For Balance Sheet Passiva (code1 60-90), flip the sign to show as positive
-            // Note: Arquero requires static column names in rollup operations.
-            // We keep amount_2024/amount_2025 as column identifiers, but they represent
-            // the dynamically selected year-period combinations via col1/col2 references.
             const signMultiplier = statementType === STATEMENT_TYPES.INCOME_STATEMENT ? -1 : 1;
 
             Logger.debug('Columns in filtered table (before groupby):', filtered.columnNames());
             Logger.debug('About to groupby with columns:', ['name1', 'name2', 'name3', 'code0', 'name0', 'code1', 'code2', 'code3', 'account_code', 'account_description']);
 
-            const aggregated = filtered
-                .params({
-                    col1Year: yearInt1,
-                    col2Year: yearInt2,
-                    signMult: signMultiplier
-                })
-                .groupby('name1', 'name2', 'name3', 'code0', 'name0', 'code1', 'code2', 'code3', 'account_code', 'account_description')
-                .rollup({
-                    amount_2024: d => aq.op.sum(d.year === col1Year ? d.movement_amount * signMult : 0),
-                    amount_2025: d => aq.op.sum(d.year === col2Year ? d.movement_amount * signMult : 0)
-                });
+            let aggregated;
+
+            if (isLTMMode && ltmInfo && ltmInfo.ranges) {
+                // LTM Mode: Create 12 dynamic period columns using RollupSpecBuilder
+                Logger.debug('LTM Mode: Creating 12 period columns', { ranges: ltmInfo.ranges });
+
+                const rollupSpec = buildLTMModeSpec(ltmInfo.ranges, signMultiplier, statementType);
+                Logger.debug('LTM Rollup spec:', Object.keys(rollupSpec));
+
+                aggregated = filtered
+                    .groupby('name1', 'name2', 'name3', 'code0', 'name0', 'code1', 'code2', 'code3', 'account_code', 'account_description')
+                    .rollup(rollupSpec);
+
+            } else {
+                // Normal Mode: Create 2 year columns using RollupSpecBuilder
+                const rollupSpec = buildNormalModeSpec(yearInt1, yearInt2, signMultiplier);
+
+                aggregated = filtered
+                    .groupby('name1', 'name2', 'name3', 'code0', 'name0', 'code1', 'code2', 'code3', 'account_code', 'account_description')
+                    .rollup(rollupSpec);
+            }
 
             Logger.debug('Columns after aggregation:', aggregated.columnNames());
             Logger.debug('Sample aggregated row:', aggregated.objects()[0]);
@@ -362,11 +399,20 @@ class StatementGenerator {
             // Add ordering if specified - sort by level codes for proper order (all 3 levels)
             const ordered = options.orderBy ? processedData.orderby('code1', 'code2', 'code3') : processedData;
 
-            // Calculate variances
-            const withVariances = this.deriveVarianceColumns(ordered);
+            // Calculate variances and totals
+            // Note: In LTM mode, we skip variance calculation (no 2-column comparison)
+            let withVariances, categoryTotals;
 
-            // Calculate category totals
-            const categoryTotals = this.calculateCategoryTotals(withVariances);
+            if (isLTMMode) {
+                // LTM Mode: Skip variance derivation, use ordered data directly
+                withVariances = ordered;
+                // Calculate category totals using dynamic month columns
+                categoryTotals = this.calculateLTMCategoryTotals(ordered, ltmInfo, statementType);
+            } else {
+                // Normal Mode: Calculate variances between two year columns
+                withVariances = this.deriveVarianceColumns(ordered);
+                categoryTotals = this.calculateCategoryTotals(withVariances);
+            }
 
             // Build result object
             const result = {
@@ -380,6 +426,13 @@ class StatementGenerator {
                     column1: ltmLabel1,
                     column2: ltmLabel2
                 };
+            }
+
+            // Add LTM info for multi-column rendering
+            if (isLTMMode && ltmInfo) {
+                result.isLTMMode = true;
+                result.ltmInfo = ltmInfo;
+                result.statementType = statementType; // Needed to determine column behavior
             }
 
             // Add statement-specific calculations

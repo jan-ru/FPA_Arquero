@@ -29,9 +29,15 @@ const mockAq = {
                 } else if (typeof fn === 'string') {
                     const $ = this._storedParams;
                     const filtered = data.filter((d: any) => {
+                        // Handle LTM range filter
                         if ($.year !== undefined && $.startPeriod !== undefined && $.endPeriod !== undefined) {
                             return d.year === $.year && d.period >= $.startPeriod && d.period <= $.endPeriod;
                         }
+                        // Handle max year filter
+                        if ($.maxYear !== undefined) {
+                            return d.year === $.maxYear;
+                        }
+                        // Handle statement type filter
                         if ($.statementType !== undefined) {
                             return d.statement_type === $.statementType;
                         }

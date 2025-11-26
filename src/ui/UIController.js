@@ -19,7 +19,7 @@ import DataLoader from '../data/DataLoader.js';
 import DataStore from '../data/DataStore.js';
 import StatementGenerator from '../statements/StatementGenerator.js';
 import AgGridStatementRenderer from './AgGridStatementRenderer.js';
-import { UI_CONFIG, UI_STATEMENT_TYPES } from '../constants.js';
+import { UI_CONFIG, UI_STATEMENT_TYPES, isLTMSelected } from '../constants.js';
 import { YEAR_CONFIG } from '../constants.js';
 import APP_CONFIG from '../config/appConfig.js';
 import FileSelectionService from '../services/FileSelectionService.js';
@@ -289,7 +289,7 @@ class UIController {
             let periodOptions;
 
             // Check if LTM is selected in period dropdown
-            if (periodValue === 'ltm' || periodValue === YEAR_CONFIG.LTM?.OPTION_VALUE) {
+            if (isLTMSelected(periodValue)) {
                 // LTM (Latest Twelve Months) selected
                 // Both columns show LTM data
                 periodOptions = {
@@ -621,6 +621,23 @@ class UIController {
         const periodSelector = document.getElementById('period-selector');
         if (periodSelector) {
             periodSelector.addEventListener('change', () => {
+                // If LTM is selected, automatically turn off variance columns and disable selector
+                const varianceSelector = document.getElementById('variance-selector');
+                const isLTM = isLTMSelected(periodSelector.value);
+
+                if (varianceSelector) {
+                    if (isLTM) {
+                        varianceSelector.value = 'none';
+                        varianceSelector.disabled = true;
+                        varianceSelector.style.backgroundColor = '#e2e8f0';
+                        varianceSelector.style.cursor = 'not-allowed';
+                    } else {
+                        varianceSelector.disabled = false;
+                        varianceSelector.style.backgroundColor = 'white';
+                        varianceSelector.style.cursor = 'pointer';
+                    }
+                }
+
                 if (this.currentStatementType) {
                     this.generateAndDisplayStatement(this.currentStatementType);
                 }
@@ -673,6 +690,17 @@ class UIController {
         document.getElementById('export-all').addEventListener('click', () => {
             this.handleExportCurrent();
         });
+
+        // Initialize variance selector state based on period selection
+        if (periodSelector && varianceSelector) {
+            const isLTM = isLTMSelected(periodSelector.value);
+            if (isLTM) {
+                varianceSelector.value = 'none';
+                varianceSelector.disabled = true;
+                varianceSelector.style.backgroundColor = '#e2e8f0';
+                varianceSelector.style.cursor = 'not-allowed';
+            }
+        }
 
         // File preview clicks
         document.querySelectorAll('.file-status-item.clickable').forEach(item => {

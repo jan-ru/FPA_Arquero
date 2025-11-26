@@ -44,24 +44,40 @@ export class LTMCalculator {
      */
     static getLatestAvailablePeriod(movementsTable) {
         if (!movementsTable || movementsTable.numRows() === 0) {
+            console.log('LTMCalculator.getLatestAvailablePeriod: No data', {
+                hasTable: !!movementsTable,
+                rows: movementsTable?.numRows()
+            });
             return { year: 0, period: 0 };
         }
 
         try {
+            console.log('LTMCalculator.getLatestAvailablePeriod: Analyzing data', {
+                totalRows: movementsTable.numRows()
+            });
+
             // Get max year
             const maxYear = movementsTable
                 .rollup({ maxYear: d => aq.op.max(d.year) })
                 .get('maxYear', 0);
 
+            console.log('LTMCalculator.getLatestAvailablePeriod: Max year found', { maxYear });
+
             if (!maxYear) {
                 return { year: 0, period: 0 };
             }
 
-            // Get max period for that year
+            // Get max period for that year - use params to pass maxYear value
             const maxPeriod = movementsTable
-                .filter(d => d.year === maxYear)
+                .params({ maxYear: maxYear })
+                .filter('(d, $) => d.year === $.maxYear')
                 .rollup({ maxPeriod: d => aq.op.max(d.period) })
                 .get('maxPeriod', 0);
+
+            console.log('LTMCalculator.getLatestAvailablePeriod: Result', {
+                year: maxYear,
+                period: maxPeriod
+            });
 
             return { year: maxYear, period: maxPeriod };
         } catch (error) {
@@ -144,11 +160,20 @@ export class LTMCalculator {
      */
     static filterMovementsForLTM(movementsTable, ltmRanges) {
         if (!movementsTable || !ltmRanges || ltmRanges.length === 0) {
+            console.log('LTMCalculator.filterMovementsForLTM: No data or ranges', {
+                hasTable: !!movementsTable,
+                rangesLength: ltmRanges?.length
+            });
             // Return empty table with same structure
             return movementsTable ? movementsTable.filter(() => false) : null;
         }
 
         try {
+            console.log('LTMCalculator.filterMovementsForLTM: Starting filter', {
+                inputRows: movementsTable.numRows(),
+                ranges: ltmRanges
+            });
+
             // Start with empty table
             let filtered = movementsTable.filter(() => false);
 
@@ -162,8 +187,16 @@ export class LTMCalculator {
                     })
                     .filter('(d, $) => d.year === $.year && d.period >= $.startPeriod && d.period <= $.endPeriod');
 
+                console.log(`LTMCalculator.filterMovementsForLTM: Range ${range.year} P${range.startPeriod}-P${range.endPeriod}`, {
+                    rowsFound: rangeData.numRows()
+                });
+
                 filtered = filtered.concat(rangeData);
             }
+
+            console.log('LTMCalculator.filterMovementsForLTM: Final result', {
+                totalRows: filtered.numRows()
+            });
 
             return filtered;
         } catch (error) {

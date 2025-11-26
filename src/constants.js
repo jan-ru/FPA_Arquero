@@ -212,6 +212,15 @@ export const YEAR_CONFIG = {
     }
 };
 
+/**
+ * Helper function to check if LTM (Latest Twelve Months) is selected
+ * @param {string} periodValue - The period value from dropdown (e.g., 'ltm', '2024-all', '2024-P9')
+ * @returns {boolean} True if LTM is selected
+ */
+export function isLTMSelected(periodValue) {
+    return periodValue === YEAR_CONFIG.LTM.OPTION_VALUE;
+}
+
 // Dutch to English month mapping (DEPRECATED - use DateUtils.getMonthNumber() instead)
 // Kept for backward compatibility but will be removed in future version
 export const MONTH_MAP = {

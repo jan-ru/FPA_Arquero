@@ -18,6 +18,7 @@ import HierarchyBuilder from '../utils/HierarchyBuilder.js';
 import SpecialRowsFactory from '../statements/specialrows/SpecialRowsFactory.js';
 import ColumnDefBuilder from './columns/ColumnDefBuilder.js';
 import { YEAR_CONFIG, UI_CONFIG, UI_STATEMENT_TYPES } from '../constants.js';
+import { exportGridToExcel, exportLTMGridToExcel } from '../export/excel-export.js';
 
 class AgGridStatementRenderer {
     constructor(containerId) {
@@ -624,6 +625,14 @@ class AgGridStatementRenderer {
             );
         }
 
+        // Pass LTM mode information if available
+        if (this.currentStatementData && this.currentStatementData.isLTMMode) {
+            builder.setLTMMode(
+                this.currentStatementData.isLTMMode,
+                this.currentStatementData.ltmInfo
+            );
+        }
+
         return builder.build();
 
         // OLD IMPLEMENTATION KEPT FOR REFERENCE - CAN BE REMOVED AFTER TESTING
@@ -763,24 +772,38 @@ class AgGridStatementRenderer {
         return '';
     }
 
-    // Export to CSV (Excel export requires ag-Grid Enterprise)
-    exportToExcel(statementName) {
+    // Export to Excel using ExcelJS
+    async exportToExcel(statementName) {
         if (!this.gridApi) {
             console.error('Grid not initialized');
             return;
         }
 
-        const fileName = statementName || this.currentStatementType || 'Statement';
-        const timestamp = new Date().toISOString().split('T')[0];
+        try {
+            const fileName = statementName || this.currentStatementType || 'Statement';
 
-        // Note: exportDataAsExcel() requires ag-Grid Enterprise
-        // Using exportDataAsCsv() instead (Community Edition)
-        const params = {
-            fileName: `${fileName}_${timestamp}.csv`
-        };
+            // Get current column definitions
+            const columnDefs = this.gridApi.getColumnDefs();
 
-        this.gridApi.exportDataAsCsv(params);
-        console.log('Exported to CSV:', params.fileName);
+            // Check if this is LTM mode
+            const isLTM = this.currentStatementData?.isLTMMode;
+            const ltmInfo = this.currentStatementData?.ltmInfo;
+
+            // Export with appropriate method
+            if (isLTM && ltmInfo) {
+                await exportLTMGridToExcel(this.gridApi, columnDefs, fileName, ltmInfo);
+            } else {
+                await exportGridToExcel(this.gridApi, columnDefs, fileName, {
+                    title: fileName,
+                    subtitle: new Date().toLocaleDateString()
+                });
+            }
+
+            console.log('Successfully exported to Excel');
+        } catch (error) {
+            console.error('Error exporting to Excel:', error);
+            alert('Failed to export to Excel. Please try again.');
+        }
     }
 
     // Legacy Excel export code (requires ag-Grid Enterprise - not available in Community)

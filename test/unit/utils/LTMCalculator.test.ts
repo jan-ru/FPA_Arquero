@@ -27,12 +27,15 @@ const mockAq = {
                     return mockAq.from(data.filter(fn));
                 } else if (typeof fn === 'string') {
                     // Handle string filter expressions with params
-                    // Example: '(d, $) => d.year === $.year && d.period >= $.startPeriod && d.period <= $.endPeriod'
                     const $ = this._storedParams;
                     const filtered = data.filter((d: any) => {
-                        // Evaluate the expression
+                        // Handle LTM range filter: '(d, $) => d.year === $.year && d.period >= $.startPeriod && d.period <= $.endPeriod'
                         if ($.year !== undefined && $.startPeriod !== undefined && $.endPeriod !== undefined) {
                             return d.year === $.year && d.period >= $.startPeriod && d.period <= $.endPeriod;
+                        }
+                        // Handle max year filter: '(d, $) => d.year === $.maxYear'
+                        if ($.maxYear !== undefined) {
+                            return d.year === $.maxYear;
                         }
                         return true;
                     });

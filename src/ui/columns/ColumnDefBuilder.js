@@ -20,6 +20,8 @@ export class ColumnDefBuilder {
         this.varianceRenderer = null; // Will be set from renderer
         this.ltmLabel1 = null; // LTM label for column 1
         this.ltmLabel2 = null; // LTM label for column 2
+        this.isLTMMode = false; // LTM multi-column mode
+        this.ltmInfo = null; // LTM period information
     }
 
     /**
@@ -43,10 +45,26 @@ export class ColumnDefBuilder {
     }
 
     /**
+     * Set LTM mode and period information
+     * @param {boolean} isLTMMode - Whether LTM multi-column mode is active
+     * @param {Object} ltmInfo - LTM period information with ranges
+     */
+    setLTMMode(isLTMMode, ltmInfo) {
+        this.isLTMMode = isLTMMode;
+        this.ltmInfo = ltmInfo;
+    }
+
+    /**
      * Build complete column definitions
      * @returns {Array<Object>} Array of column definitions
      */
     build() {
+        // Check if LTM multi-column mode is active
+        if (this.isLTMMode && this.ltmInfo && this.ltmInfo.ranges) {
+            return this.buildLTMColumns();
+        }
+
+        // Normal mode: 2 columns + variance
         // Get UI settings
         let period1Label = this.getPeriodLabel(this.year1);
         let period2Label = this.getPeriodLabel(this.year2);
@@ -74,6 +92,38 @@ export class ColumnDefBuilder {
         }
         if (varianceMode === 'percent' || varianceMode === 'both') {
             columns.push(this.buildVariancePercentColumn('variance_percent', false));
+        }
+
+        return columns;
+    }
+
+    /**
+     * Build column definitions for LTM multi-column mode
+     * @returns {Array<Object>} Array of column definitions
+     */
+    buildLTMColumns() {
+        const columns = [this.buildCategoryColumn()];
+
+        const viewType = document.getElementById('view-type')?.value || 'period';
+        const isIncomeStatement = this.statementType === 'IS' || this.statementType === 'income-statement';
+        const isBalanceSheet = this.statementType === 'BS' || this.statementType === 'balance-sheet';
+
+        let monthIndex = 1;
+
+        // Build 12 period columns
+        for (const range of this.ltmInfo.ranges) {
+            for (let period = range.startPeriod; period <= range.endPeriod; period++) {
+                const columnName = `month_${monthIndex}`;
+                const headerName = `${range.year} P${period}`;
+
+                columns.push(this.buildAmountColumn(columnName, headerName));
+                monthIndex++;
+            }
+        }
+
+        // For Income Statement: Add 13th cumulative column
+        if (isIncomeStatement) {
+            columns.push(this.buildAmountColumn('ltm_total', 'LTM Total'));
         }
 
         return columns;
