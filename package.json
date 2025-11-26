@@ -1,6 +1,6 @@
 {
   "name": "financial-statement-generator",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "description": "Financial Statement Generator with Dutch Accounting Standards",
   "type": "module",
   "scripts": {

@@ -392,30 +392,91 @@ class UIController {
     }
 
     // Handle export all statements
-    handleExportCurrent() {
+    async handleExportCurrent() {
         try {
-            if (!this.currentStatementType) {
-                this.showExportStatus('No statement to export', 'error');
-                return;
-            }
+            this.showExportStatus('Exporting all statements...', 'loading');
 
-            this.showExportStatus('Exporting statement...', 'loading');
+            // Import the multi-statement export function
+            const { exportMultipleStatementsToExcel } = await import('../export/excel-export.js');
 
-            // Get statement name from selector
-            const statementSelector = document.getElementById('statement-selector');
-            const statementName = statementSelector ?
-                statementSelector.options[statementSelector.selectedIndex].text :
-                this.currentStatementType;
+            // Get current period options for all statements
+            const period1 = this.getPeriodOptions('period1');
+            const period2 = this.getPeriodOptions('period2');
 
-            // Export using ag-Grid
-            this.agGridRenderer.exportToExcel(statementName);
+            // Generate all three statements
+            const statements = await this.generateAllStatementsForExport(period1, period2);
 
-            this.showExportStatus('Statement exported successfully!', 'success');
+            // Export all statements to a single Excel file with multiple tabs
+            await exportMultipleStatementsToExcel(statements, 'Financial_Statements');
+
+            this.showExportStatus('All statements exported successfully!', 'success');
 
         } catch (error) {
             this.showExportStatus('Export failed: ' + error.message, 'error');
             console.error('Export error:', error);
         }
+    }
+
+    // Generate all three statements for export (without rendering them)
+    async generateAllStatementsForExport(period1, period2) {
+        const statements = [];
+        const statementTypes = [
+            { type: 'balance-sheet', name: 'Balance Sheet' },
+            { type: 'income-statement', name: 'Income Statement' },
+            { type: 'cash-flow', name: 'Cash Flow' }
+        ];
+
+        for (const { type, name } of statementTypes) {
+            try {
+                // Generate statement data
+                let statementData;
+                if (type === 'balance-sheet') {
+                    statementData = this.statementGenerator.generateBalanceSheet({
+                        period1,
+                        period2
+                    });
+                } else if (type === 'income-statement') {
+                    statementData = this.statementGenerator.generateIncomeStatement({
+                        period1,
+                        period2
+                    });
+                } else if (type === 'cash-flow') {
+                    statementData = this.statementGenerator.generateCashFlowStatement({
+                        period1,
+                        period2
+                    });
+                }
+
+                // Create a temporary grid to hold the data
+                const tempContainer = document.createElement('div');
+                tempContainer.style.display = 'none';
+                document.body.appendChild(tempContainer);
+
+                // Build column definitions
+                const columnDefs = this.agGridRenderer.buildColumnDefinitions(statementData);
+
+                // Create temporary grid API
+                const gridOptions = {
+                    columnDefs: columnDefs,
+                    rowData: statementData.flatData || [],
+                    suppressCellFocus: true
+                };
+
+                const tempGridApi = agGrid.createGrid(tempContainer, gridOptions);
+
+                statements.push({
+                    gridApi: tempGridApi,
+                    columnDefs: columnDefs,
+                    name: name
+                });
+
+            } catch (error) {
+                console.error(`Failed to generate ${name}:`, error);
+                // Continue with other statements even if one fails
+            }
+        }
+
+        return statements;
     }
 
     // Show export status message

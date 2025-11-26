@@ -436,7 +436,8 @@ class StatementGenerator {
             }
 
             // Add statement-specific calculations
-            if (options.calculateMetrics) {
+            // Skip metrics calculation in LTM mode (metrics use amount_2024/amount_2025 columns)
+            if (options.calculateMetrics && !isLTMMode) {
                 // Pass withVariances (account-level data) instead of processedData
                 // This has the proper amount_2024/amount_2025 columns after aggregation
                 result.metrics = options.calculateMetrics(categoryTotals, withVariances);

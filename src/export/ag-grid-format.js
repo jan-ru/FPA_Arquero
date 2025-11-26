@@ -102,7 +102,7 @@ export function getCellStyle(params) {
     } else if (field && (field.startsWith('amount_') || field.startsWith('month_') || field === 'ltm_total')) {
         // Amount columns
         style.alignment.horizontal = 'right';
-        style.numFmt = '#,##0.00;[Red]-#,##0.00'; // Number format with red negatives
+        style.numFmt = '#,##0;[Red]-#,##0'; // Number format with red negatives (no decimals)
 
         // Color negative values red
         if (value != null && typeof value === 'number' && value < 0) {
@@ -113,7 +113,7 @@ export function getCellStyle(params) {
         style.alignment.horizontal = 'right';
 
         if (field === 'variance_amount') {
-            style.numFmt = '#,##0.00;[Red]-#,##0.00';
+            style.numFmt = '#,##0;[Red]-#,##0'; // No decimals
         } else if (field === 'variance_percent') {
             style.numFmt = '0.0"%"';
         }
