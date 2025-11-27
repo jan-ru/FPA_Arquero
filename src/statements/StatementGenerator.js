@@ -55,8 +55,8 @@ class StatementGenerator {
         // Income Statement ALWAYS uses movements (never balances)
         // For cumulative view, we'll sum movements up to the selected period
         // For period view, we'll show individual period movements
-        // Balance Sheet uses balances for cumulative view, movements for period view
-        const useMovements = statementType === STATEMENT_TYPES.INCOME_STATEMENT || viewType === 'period';
+        // Balance Sheet ALWAYS uses balances (cumulative data) - it shows position at a point in time
+        const useMovements = statementType === STATEMENT_TYPES.INCOME_STATEMENT;
 
         const combinedData = useMovements
             ? this.dataStore.getCombinedMovements()
@@ -210,6 +210,12 @@ class StatementGenerator {
             let viewType = 'cumulative';
             if (typeof document !== 'undefined') {
                 viewType = document.getElementById('view-type')?.value || 'cumulative';
+            }
+
+            // Balance Sheet ALWAYS uses cumulative view (it shows position at a point in time)
+            // Income Statement respects the view type selection
+            if (statementType === STATEMENT_TYPES.BALANCE_SHEET) {
+                viewType = 'cumulative';
             }
 
             // Initialize LTM label storage
