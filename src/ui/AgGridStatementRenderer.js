@@ -69,7 +69,9 @@ class AgGridStatementRenderer {
                 'level-1-row': params => params.data?.level === 1,
                 'level-2-row': params => params.data?.level === 2,
                 'level-3-row': params => params.data?.level === 3,
-                'totaal-activa-row': params => params.data?.label === 'Totaal activa'
+                'totaal-activa-row': params => params.data?.label === 'Totaal activa',
+                'spacer-row': params => params.data?._rowType === 'spacer',
+                'spacer-after-activa': params => params.data?.hierarchy?.[0] === 'SPACER_1'
             },
 
             onGridReady: params => {
