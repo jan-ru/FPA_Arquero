@@ -39,13 +39,16 @@ Deno.test("SpecialRowsFactory.create - NoSpecialRows returns data unchanged", ()
 
 Deno.test("BalanceSheetSpecialRows.calculateTotalAssets - sums asset categories", () => {
     const handler = new BalanceSheetSpecialRows();
-    const totals = [
-        { name1: 'Materiële vaste activa', amount_2024: 1000, amount_2025: 1100 },
-        { name1: 'Voorraden', amount_2024: 500, amount_2025: 550 },
-        { name1: 'eigen vermogen', amount_2024: 800, amount_2025: 850 }
+    // Test data simulates displayed rows (level 1 asset categories)
+    const data = [
+        { level: 0, label: 'Activa', amount_2024: null, amount_2025: null },
+        { level: 1, label: 'vaste activa', name0: 'Activa', amount_2024: 1000, amount_2025: 1100 },
+        { level: 1, label: 'vlottende activa', name0: 'Activa', amount_2024: 500, amount_2025: 550 },
+        { level: 0, label: 'Passiva', amount_2024: null, amount_2025: null },
+        { level: 1, label: 'eigen vermogen', name0: 'Passiva', amount_2024: 800, amount_2025: 850 }
     ];
 
-    const result = handler.calculateTotalAssets(totals);
+    const result = handler.calculateTotalAssets(data);
 
     assertEquals(result.year1, 1500); // 1000 + 500
     assertEquals(result.year2, 1650); // 1100 + 550
@@ -53,13 +56,16 @@ Deno.test("BalanceSheetSpecialRows.calculateTotalAssets - sums asset categories"
 
 Deno.test("BalanceSheetSpecialRows.calculateTotalLiabilitiesEquity - sums liability categories", () => {
     const handler = new BalanceSheetSpecialRows();
-    const totals = [
-        { name1: 'Materiële vaste activa', amount_2024: 1000, amount_2025: 1100 },
-        { name1: 'eigen vermogen', amount_2024: 800, amount_2025: 850 },
-        { name1: 'korte termijn schulden', amount_2024: 200, amount_2025: 250 }
+    // Test data simulates displayed rows (level 1 liability/equity categories)
+    const data = [
+        { level: 0, label: 'Activa', amount_2024: null, amount_2025: null },
+        { level: 1, label: 'vaste activa', name0: 'Activa', amount_2024: 1000, amount_2025: 1100 },
+        { level: 0, label: 'Passiva', amount_2024: null, amount_2025: null },
+        { level: 1, label: 'eigen vermogen', name0: 'Passiva', amount_2024: 800, amount_2025: 850 },
+        { level: 1, label: 'korte termijn schulden', name0: 'Passiva', amount_2024: 200, amount_2025: 250 }
     ];
 
-    const result = handler.calculateTotalLiabilitiesEquity(totals);
+    const result = handler.calculateTotalLiabilitiesEquity(data);
 
     assertEquals(result.year1, 1000); // 800 + 200
     assertEquals(result.year2, 1100); // 850 + 250

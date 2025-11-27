@@ -46,8 +46,8 @@ export class BalanceSheetSpecialRows {
         const year1 = YEAR_CONFIG.getYear(0);
         const year2 = YEAR_CONFIG.getYear(1);
 
-        // Calculate Total Assets from category totals
-        const totalAssets = this.calculateTotalAssets(totals);
+        // Calculate Total Assets from displayed data (sum of level 1 asset rows)
+        const totalAssets = this.calculateTotalAssets(result);
 
         // Find insertion point: before first liability/equity category
         const insertIndex = result.findIndex(row =>
@@ -71,8 +71,8 @@ export class BalanceSheetSpecialRows {
             result.splice(liabilityIndex, 0, this.createResultaatBoekjaarRow(metrics.netIncome, year1, year2));
         }
 
-        // Calculate Total Liabilities & Equity (including net income)
-        const totalLE = this.calculateTotalLiabilitiesEquity(totals);
+        // Calculate Total Liabilities & Equity from displayed data (sum of level 1 L&E rows)
+        const totalLE = this.calculateTotalLiabilitiesEquity(result);
         const totalLEWithIncome = {
             year1: totalLE.year1 + (metrics?.netIncome?.[year1] || 0),
             year2: totalLE.year2 + (metrics?.netIncome?.[year2] || 0)
@@ -81,38 +81,62 @@ export class BalanceSheetSpecialRows {
         // Append Totaal passiva at end
         result.push(this.createTotalPassivaRow(totalLEWithIncome, year1, year2));
 
+        // Validate Balance Sheet equation: Assets = Liabilities + Equity
+        this.validateBalanceSheet(totalAssets, totalLEWithIncome, year1, year2);
+
         return result;
     }
 
     /**
-     * Calculate total assets from category totals
-     * @param {Array<Object>} totals - Category totals
+     * Calculate total assets from displayed data rows
+     * Sums level 1 asset categories (vaste activa, vlottende activa)
+     * @param {Array<Object>} data - Statement data rows
      * @returns {Object} Total assets for both years
      */
-    calculateTotalAssets(totals) {
+    calculateTotalAssets(data) {
         let year1 = 0, year2 = 0;
-        totals.forEach(row => {
-            if (CategoryMatcher.isAsset(row.name1)) {
+
+        // Sum level 1 rows under "Activa" section
+        // These are the direct children of the "Activa" section (vaste activa, vlottende activa)
+        data.forEach(row => {
+            // Check if this is a level 1 row under the Activa section
+            const isActivaChild = row.level === 1 &&
+                                 (row.name0 === 'Activa' || row.hierarchy?.[0] === 'Activa');
+
+            if (isActivaChild) {
                 year1 += row.amount_2024 || 0;
                 year2 += row.amount_2025 || 0;
             }
         });
+
         return { year1, year2 };
     }
 
     /**
-     * Calculate total liabilities & equity from category totals
-     * @param {Array<Object>} totals - Category totals
+     * Calculate total liabilities & equity from displayed data rows
+     * Sums level 1 liability/equity categories (eigen vermogen, lange termijn schulden, etc.)
+     * Note: Excludes "Resultaat boekjaar" as it's added separately
+     * @param {Array<Object>} data - Statement data rows
      * @returns {Object} Total L&E for both years
      */
-    calculateTotalLiabilitiesEquity(totals) {
+    calculateTotalLiabilitiesEquity(data) {
         let year1 = 0, year2 = 0;
-        totals.forEach(row => {
-            if (CategoryMatcher.isLiabilityOrEquity(row.name1)) {
+
+        // Sum level 1 rows under "Passiva" section
+        // These are the direct children of the "Passiva" section
+        // Exclude "Resultaat boekjaar" as it's added separately to the total
+        data.forEach(row => {
+            // Check if this is a level 1 row under the Passiva section
+            const isPassivaChild = row.level === 1 &&
+                                  row.label !== 'Resultaat boekjaar' &&
+                                  (row.name0 === 'Passiva' || row.hierarchy?.[0] === 'Passiva');
+
+            if (isPassivaChild) {
                 year1 += row.amount_2024 || 0;
                 year2 += row.amount_2025 || 0;
             }
         });
+
         return { year1, year2 };
     }
 
@@ -231,6 +255,41 @@ export class BalanceSheetSpecialRows {
             _isMetric: false,
             _rowType: 'spacer'
         };
+    }
+
+    /**
+     * Validate Balance Sheet equation: Assets = Liabilities + Equity
+     * Logs warnings if the equation doesn't balance
+     * @param {Object} totalAssets - Total assets {year1, year2}
+     * @param {Object} totalLE - Total liabilities & equity {year1, year2}
+     * @param {string} year1 - First year
+     * @param {string} year2 - Second year
+     */
+    validateBalanceSheet(totalAssets, totalLE, year1, year2) {
+        const tolerance = 0.01; // Allow 1 cent difference due to rounding
+
+        // Validate year 1
+        const diff1 = Math.abs(totalAssets.year1 - totalLE.year1);
+        if (diff1 > tolerance) {
+            console.warn(`⚠️ Balance Sheet ${year1} does not balance!`);
+            console.warn(`   Assets: ${totalAssets.year1.toFixed(2)}`);
+            console.warn(`   Liabilities + Equity: ${totalLE.year1.toFixed(2)}`);
+            console.warn(`   Difference: ${diff1.toFixed(2)}`);
+        }
+
+        // Validate year 2
+        const diff2 = Math.abs(totalAssets.year2 - totalLE.year2);
+        if (diff2 > tolerance) {
+            console.warn(`⚠️ Balance Sheet ${year2} does not balance!`);
+            console.warn(`   Assets: ${totalAssets.year2.toFixed(2)}`);
+            console.warn(`   Liabilities + Equity: ${totalLE.year2.toFixed(2)}`);
+            console.warn(`   Difference: ${diff2.toFixed(2)}`);
+        }
+
+        // Log success if balanced
+        if (diff1 <= tolerance && diff2 <= tolerance) {
+            console.log(`✅ Balance Sheet validates: Assets = Liabilities + Equity (both years)`);
+        }
     }
 }
 
