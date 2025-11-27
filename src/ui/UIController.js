@@ -488,7 +488,7 @@ class UIController {
                 document.body.appendChild(tempContainer);
 
                 // Create a temporary AgGridStatementRenderer instance
-                const { AgGridStatementRenderer } = await import('./AgGridStatementRenderer.js');
+                const AgGridStatementRenderer = (await import('./AgGridStatementRenderer.js')).default;
                 const tempRenderer = new AgGridStatementRenderer(tempContainerId);
 
                 // Render the statement to the temporary container

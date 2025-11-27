@@ -63,12 +63,12 @@ export class BalanceSheetSpecialRows {
             result.splice(insertIndex + 1, 0, this.createSpacerRow('SPACER_1'));
         }
 
-        // Insert Resultaat boekjaar at the end of Equity section (before liabilities)
-        // Find the last equity row (code1 in 60-69 range) or first liability row (code1 >= 70)
-        const liabilityIndex = this.findFirstLiabilityIndex(result);
+        // Insert Resultaat boekjaar at the end of Equity section
+        // Find the last equity detail row (within eigen vermogen)
+        const equityInsertIndex = this.findEquityInsertIndex(result);
 
-        if (liabilityIndex >= 0 && metrics?.netIncome) {
-            result.splice(liabilityIndex, 0, this.createResultaatBoekjaarRow(metrics.netIncome, year1, year2));
+        if (equityInsertIndex >= 0 && metrics?.netIncome) {
+            result.splice(equityInsertIndex, 0, this.createResultaatBoekjaarRow(metrics.netIncome, year1, year2));
         }
 
         // Calculate Total Liabilities & Equity from displayed data (sum of level 1 L&E rows)
@@ -141,16 +141,27 @@ export class BalanceSheetSpecialRows {
     }
 
     /**
-     * Find the first liability row (code1 >= 70)
-     * This is where we'll insert Resultaat boekjaar (at end of equity, before liabilities)
+     * Find where to insert Resultaat boekjaar within eigen vermogen section
+     * Should be inserted after the last detail row of "eigen vermogen" (level 2)
+     * but before "lange termijn schulden" category (level 1, code1 >= 65)
      * @param {Array<Object>} data - Statement data
-     * @returns {number} Index or -1 if not found
+     * @returns {number} Index where to insert, or -1 if not found
      */
-    findFirstLiabilityIndex(data) {
-        return data.findIndex(row => {
-            const code1 = parseInt(row.code1);
-            return !isNaN(code1) && code1 >= 70;
-        });
+    findEquityInsertIndex(data) {
+        // Find the last row that belongs to eigen vermogen section
+        // This is the last row with code1 in range 60-64 (eigen vermogen codes)
+        let lastEquityIndex = -1;
+
+        for (let i = 0; i < data.length; i++) {
+            const code1 = parseInt(data[i].code1);
+            // Equity section is code1 = 60-64
+            if (!isNaN(code1) && code1 >= 60 && code1 < 65) {
+                lastEquityIndex = i;
+            }
+        }
+
+        // Insert after the last equity row
+        return lastEquityIndex >= 0 ? lastEquityIndex + 1 : -1;
     }
 
     /**
@@ -164,22 +175,22 @@ export class BalanceSheetSpecialRows {
         const { amount, percent } = VarianceCalculator.calculateForYears(amounts, year1, year2);
 
         return {
-            hierarchy: ['Resultaat boekjaar'],
-            level: 2,  // Same indentation level as other equity detail items like "Overige reserves"
+            hierarchy: ['Passiva', 'eigen vermogen', 'Resultaat boekjaar'],
+            level: 2,  // Same indentation level as other equity detail items like "Eigen vermogen"
             label: 'Resultaat boekjaar',
-            name0: '',
-            name1: '',
+            name0: 'Passiva',
+            name1: 'eigen vermogen',
             name2: 'Resultaat boekjaar',
             code0: '6',
-            code1: '69',
-            code2: '69999',
+            code1: '60',  // Changed from '69' to '60' to group with eigen vermogen
+            code2: '60999',  // Special code for Resultaat boekjaar within equity
             code3: '',
             amount_2024: amounts[year1],
             amount_2025: amounts[year2],
             variance_amount: amount,
             variance_percent: percent,
-            _isMetric: false,  // Changed from true - not a metric row
-            _rowType: 'detail'  // Changed from 'metric' - regular detail row (not bold)
+            _isMetric: false,
+            _rowType: 'detail'
         };
     }
 
