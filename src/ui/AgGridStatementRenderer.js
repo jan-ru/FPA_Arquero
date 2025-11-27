@@ -68,7 +68,8 @@ class AgGridStatementRenderer {
                 'level-0-row': params => params.data?.level === 0,
                 'level-1-row': params => params.data?.level === 1,
                 'level-2-row': params => params.data?.level === 2,
-                'level-3-row': params => params.data?.level === 3
+                'level-3-row': params => params.data?.level === 3,
+                'totaal-activa-row': params => params.data?.label === 'Totaal activa'
             },
 
             onGridReady: params => {
@@ -732,7 +733,13 @@ class AgGridStatementRenderer {
         // For spacer rows, return empty string
         if (params?.data?._rowType === 'spacer') return '';
 
-        if (value == null || isNaN(value)) return '-';
+        // For section headers (Activa/Passiva with null values), return empty string
+        if (value == null || isNaN(value)) {
+            const isHeaderRow = params?.data?.level === 0 &&
+                               (params?.data?.label === 'Activa' || params?.data?.label === 'Passiva');
+            return isHeaderRow ? '' : '-';
+        }
+
         return new Intl.NumberFormat('nl-NL', {
             style: 'decimal',
             minimumFractionDigits: 0,
