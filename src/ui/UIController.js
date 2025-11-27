@@ -456,49 +456,57 @@ class UIController {
         return periodOptions;
     }
 
-    // Generate all three statements for export (without rendering them)
+    // Generate all three statements for export (without rendering to UI)
     async generateAllStatementsForExport(periodOptions) {
         const statements = [];
         const statementTypes = [
-            { type: 'balance-sheet', name: 'Balance Sheet' },
-            { type: 'income-statement', name: 'Income Statement' },
-            { type: 'cash-flow', name: 'Cash Flow' }
+            { type: UI_STATEMENT_TYPES.BALANCE_SHEET, name: 'Balance Sheet', generator: 'generateBalanceSheet' },
+            { type: UI_STATEMENT_TYPES.INCOME_STATEMENT, name: 'Income Statement', generator: 'generateIncomeStatement' },
+            { type: UI_STATEMENT_TYPES.CASH_FLOW, name: 'Cash Flow Statement', generator: 'generateCashFlowStatement' }
         ];
 
-        for (const { type, name } of statementTypes) {
+        for (const { type, name, generator } of statementTypes) {
             try {
-                // Generate statement data
-                let statementData;
-                if (type === 'balance-sheet') {
-                    statementData = this.statementGenerator.generateBalanceSheet(periodOptions);
-                } else if (type === 'income-statement') {
-                    statementData = this.statementGenerator.generateIncomeStatement(periodOptions);
-                } else if (type === 'cash-flow') {
-                    statementData = this.statementGenerator.generateCashFlowStatement(periodOptions);
+                console.log(`Generating ${name} for export...`);
+
+                // Generate statement data directly (without rendering to UI)
+                const statementData = this.statementGenerator[generator](periodOptions);
+
+                // Validate statement data
+                if (!statementData || !statementData.details) {
+                    throw new Error(`${name} generation returned invalid data`);
                 }
 
-                // Create a temporary grid to hold the data
+                // Create a temporary container div for the grid
+                const tempContainerId = `temp-grid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
                 const tempContainer = document.createElement('div');
-                tempContainer.style.display = 'none';
+                tempContainer.id = tempContainerId;
+                tempContainer.style.position = 'absolute';
+                tempContainer.style.left = '-9999px';
+                tempContainer.style.width = '1000px';
+                tempContainer.style.height = '600px';
                 document.body.appendChild(tempContainer);
 
-                // Build column definitions
-                const columnDefs = this.agGridRenderer.buildColumnDefinitions(statementData);
+                // Create a temporary AgGridStatementRenderer instance
+                const { AgGridStatementRenderer } = await import('./AgGridStatementRenderer.js');
+                const tempRenderer = new AgGridStatementRenderer(tempContainerId);
 
-                // Create temporary grid API
-                const gridOptions = {
-                    columnDefs: columnDefs,
-                    rowData: statementData.flatData || [],
-                    suppressCellFocus: true
-                };
+                // Render the statement to the temporary container
+                tempRenderer.render(statementData, type);
 
-                const tempGridApi = agGrid.createGrid(tempContainer, gridOptions);
+                // Get the grid API and column definitions
+                const gridApi = tempRenderer.gridApi;
+                const columnDefs = gridApi.getColumnDefs();
 
                 statements.push({
-                    gridApi: tempGridApi,
+                    gridApi: gridApi,
                     columnDefs: columnDefs,
                     name: name
                 });
+
+                // Clean up - destroy the grid and remove the temp container
+                // Note: We can't destroy yet because we need the gridApi for export
+                // The temp container will be cleaned up after export completes
 
             } catch (error) {
                 console.error(`Failed to generate ${name}:`, error);
