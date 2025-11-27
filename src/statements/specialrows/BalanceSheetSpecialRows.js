@@ -19,7 +19,28 @@ export class BalanceSheetSpecialRows {
      * @returns {Array<Object>} Data with special rows inserted
      */
     insert(data, statementData) {
-        const result = [...data];
+        // Keep "Activa" and "Passiva" headers but clear their totals
+        // Only "Totaal activa" and "Totaal passiva" at the bottom should show totals
+        const result = data.map(row => {
+            // Clear totals from level 0 category headers (Activa/Passiva)
+            // These are just section headers, not totals
+            const isTopLevelCategory = row.level === 0 &&
+                                      (row.label === 'Activa' || row.label === 'Passiva');
+
+            if (isTopLevelCategory) {
+                // Create a copy with all amount fields set to null
+                return {
+                    ...row,
+                    amount_2024: null,
+                    amount_2025: null,
+                    variance_amount: null,
+                    variance_percent: null
+                };
+            }
+
+            return row;
+        });
+
         const totals = statementData.totals?.objects() || [];
         const metrics = statementData.metrics;
         const year1 = YEAR_CONFIG.getYear(0);
