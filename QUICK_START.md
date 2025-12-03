@@ -1,0 +1,167 @@
+# Quick Start Guide
+
+## ⚠️ Important: Web Server Required
+
+This application uses **ES6 modules** and must be served from a web server. Opening `index.html` directly in your browser will NOT work due to CORS restrictions.
+
+---
+
+## 🚀 Start the Application
+
+### Step 1: Run a Local Web Server
+
+Choose one of these options:
+
+#### Option 1: Python 3 (Recommended - Usually Pre-installed)
+```bash
+python3 -m http.server 8000
+```
+
+#### Option 2: Python 2
+```bash
+python -m SimpleHTTPServer 8000
+```
+
+#### Option 3: Node.js http-server
+```bash
+# Install once
+npm install -g http-server
+
+# Run
+http-server -p 8000
+```
+
+#### Option 4: VS Code Live Server
+1. Install "Live Server" extension in VS Code
+2. Right-click `index.html`
+3. Select "Open with Live Server"
+
+#### Option 5: Deno
+```bash
+deno run --allow-net --allow-read https://deno.land/std/http/file_server.ts
+```
+
+### Step 2: Open in Browser
+
+Navigate to: **http://localhost:8000**
+
+---
+
+## 📁 Load Your Data
+
+1. Click **"Select Directory"** button
+2. Navigate to your `input` folder containing:
+   - `2024_BalansenWinstverliesperperiode.xlsx`
+   - `2025_BalansenWinstverliesperperiode.xlsx`
+   - `DimDates.xlsx` (optional)
+3. Files will load automatically
+4. View statements in the ag-Grid table
+
+---
+
+## 🎯 Use the Application
+
+### Select Statement Type
+Use the dropdown to choose:
+- Income Statement
+- Balance Sheet  
+- Cash Flow Statement
+
+### Filter by Period
+- **Year Selector**: Choose 2024, 2025, or LTM (Last Twelve Months)
+- **Period Selector**: Choose yearly, quarterly (Q1-Q4), or monthly (P1-P12)
+
+### Adjust Variance Display
+Choose how to display variance:
+- None
+- Amount (€)
+- Percent (%)
+- Both
+
+### Export Data
+Click **"Export to Excel"** to download the current statement
+
+---
+
+## ❌ Troubleshooting
+
+### "Select Directory" Button Does Nothing
+
+**Problem:** You opened `index.html` directly (file:// protocol)
+
+**Solution:** Run a web server (see Step 1 above)
+
+**Why:** ES6 modules require HTTP protocol due to browser security (CORS)
+
+### Console Error: "Failed to load module"
+
+**Problem:** Same as above - file:// protocol
+
+**Solution:** Use http://localhost:8000 instead
+
+### Browser Not Supported
+
+**Supported Browsers:**
+- ✅ Chrome 86+
+- ✅ Edge 86+
+- ✅ Opera 72+
+
+**Not Supported:**
+- ❌ Firefox (no File System Access API)
+- ❌ Safari (no File System Access API)
+
+---
+
+## 📊 Application Architecture
+
+```
+├── index.html          # Entry point (minimal HTML)
+├── src/                # ES6 modules
+│   ├── app.js         # Initialization
+│   ├── config/        # Configuration
+│   ├── data/          # Data loading & storage
+│   ├── statements/    # Statement generation
+│   ├── ui/            # User interface
+│   ├── services/      # Cross-cutting services
+│   ├── utils/         # Utility functions
+│   └── export/        # Export functionality
+├── test/              # Unit tests (Deno)
+└── input/             # Your data files (create this)
+```
+
+---
+
+## 🧪 Run Tests
+
+```bash
+# Run all tests
+deno test --allow-read test/unit/
+
+# Run with coverage
+deno test --allow-read --coverage=coverage test/unit/
+deno coverage coverage
+```
+
+---
+
+## 📚 More Information
+
+- **Full Documentation**: See [README.md](README.md)
+- **Version History**: See [CHANGELOG.md](CHANGELOG.md)
+- **Data Format**: See [docs/SAMPLE_DATA_FORMAT.md](docs/SAMPLE_DATA_FORMAT.md)
+- **Testing Guide**: See [test/docs/TESTING_GUIDE.md](test/docs/TESTING_GUIDE.md)
+
+---
+
+## 🆘 Still Having Issues?
+
+1. Check browser console for error messages (F12)
+2. Verify you're using http://localhost:8000 (not file://)
+3. Confirm your browser is Chrome, Edge, or Opera
+4. Check that your data files are in the correct format
+5. Review the troubleshooting section in README.md
+
+---
+
+**Version:** 0.11.0  
+**Last Updated:** November 18, 2025
