@@ -45,6 +45,27 @@ This application requires a browser that supports the File System Access API:
 
 ## Getting Started
 
+### Prerequisites
+
+**⚠️ Important:** This application uses ES6 modules and **must be served from a web server**. It will NOT work if you open `index.html` directly in your browser (file:// protocol) due to CORS restrictions.
+
+**Quick Start - Run a Local Web Server:**
+
+```bash
+# Option 1: Python 3 (simplest)
+python3 -m http.server 8000
+
+# Option 2: Python 2
+python -m SimpleHTTPServer 8000
+
+# Option 3: Node.js (install first: npm install -g http-server)
+http-server -p 8000
+
+# Option 4: VS Code - Install "Live Server" extension, right-click index.html, select "Open with Live Server"
+```
+
+Then open your browser to: `http://localhost:8000`
+
 ### 1. Prepare Your Data
 
 Create an `input` directory with the following Excel files:
@@ -446,7 +467,7 @@ For issues or questions:
 
 ## Version
 
-**Current Version:** 2.8.0 (with v3.0 ag-Grid features implemented)
+**Current Version:** 0.11.0
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed version history and release notes.
 
