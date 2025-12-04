@@ -22,6 +22,15 @@ export class ColumnDefBuilder {
         this.ltmLabel2 = null; // LTM label for column 2
         this.isLTMMode = false; // LTM multi-column mode
         this.ltmInfo = null; // LTM period information
+        this.reportMetadata = null; // Report definition metadata
+    }
+
+    /**
+     * Set report metadata for display in headers
+     * @param {Object} metadata - Report metadata (reportName, reportVersion, etc.)
+     */
+    setReportMetadata(metadata) {
+        this.reportMetadata = metadata;
     }
 
     /**
@@ -131,6 +140,7 @@ export class ColumnDefBuilder {
 
     /**
      * Build category column with hierarchy indentation
+     * Supports both legacy 'level' and new 'indent' attributes from report definitions
      * @returns {Object} Column definition
      */
     buildCategoryColumn() {
@@ -140,14 +150,18 @@ export class ColumnDefBuilder {
             minWidth: 400,
             cellRenderer: params => {
                 if (!params.data) return '';
-                const level = params.data.level || 0;
-                const indent = '&nbsp;&nbsp;&nbsp;&nbsp;'.repeat(level);
+                
+                // Support both 'indent' (from report definitions) and 'level' (legacy)
+                const indentLevel = params.data.indent !== undefined ? params.data.indent : (params.data.level || 0);
+                const indent = '&nbsp;&nbsp;&nbsp;&nbsp;'.repeat(indentLevel);
                 const label = params.data.label || '';
+                
                 return indent + label;
             },
             cellClass: params => {
-                const level = params.data?.level || 0;
-                return level === 0 ? 'group-cell' : 'detail-cell';
+                // Support both 'indent' and 'level' for styling
+                const indentLevel = params.data?.indent !== undefined ? params.data.indent : (params.data?.level || 0);
+                return indentLevel === 0 ? 'group-cell' : 'detail-cell';
             }
         };
     }

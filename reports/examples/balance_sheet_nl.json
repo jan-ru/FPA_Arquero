@@ -1,0 +1,477 @@
+{
+  "_comment": "Dutch Balance Sheet - Detailed balance sheet following Dutch GAAP",
+  "reportId": "balance_sheet_nl",
+  "name": "Balans (NL)",
+  "version": "1.0.0",
+  "statementType": "balance",
+  "description": "Detailed Dutch balance sheet following local GAAP with standard classifications for assets, liabilities, and equity",
+  
+  "variables": {
+    "intangible_assets": {
+      "filter": { "code1": "100", "code2": "101" },
+      "aggregate": "sum",
+      "description": "Intangible fixed assets"
+    },
+    "tangible_assets": {
+      "filter": { "code1": "100", "code2": "102" },
+      "aggregate": "sum",
+      "description": "Tangible fixed assets"
+    },
+    "financial_assets": {
+      "filter": { "code1": "100", "code2": "103" },
+      "aggregate": "sum",
+      "description": "Financial fixed assets"
+    },
+    "inventory": {
+      "filter": { "code1": "110", "code2": "111" },
+      "aggregate": "sum",
+      "description": "Inventory and work in progress"
+    },
+    "receivables": {
+      "filter": { "code1": "110", "code2": "112" },
+      "aggregate": "sum",
+      "description": "Trade and other receivables"
+    },
+    "securities": {
+      "filter": { "code1": "110", "code2": "113" },
+      "aggregate": "sum",
+      "description": "Securities and investments"
+    },
+    "cash": {
+      "filter": { "code1": "110", "code2": "114" },
+      "aggregate": "sum",
+      "description": "Cash and cash equivalents"
+    },
+    "share_capital": {
+      "filter": { "code1": "200", "code2": "201" },
+      "aggregate": "sum",
+      "description": "Share capital"
+    },
+    "share_premium": {
+      "filter": { "code1": "200", "code2": "202" },
+      "aggregate": "sum",
+      "description": "Share premium reserve"
+    },
+    "legal_reserves": {
+      "filter": { "code1": "200", "code2": "203" },
+      "aggregate": "sum",
+      "description": "Legal and statutory reserves"
+    },
+    "other_reserves": {
+      "filter": { "code1": "200", "code2": "204" },
+      "aggregate": "sum",
+      "description": "Other reserves"
+    },
+    "retained_earnings": {
+      "filter": { "code1": "200", "code2": "205" },
+      "aggregate": "sum",
+      "description": "Retained earnings"
+    },
+    "provisions": {
+      "filter": { "code1": "210" },
+      "aggregate": "sum",
+      "description": "Provisions for liabilities and charges"
+    },
+    "long_term_debt": {
+      "filter": { "code1": "220", "code2": "221" },
+      "aggregate": "sum",
+      "description": "Long-term debt"
+    },
+    "deferred_tax": {
+      "filter": { "code1": "220", "code2": "222" },
+      "aggregate": "sum",
+      "description": "Deferred tax liabilities"
+    },
+    "other_long_term": {
+      "filter": { "code1": "220", "code2": "229" },
+      "aggregate": "sum",
+      "description": "Other long-term liabilities"
+    },
+    "short_term_debt": {
+      "filter": { "code1": "230", "code2": "231" },
+      "aggregate": "sum",
+      "description": "Short-term debt"
+    },
+    "trade_payables": {
+      "filter": { "code1": "230", "code2": "232" },
+      "aggregate": "sum",
+      "description": "Trade payables"
+    },
+    "tax_payables": {
+      "filter": { "code1": "230", "code2": "233" },
+      "aggregate": "sum",
+      "description": "Tax and social security payables"
+    },
+    "other_payables": {
+      "filter": { "code1": "230", "code2": "239" },
+      "aggregate": "sum",
+      "description": "Other payables and accruals"
+    }
+  },
+  
+  "layout": [
+    {
+      "_comment": "=== ASSETS SECTION ===",
+      "order": 100,
+      "label": "ACTIVA",
+      "type": "spacer",
+      "style": "total"
+    },
+    {
+      "order": 110,
+      "type": "spacer"
+    },
+    
+    {
+      "_comment": "=== FIXED ASSETS ===",
+      "order": 200,
+      "label": "Vaste activa",
+      "type": "spacer",
+      "style": "metric"
+    },
+    {
+      "order": 210,
+      "label": "Immateriële vaste activa",
+      "type": "variable",
+      "variable": "intangible_assets",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal"
+    },
+    {
+      "order": 220,
+      "label": "Materiële vaste activa",
+      "type": "variable",
+      "variable": "tangible_assets",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal"
+    },
+    {
+      "order": 230,
+      "label": "Financiële vaste activa",
+      "type": "variable",
+      "variable": "financial_assets",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal"
+    },
+    {
+      "order": 240,
+      "label": "Totaal vaste activa",
+      "type": "subtotal",
+      "from": 210,
+      "to": 230,
+      "format": "currency",
+      "style": "subtotal",
+      "indent": 0
+    },
+    {
+      "order": 250,
+      "type": "spacer"
+    },
+    
+    {
+      "_comment": "=== CURRENT ASSETS ===",
+      "order": 300,
+      "label": "Vlottende activa",
+      "type": "spacer",
+      "style": "metric"
+    },
+    {
+      "order": 310,
+      "label": "Voorraden",
+      "type": "variable",
+      "variable": "inventory",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal"
+    },
+    {
+      "order": 320,
+      "label": "Vorderingen",
+      "type": "variable",
+      "variable": "receivables",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal"
+    },
+    {
+      "order": 330,
+      "label": "Effecten",
+      "type": "variable",
+      "variable": "securities",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal"
+    },
+    {
+      "order": 340,
+      "label": "Liquide middelen",
+      "type": "variable",
+      "variable": "cash",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal"
+    },
+    {
+      "order": 350,
+      "label": "Totaal vlottende activa",
+      "type": "subtotal",
+      "from": 310,
+      "to": 340,
+      "format": "currency",
+      "style": "subtotal",
+      "indent": 0
+    },
+    {
+      "order": 360,
+      "type": "spacer"
+    },
+    
+    {
+      "_comment": "=== TOTAL ASSETS ===",
+      "order": 400,
+      "label": "TOTAAL ACTIVA",
+      "type": "calculated",
+      "expression": "@240 + @350",
+      "format": "currency",
+      "style": "total",
+      "indent": 0
+    },
+    {
+      "order": 410,
+      "type": "spacer"
+    },
+    {
+      "order": 420,
+      "type": "spacer"
+    },
+    
+    {
+      "_comment": "=== LIABILITIES AND EQUITY SECTION ===",
+      "order": 500,
+      "label": "PASSIVA",
+      "type": "spacer",
+      "style": "total"
+    },
+    {
+      "order": 510,
+      "type": "spacer"
+    },
+    
+    {
+      "_comment": "=== EQUITY ===",
+      "order": 600,
+      "label": "Eigen vermogen",
+      "type": "spacer",
+      "style": "metric"
+    },
+    {
+      "order": 610,
+      "label": "Geplaatst kapitaal",
+      "type": "variable",
+      "variable": "share_capital",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal"
+    },
+    {
+      "order": 620,
+      "label": "Agioreserve",
+      "type": "variable",
+      "variable": "share_premium",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal"
+    },
+    {
+      "order": 630,
+      "label": "Wettelijke reserves",
+      "type": "variable",
+      "variable": "legal_reserves",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal"
+    },
+    {
+      "order": 640,
+      "label": "Overige reserves",
+      "type": "variable",
+      "variable": "other_reserves",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal"
+    },
+    {
+      "order": 650,
+      "label": "Onverdeelde winst",
+      "type": "variable",
+      "variable": "retained_earnings",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal"
+    },
+    {
+      "order": 660,
+      "label": "Totaal eigen vermogen",
+      "type": "subtotal",
+      "from": 610,
+      "to": 650,
+      "format": "currency",
+      "style": "subtotal",
+      "indent": 0
+    },
+    {
+      "order": 670,
+      "type": "spacer"
+    },
+    
+    {
+      "_comment": "=== PROVISIONS ===",
+      "order": 700,
+      "label": "Voorzieningen",
+      "type": "variable",
+      "variable": "provisions",
+      "format": "currency",
+      "indent": 0,
+      "style": "normal"
+    },
+    {
+      "order": 710,
+      "type": "spacer"
+    },
+    
+    {
+      "_comment": "=== LONG-TERM LIABILITIES ===",
+      "order": 800,
+      "label": "Langlopende schulden",
+      "type": "spacer",
+      "style": "metric"
+    },
+    {
+      "order": 810,
+      "label": "Langlopende leningen",
+      "type": "variable",
+      "variable": "long_term_debt",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal"
+    },
+    {
+      "order": 820,
+      "label": "Latente belastingverplichtingen",
+      "type": "variable",
+      "variable": "deferred_tax",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal"
+    },
+    {
+      "order": 830,
+      "label": "Overige langlopende schulden",
+      "type": "variable",
+      "variable": "other_long_term",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal"
+    },
+    {
+      "order": 840,
+      "label": "Totaal langlopende schulden",
+      "type": "subtotal",
+      "from": 810,
+      "to": 830,
+      "format": "currency",
+      "style": "subtotal",
+      "indent": 0
+    },
+    {
+      "order": 850,
+      "type": "spacer"
+    },
+    
+    {
+      "_comment": "=== CURRENT LIABILITIES ===",
+      "order": 900,
+      "label": "Kortlopende schulden",
+      "type": "spacer",
+      "style": "metric"
+    },
+    {
+      "order": 910,
+      "label": "Kortlopende leningen",
+      "type": "variable",
+      "variable": "short_term_debt",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal"
+    },
+    {
+      "order": 920,
+      "label": "Crediteuren",
+      "type": "variable",
+      "variable": "trade_payables",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal"
+    },
+    {
+      "order": 930,
+      "label": "Belastingen en sociale lasten",
+      "type": "variable",
+      "variable": "tax_payables",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal"
+    },
+    {
+      "order": 940,
+      "label": "Overige schulden en overlopende passiva",
+      "type": "variable",
+      "variable": "other_payables",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal"
+    },
+    {
+      "order": 950,
+      "label": "Totaal kortlopende schulden",
+      "type": "subtotal",
+      "from": 910,
+      "to": 940,
+      "format": "currency",
+      "style": "subtotal",
+      "indent": 0
+    },
+    {
+      "order": 960,
+      "type": "spacer"
+    },
+    
+    {
+      "_comment": "=== TOTAL LIABILITIES AND EQUITY ===",
+      "order": 1000,
+      "label": "TOTAAL PASSIVA",
+      "type": "calculated",
+      "expression": "@660 + @700 + @840 + @950",
+      "format": "currency",
+      "style": "total",
+      "indent": 0
+    }
+  ],
+  
+  "formatting": {
+    "currency": {
+      "decimals": 0,
+      "thousands": true,
+      "symbol": "€"
+    }
+  },
+  
+  "metadata": {
+    "author": "Example",
+    "created": "2024-01-01T00:00:00Z",
+    "tags": ["example", "dutch", "balance-sheet", "gaap"]
+  }
+}

@@ -1,0 +1,241 @@
+{
+  "reportId": "cash_flow_migrated",
+  "name": "Kasstroomoverzicht (Migrated)",
+  "version": "1.0.0",
+  "statementType": "cashflow",
+  "description": "Migrated Dutch cash flow statement from hardcoded logic - indirect method",
+  "variables": {
+    "net_income": {
+      "filter": {
+        "statement_type": "Winst & verlies"
+      },
+      "aggregate": "sum",
+      "description": "Net Income from Income Statement"
+    },
+    "depreciation": {
+      "filter": {
+        "name2": "Afschrijvingen"
+      },
+      "aggregate": "sum",
+      "description": "Depreciation (non-cash expense)"
+    },
+    "inventory_change": {
+      "filter": {
+        "code1": "30"
+      },
+      "aggregate": "sum",
+      "description": "Change in Inventory"
+    },
+    "receivables_change": {
+      "filter": {
+        "code1": "40"
+      },
+      "aggregate": "sum",
+      "description": "Change in Receivables"
+    },
+    "payables_change": {
+      "filter": {
+        "code1": "80"
+      },
+      "aggregate": "sum",
+      "description": "Change in Payables"
+    },
+    "fixed_assets_change": {
+      "filter": {
+        "code1": "10"
+      },
+      "aggregate": "sum",
+      "description": "Change in Fixed Assets (CapEx)"
+    },
+    "long_term_debt_change": {
+      "filter": {
+        "code1": "90"
+      },
+      "aggregate": "sum",
+      "description": "Change in Long-term Debt"
+    }
+  },
+  "layout": [
+    {
+      "order": 100,
+      "label": "Operationele activiteiten",
+      "type": "spacer",
+      "style": "total",
+      "indent": 0,
+      "description": "Operating Activities section header"
+    },
+    {
+      "order": 110,
+      "label": "Resultaat na belastingen",
+      "type": "variable",
+      "variable": "net_income",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal",
+      "description": "Net Income (starting point)"
+    },
+    {
+      "order": 120,
+      "label": "Afschrijvingen",
+      "type": "variable",
+      "variable": "depreciation",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal",
+      "description": "Add back depreciation (non-cash)"
+    },
+    {
+      "order": 130,
+      "label": "Verandering voorraden",
+      "type": "variable",
+      "variable": "inventory_change",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal",
+      "description": "Change in inventory (negative = cash used)"
+    },
+    {
+      "order": 140,
+      "label": "Verandering vorderingen",
+      "type": "variable",
+      "variable": "receivables_change",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal",
+      "description": "Change in receivables (negative = cash used)"
+    },
+    {
+      "order": 150,
+      "label": "Verandering schulden",
+      "type": "variable",
+      "variable": "payables_change",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal",
+      "description": "Change in payables (positive = cash provided)"
+    },
+    {
+      "order": 200,
+      "label": "Kasstroom uit operationele activiteiten",
+      "type": "subtotal",
+      "from": 110,
+      "to": 150,
+      "format": "currency",
+      "style": "subtotal",
+      "indent": 0,
+      "description": "Total Operating Cash Flow"
+    },
+    {
+      "order": 210,
+      "type": "spacer",
+      "description": "Blank row after operating activities"
+    },
+    {
+      "order": 300,
+      "label": "Investeringsactiviteiten",
+      "type": "spacer",
+      "style": "total",
+      "indent": 0,
+      "description": "Investing Activities section header"
+    },
+    {
+      "order": 310,
+      "label": "Investeringen in vaste activa",
+      "type": "variable",
+      "variable": "fixed_assets_change",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal",
+      "description": "Capital expenditures (negative = cash used)"
+    },
+    {
+      "order": 400,
+      "label": "Kasstroom uit investeringsactiviteiten",
+      "type": "variable",
+      "variable": "fixed_assets_change",
+      "format": "currency",
+      "style": "subtotal",
+      "indent": 0,
+      "description": "Total Investing Cash Flow (same as CapEx)"
+    },
+    {
+      "order": 410,
+      "type": "spacer",
+      "description": "Blank row after investing activities"
+    },
+    {
+      "order": 500,
+      "label": "Financieringsactiviteiten",
+      "type": "spacer",
+      "style": "total",
+      "indent": 0,
+      "description": "Financing Activities section header"
+    },
+    {
+      "order": 510,
+      "label": "Verandering langlopende schulden",
+      "type": "variable",
+      "variable": "long_term_debt_change",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal",
+      "description": "Change in long-term debt"
+    },
+    {
+      "order": 600,
+      "label": "Kasstroom uit financieringsactiviteiten",
+      "type": "variable",
+      "variable": "long_term_debt_change",
+      "format": "currency",
+      "style": "subtotal",
+      "indent": 0,
+      "description": "Total Financing Cash Flow (same as debt change)"
+    },
+    {
+      "order": 610,
+      "type": "spacer",
+      "description": "Blank row before net change"
+    },
+    {
+      "order": 700,
+      "label": "Netto verandering liquide middelen",
+      "type": "calculated",
+      "expression": "@200 + @400 + @600",
+      "format": "currency",
+      "style": "total",
+      "indent": 0,
+      "description": "Net Change in Cash = Operating + Investing + Financing"
+    }
+  ],
+  "formatting": {
+    "currency": {
+      "decimals": 0,
+      "thousands": true,
+      "symbol": "€"
+    },
+    "percent": {
+      "decimals": 1,
+      "symbol": "%"
+    },
+    "integer": {
+      "thousands": true
+    },
+    "decimal": {
+      "decimals": 2,
+      "thousands": true
+    }
+  },
+  "metadata": {
+    "author": "ReportMigrationTool",
+    "created": "2025-12-03T22:50:30.439Z",
+    "tags": [
+      "migrated",
+      "dutch",
+      "cash-flow",
+      "indirect-method",
+      "hardcoded-export"
+    ],
+    "source": "StatementGenerator.generateCashFlowStatement()",
+    "notes": "Cash flow uses indirect method starting with net income"
+  }
+}

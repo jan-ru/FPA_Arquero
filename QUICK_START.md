@@ -67,6 +67,13 @@ Use the dropdown to choose:
 - Balance Sheet  
 - Cash Flow Statement
 
+### Select Report Definition (NEW)
+Choose from available report templates:
+- **Default Reports**: Standard financial statements
+- **Detailed Reports**: Comprehensive breakdowns with subcategories
+- **IFRS Reports**: International Financial Reporting Standards format
+- **Custom Reports**: Your own custom report definitions
+
 ### Filter by Period
 - **Year Selector**: Choose 2024, 2025, or LTM (Last Twelve Months)
 - **Period Selector**: Choose yearly, quarterly (Q1-Q4), or monthly (P1-P12)
@@ -144,10 +151,57 @@ deno coverage coverage
 
 ---
 
+## 📝 Creating Custom Reports
+
+Want to create your own custom financial statement layouts?
+
+### Quick Start
+1. Copy an example: `reports/examples/income_simple.json`
+2. Modify the JSON file:
+   - Change `reportId` and `name`
+   - Define your variables (filters + aggregations)
+   - Specify layout items (order, labels, calculations)
+   - Set formatting rules
+3. Save to `reports/` directory
+4. Reload the application
+5. Select your report from the dropdown
+
+### Example Report Structure
+```json
+{
+  "reportId": "my_custom_report",
+  "name": "My Custom Income Statement",
+  "version": "1.0.0",
+  "statementType": "income",
+  "variables": {
+    "revenue": {
+      "filter": { "code1": "700" },
+      "aggregate": "sum"
+    }
+  },
+  "layout": [
+    {
+      "order": 100,
+      "label": "Revenue",
+      "type": "variable",
+      "variable": "revenue",
+      "format": "currency"
+    }
+  ]
+}
+```
+
+### Learn More
+- **Complete Guide**: [docs/REPORT_DEFINITIONS.md](docs/REPORT_DEFINITIONS.md)
+- **Migration Guide**: [docs/MIGRATION_GUIDE.md](docs/MIGRATION_GUIDE.md)
+- **Example Reports**: [reports/examples/](reports/examples/)
+
 ## 📚 More Information
 
 - **Full Documentation**: See [README.md](README.md)
 - **Version History**: See [CHANGELOG.md](CHANGELOG.md)
+- **Report Definitions**: See [docs/REPORT_DEFINITIONS.md](docs/REPORT_DEFINITIONS.md)
+- **Migration Guide**: See [docs/MIGRATION_GUIDE.md](docs/MIGRATION_GUIDE.md)
 - **Data Format**: See [docs/SAMPLE_DATA_FORMAT.md](docs/SAMPLE_DATA_FORMAT.md)
 - **Testing Guide**: See [test/docs/TESTING_GUIDE.md](test/docs/TESTING_GUIDE.md)
 

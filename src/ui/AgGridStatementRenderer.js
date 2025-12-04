@@ -61,16 +61,32 @@ class AgGridStatementRenderer {
             suppressAggFuncInHeader: true,  // Clean header display
 
             // Row styling based on type and level
+            // Support both legacy _rowType and new style attribute from report definitions
             rowClassRules: {
-                'total-row': params => params.data?._rowType === 'total',
-                'metric-row': params => params.data?._rowType === 'metric',
+                // Style-based classes (from report definitions)
+                'total-row': params => params.data?.style === 'total' || params.data?._rowType === 'total',
+                'metric-row': params => params.data?.style === 'metric' || params.data?._rowType === 'metric',
+                'subtotal-row': params => params.data?.style === 'subtotal',
+                'spacer-row': params => params.data?.style === 'spacer' || params.data?._rowType === 'spacer',
+                'normal-row': params => params.data?.style === 'normal',
+                
+                // Legacy type-based classes (for backward compatibility)
                 'group-row': params => params.data?._rowType === 'group',
+                
+                // Indent-based classes (from report definitions)
+                'indent-0': params => params.data?.indent === 0,
+                'indent-1': params => params.data?.indent === 1,
+                'indent-2': params => params.data?.indent === 2,
+                'indent-3': params => params.data?.indent === 3,
+                
+                // Legacy level-based classes (for backward compatibility)
                 'level-0-row': params => params.data?.level === 0,
                 'level-1-row': params => params.data?.level === 1,
                 'level-2-row': params => params.data?.level === 2,
                 'level-3-row': params => params.data?.level === 3,
+                
+                // Special case classes
                 'totaal-activa-row': params => params.data?.label === 'Totaal activa',
-                'spacer-row': params => params.data?._rowType === 'spacer',
                 'spacer-after-activa': params => params.data?.hierarchy?.[0] === 'SPACER_1'
             },
 
@@ -98,6 +114,13 @@ class AgGridStatementRenderer {
 
     // Prepare data for ag-Grid
     prepareDataForGrid(statementData, statementType) {
+        // Check if this is a configurable report (has rows array from report definition)
+        if (statementData.rows && Array.isArray(statementData.rows)) {
+            Logger.debug('Using configurable report data', { rowCount: statementData.rows.length });
+            return this._prepareConfigurableReportData(statementData);
+        }
+
+        // Legacy path: use hierarchical tree builder
         const details = statementData.details.objects();
 
         // Get detail level setting
@@ -109,6 +132,70 @@ class AgGridStatementRenderer {
         // Insert special rows based on statement type using factory
         const specialRowsHandler = SpecialRowsFactory.create(statementType);
         gridData = specialRowsHandler.insert(gridData, statementData);
+
+        return gridData;
+    }
+
+    /**
+     * Prepare configurable report data for ag-Grid
+     * 
+     * Transforms report definition rows into ag-Grid compatible format.
+     * Applies indentation, styling, and formatting from report definition.
+     * Supports all layout item types: variable, calculated, category, subtotal, spacer.
+     * 
+     * @private
+     * @param {Object} statementData - Statement data from report renderer
+     * @param {Array} statementData.rows - Array of row objects from report definition
+     * @param {Object} statementData.metadata - Report metadata (reportId, reportName, reportVersion)
+     * @returns {Array} Grid data ready for ag-Grid with proper styling and indentation
+     * 
+     * @example
+     * const gridData = this._prepareConfigurableReportData({
+     *   rows: [
+     *     { order: 10, label: 'Revenue', type: 'variable', style: 'normal', indent: 0, ... },
+     *     { order: 20, label: 'Expenses', type: 'variable', style: 'normal', indent: 0, ... },
+     *     { order: 30, label: 'Net Income', type: 'calculated', style: 'total', indent: 0, ... }
+     *   ],
+     *   metadata: { reportId: 'income_simple', reportName: 'Simple Income Statement', ... }
+     * });
+     */
+    _prepareConfigurableReportData(statementData) {
+        const gridData = statementData.rows.map(row => {
+            // Transform report definition row to ag-Grid format
+            return {
+                // Core fields
+                order: row.order,
+                label: row.label || '',
+                type: row.type,
+                style: row.style || 'normal',
+                indent: row.indent !== undefined ? row.indent : 0,
+                
+                // Amount fields (use raw values for calculations)
+                amount_2024: row.amount_2024,
+                amount_2025: row.amount_2025,
+                variance_amount: row.variance_amount,
+                variance_percent: row.variance_percent,
+                
+                // Formatted fields (for display)
+                formatted_2024: row.formatted_2024,
+                formatted_2025: row.formatted_2025,
+                formatted_variance_amount: row.formatted_variance_amount,
+                formatted_variance_percent: row.formatted_variance_percent,
+                
+                // Metadata for ag-Grid
+                _rowType: row.style || row.type, // Use style as _rowType for backward compatibility
+                _metadata: row._metadata,
+                
+                // For backward compatibility with existing code
+                level: row.indent !== undefined ? row.indent : 0,
+                hierarchy: [row.label || '']
+            };
+        });
+
+        Logger.debug('Prepared configurable report data', {
+            rowCount: gridData.length,
+            sample: gridData.slice(0, 3)
+        });
 
         return gridData;
     }
@@ -619,6 +706,15 @@ class AgGridStatementRenderer {
             (value, params) => this.formatCurrency(value, params),
             (params) => this.varianceRenderer(params)
         );
+
+        // Pass report metadata if available (from configurable reports)
+        if (this.currentStatementData && this.currentStatementData.metadata) {
+            builder.setReportMetadata({
+                reportId: this.currentStatementData.metadata.reportId,
+                reportName: this.currentStatementData.metadata.reportName || this.currentStatementData.reportName,
+                reportVersion: this.currentStatementData.metadata.reportVersion || this.currentStatementData.reportVersion
+            });
+        }
 
         // Pass LTM labels if available
         if (this.currentStatementData && this.currentStatementData.ltmLabels) {

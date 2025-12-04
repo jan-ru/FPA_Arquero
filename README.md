@@ -17,6 +17,8 @@ See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
 
 - **Single-Page Application**: No installation required, runs entirely in the browser
 - **Professional Data Grid**: Built with ag-Grid Community Edition for fast, responsive display
+- **Configurable Report Definitions**: Define custom financial statement layouts using JSON configuration files
+- **Report Selection**: Choose from multiple report templates or create your own custom reports
 - **Multi-Period Analysis**: Compare any two periods (year, quarter, or month) with automatic variance calculations
 - **Flexible Period Selection**: Choose from yearly (All), quarterly (Q1-Q4), monthly (P1-P12), or **LTM (Latest 12 Months)**
 - **LTM (Latest Twelve Months)**: Rolling 12-month analysis that automatically spans fiscal year boundaries
@@ -83,6 +85,7 @@ Create an `input` directory with the following Excel files:
 ### 3. View Financial Statements
 
 - **Statement Selector**: Use the dropdown to switch between Balance Sheet, Income Statement, and Cash Flow Statement
+- **Report Selector**: Choose from available report definitions (default, detailed, IFRS, etc.)
 - **Period Selection**: Choose periods for comparison (supports Year, Quarter, Month, or LTM)
 - **LTM (Latest 12 Months)**: Select "LTM" from the period dropdown to view rolling 12-month data
   - Automatically calculates the most recent 12 consecutive months
@@ -125,9 +128,20 @@ financial-statement-generator/
 │   │   ├── StatusMessageService.ts/.js # UI status messages
 │   │   ├── FileMetricsService.ts/.js   # File metrics calculation
 │   │   └── ValidationService.ts/.js    # Data validation
+│   ├── reports/                # Configurable report system (NEW)
+│   │   ├── ReportLoader.js     # Load report definitions from JSON
+│   │   ├── ReportRegistry.js   # Manage available report definitions
+│   │   ├── ReportRenderer.js   # Generate statements from definitions
+│   │   ├── ExpressionEvaluator.js # Evaluate calculation expressions
+│   │   ├── VariableResolver.js # Resolve variable references
+│   │   ├── FilterEngine.js     # Apply filters to movements data
+│   │   ├── ReportValidator.js  # Validate report definitions
+│   │   ├── ReportMigrationTool.js # Export hardcoded reports to JSON
+│   │   └── schema/             # JSON Schema definitions
+│   │       └── report-definition.schema.json
 │   ├── statements/             # Financial statement generation
 │   │   ├── StatementGenerator.js # BS, IS, CF generation logic
-│   │   └── specialrows/        # Special row insertion
+│   │   └── specialrows/        # Special row insertion (deprecated)
 │   │       ├── BalanceSheetSpecialRows.js
 │   │       ├── IncomeStatementSpecialRows.js
 │   │       └── CashFlowStatementSpecialRows.js
@@ -137,16 +151,32 @@ financial-statement-generator/
 │       ├── UIController.js     # Main UI orchestrator
 │       ├── AgGridStatementRenderer.js # ag-Grid renderer
 │       └── InteractiveUI.js    # Legacy HTML renderer (deprecated)
+├── reports/                    # Report definition files (NEW)
+│   ├── income_statement_default.json
+│   ├── balance_sheet_default.json
+│   ├── cash_flow_default.json
+│   └── examples/               # Example report definitions
+│       ├── income_simple.json
+│       ├── income_detailed_nl.json
+│       ├── income_ifrs.json
+│       ├── balance_sheet_nl.json
+│       └── balance_sheet_ifrs.json
 ├── test/                       # Testing directory
 │   ├── unit/                   # Unit tests
 │   │   ├── utils/              # Tests for utils
 │   │   ├── data/               # Tests for data layer
 │   │   ├── statements/         # Tests for statement generation
+│   │   ├── reports/            # Tests for configurable reports (NEW)
 │   │   └── ...
+│   ├── property/               # Property-based tests (NEW)
+│   │   └── reports/            # Property tests for reports
 │   └── scripts/                # Functional tests
 │       ├── run_all_tests.ts    # Test runner
 │       └── test_period_mapping.ts # Period validation
 ├── docs/                       # Documentation
+│   ├── REPORT_DEFINITIONS.md   # Report definition guide (NEW)
+│   ├── MIGRATION_GUIDE.md      # Migration guide (NEW)
+│   ├── MIGRATION_TOOL.md       # Migration tool docs (NEW)
 │   ├── ag-grid-migration-plan.md
 │   └── ag-grid-excel-formatting-examples.md
 └── input/                      # Your data files (create this)
@@ -215,6 +245,26 @@ Edit `config.json` to customize file names and directories:
   - **Starting Cash**
   - **Net Change in Cash**
   - **Ending Cash**
+
+### Configurable Report Definitions (NEW)
+- **JSON-Based Configuration**: Define report layouts externally without code changes
+- **Custom Reports**: Create custom financial statements tailored to your needs
+- **Report Selection**: Choose from multiple report templates via dropdown
+- **Variable Definitions**: Define reusable filters and aggregations
+- **Calculated Metrics**: Create custom calculations using simple expressions
+- **Flexible Formatting**: Control number formatting (currency, percent, integer, decimal)
+- **Layout Control**: Specify row order, indentation, and styling
+- **Validation**: Automatic validation of report definitions with helpful error messages
+- **Examples Included**: Sample reports for Dutch GAAP, IFRS, and simplified formats
+- **Migration Tool**: Export existing hardcoded reports to JSON format
+
+**Creating Custom Reports:**
+1. Copy an example from `/reports/examples/`
+2. Modify variables, layout, and formatting
+3. Save to `/reports/` directory
+4. Select from report dropdown in UI
+
+See [docs/REPORT_DEFINITIONS.md](docs/REPORT_DEFINITIONS.md) for complete guide.
 
 ### Variance Analysis
 - Automatically calculates absolute variance (Period 2 - Period 1)

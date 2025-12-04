@@ -1,0 +1,197 @@
+{
+  "reportId": "income_statement_migrated",
+  "name": "Winst & Verlies Rekening (Migrated)",
+  "version": "1.0.0",
+  "statementType": "income",
+  "description": "Migrated Dutch income statement from hardcoded logic - matches original implementation exactly",
+  "variables": {
+    "revenue": {
+      "filter": {
+        "code1": "500"
+      },
+      "aggregate": "sum",
+      "description": "Netto-omzet (Revenue) - code1=500"
+    },
+    "cogs": {
+      "filter": {
+        "code1": "510"
+      },
+      "aggregate": "sum",
+      "description": "Kostprijs van de omzet (Cost of Goods Sold) - code1=510"
+    },
+    "operating_costs": {
+      "filter": {
+        "code1": "520"
+      },
+      "aggregate": "sum",
+      "description": "Bedrijfslasten (Operating Costs) - code1=520"
+    },
+    "other_operating_costs": {
+      "filter": {
+        "code1": "530"
+      },
+      "aggregate": "sum",
+      "description": "Overige bedrijfslasten (Other Operating Costs) - code1=530"
+    },
+    "financial": {
+      "filter": {
+        "code1": "540"
+      },
+      "aggregate": "sum",
+      "description": "Financiële baten en lasten (Financial Income and Expenses) - code1=540"
+    },
+    "taxes": {
+      "filter": {
+        "code1": "550"
+      },
+      "aggregate": "sum",
+      "description": "Belastingen (Taxes) - code1=550"
+    }
+  },
+  "layout": [
+    {
+      "order": 100,
+      "label": "Netto-omzet",
+      "type": "variable",
+      "variable": "revenue",
+      "format": "currency",
+      "indent": 0,
+      "style": "normal",
+      "description": "Revenue from sales"
+    },
+    {
+      "order": 200,
+      "label": "Kostprijs van de omzet",
+      "type": "variable",
+      "variable": "cogs",
+      "format": "currency",
+      "indent": 0,
+      "style": "normal",
+      "description": "Cost of goods sold"
+    },
+    {
+      "order": 300,
+      "label": "Bruto marge",
+      "type": "calculated",
+      "expression": "revenue + cogs",
+      "format": "currency",
+      "style": "metric",
+      "indent": 0,
+      "description": "Gross Margin = Revenue + COGS (COGS is negative)"
+    },
+    {
+      "order": 310,
+      "type": "spacer",
+      "description": "Blank row after Bruto marge"
+    },
+    {
+      "order": 400,
+      "label": "Bedrijfslasten",
+      "type": "variable",
+      "variable": "operating_costs",
+      "format": "currency",
+      "indent": 0,
+      "style": "normal",
+      "description": "Operating expenses"
+    },
+    {
+      "order": 500,
+      "label": "Bedrijfsresultaat",
+      "type": "calculated",
+      "expression": "revenue + cogs + operating_costs",
+      "format": "currency",
+      "style": "metric",
+      "indent": 0,
+      "description": "Operating Result = Gross Margin + Operating Costs"
+    },
+    {
+      "order": 510,
+      "type": "spacer",
+      "description": "Blank row after Bedrijfsresultaat"
+    },
+    {
+      "order": 600,
+      "label": "Overige bedrijfslasten",
+      "type": "variable",
+      "variable": "other_operating_costs",
+      "format": "currency",
+      "indent": 0,
+      "style": "normal",
+      "description": "Other operating expenses"
+    },
+    {
+      "order": 700,
+      "label": "Financiële baten en lasten",
+      "type": "variable",
+      "variable": "financial",
+      "format": "currency",
+      "indent": 0,
+      "style": "normal",
+      "description": "Financial income and expenses"
+    },
+    {
+      "order": 800,
+      "label": "Resultaat voor belastingen",
+      "type": "calculated",
+      "expression": "revenue + cogs + operating_costs + other_operating_costs + financial",
+      "format": "currency",
+      "style": "metric",
+      "indent": 0,
+      "description": "Result Before Taxes"
+    },
+    {
+      "order": 810,
+      "type": "spacer",
+      "description": "Blank row before taxes"
+    },
+    {
+      "order": 900,
+      "label": "Belastingen",
+      "type": "variable",
+      "variable": "taxes",
+      "format": "currency",
+      "indent": 0,
+      "style": "normal",
+      "description": "Income taxes"
+    },
+    {
+      "order": 1000,
+      "label": "Resultaat na belastingen",
+      "type": "calculated",
+      "expression": "revenue + cogs + operating_costs + other_operating_costs + financial + taxes",
+      "format": "currency",
+      "style": "total",
+      "indent": 0,
+      "description": "Net Income = All revenues and expenses"
+    }
+  ],
+  "formatting": {
+    "currency": {
+      "decimals": 0,
+      "thousands": true,
+      "symbol": "€"
+    },
+    "percent": {
+      "decimals": 1,
+      "symbol": "%"
+    },
+    "integer": {
+      "thousands": true
+    },
+    "decimal": {
+      "decimals": 2,
+      "thousands": true
+    }
+  },
+  "metadata": {
+    "author": "ReportMigrationTool",
+    "created": "2025-12-03T22:50:30.431Z",
+    "tags": [
+      "migrated",
+      "dutch",
+      "income-statement",
+      "hardcoded-export"
+    ],
+    "source": "StatementGenerator.generateIncomeStatement()"
+  }
+}

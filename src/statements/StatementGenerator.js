@@ -32,11 +32,21 @@ import {
     buildLTMCategoryTotalsSpec,
     buildCategoryTotalsSpec
 } from '../utils/RollupSpecBuilder.js';
+import ReportRenderer from '../reports/ReportRenderer.js';
+import VariableResolver from '../reports/VariableResolver.js';
+import ExpressionEvaluator from '../reports/ExpressionEvaluator.js';
+import FilterEngine from '../reports/FilterEngine.js';
 
 class StatementGenerator {
     constructor(dataStore) {
         this.dataStore = dataStore;
         this.unmappedAccounts = [];
+        
+        // Initialize report definition components
+        this.filterEngine = new FilterEngine();
+        this.variableResolver = new VariableResolver(this.filterEngine);
+        this.expressionEvaluator = new ExpressionEvaluator();
+        this.reportRenderer = new ReportRenderer(this.variableResolver, this.expressionEvaluator);
     }
 
     // Helper: Calculate variance percentage
@@ -463,413 +473,265 @@ class StatementGenerator {
         }
     }
 
-    // Generate Balance Sheet
-    generateBalanceSheet(options = {}) {
-        const year1 = YEAR_CONFIG.getYear(0);
-        const year2 = YEAR_CONFIG.getYear(1);
+    /**
+     * Generate statement from report definition
+     * 
+     * This method provides the new configurable report generation system.
+     * It uses report definitions (JSON) to generate financial statements
+     * instead of hardcoded logic.
+     * 
+     * @param {Object} reportDef - Report definition object
+     * @param {Object} options - Generation options
+     * @param {string} options.period2024 - Period selection for 2024 (e.g., "2024-all", "2024-6", "2024-Q1")
+     * @param {string} options.period2025 - Period selection for 2025 (e.g., "2025-all", "2025-6", "2025-Q1")
+     * @param {string} options.varianceMode - Variance display mode (Amount, Percent, Both, None)
+     * @param {string} options.detailLevel - Detail level (All Levels, Summary Only)
+     * @returns {Object} Statement data with rows ready for ag-Grid
+     * 
+     * @example
+     * const reportDef = registry.getReport('income_statement_nl');
+     * const statement = generator.generateStatementFromDefinition(reportDef, {
+     *   period2024: '2024-all',
+     *   period2025: '2025-all',
+     *   varianceMode: 'Both',
+     *   detailLevel: 'All Levels'
+     * });
+     */
+    generateStatementFromDefinition(reportDef, options = {}) {
+        if (!reportDef) {
+            throw new Error('Report definition is required');
+        }
 
-        return this.generateStatement(STATEMENT_TYPES.BALANCE_SHEET, {
-            name: 'Balance Sheet',
-            [`period${year1}`]: options[`period${year1}`],
-            [`period${year2}`]: options[`period${year2}`],
-            calculateMetrics: (categoryTotals, rawFilteredData) => {
-                // Get net income from Income Statement for the same periods
-                const incomeStatement = this.generateIncomeStatement(options);
-                const netIncome = incomeStatement.metrics?.netIncome || {};
-
-                return {
-                    netIncome: netIncome
-                };
-            },
-            validateBalance: (categoryTotals) => {
-                // Use latest year for balance validation
-                const latestYear = YEAR_CONFIG.getYear(YEAR_CONFIG.yearCount - 1);
-                const latestCol = YEAR_CONFIG.getAmountColumn(latestYear);
-
-                const totals = categoryTotals.objects();
-                let totalAssets = 0, totalLiabilities = 0, totalEquity = 0;
-
-                totals.forEach(row => {
-                    if (CategoryMatcher.isAsset(row.name1)) {
-                        totalAssets += row[latestCol] || 0;
-                    } else if (CategoryMatcher.isLiability(row.name1)) {
-                        totalLiabilities += row[latestCol] || 0;
-                    } else if (CategoryMatcher.isEquity(row.name1)) {
-                        totalEquity += row[latestCol] || 0;
-                    }
-                });
-
-                const imbalance = Math.abs(totalAssets - (totalLiabilities + totalEquity));
-                if (imbalance > VALIDATION_CONFIG.BALANCE_TOLERANCE) {
-                    console.warn(`Balance Sheet imbalance: ${imbalance.toFixed(2)}`);
-                    console.warn(`Total Assets: ${totalAssets.toFixed(2)}`);
-                    console.warn(`Total Liabilities: ${totalLiabilities.toFixed(2)}`);
-                    console.warn(`Total Equity: ${totalEquity.toFixed(2)}`);
-                }
-
-                return {
-                    balanced: imbalance <= VALIDATION_CONFIG.BALANCE_TOLERANCE,
-                    imbalance: imbalance
-                };
-            }
-        });
-    }
-
-    // Generate Income Statement
-    generateIncomeStatement(options = {}) {
-        const year1 = YEAR_CONFIG.getYear(0);
-        const year2 = YEAR_CONFIG.getYear(1);
-
-        return this.generateStatement(STATEMENT_TYPES.INCOME_STATEMENT, {
-            name: 'Income Statement',
-            orderBy: true,
-            [`period${year1}`]: options[`period${year1}`],
-            [`period${year2}`]: options[`period${year2}`],
-            calculateMetrics: (categoryTotals, rawFilteredData) => {
-                // Use YEAR_CONFIG for dynamic year references
-                const year1 = YEAR_CONFIG.getYear(0);
-                const year2 = YEAR_CONFIG.getYear(1);
-                const col1 = YEAR_CONFIG.getAmountColumn(year1);
-                const col2 = YEAR_CONFIG.getAmountColumn(year2);
-
-                const totals = categoryTotals.objects();
-                let netIncome1 = 0;
-                let netIncome2 = 0;
-
-                // Calculate net income from category totals
-                totals.forEach(row => {
-                    netIncome1 += row[col1] || 0;
-                    netIncome2 += row[col2] || 0;
-                });
-
-                // Calculate Revenue and COGS from account-level aggregated data
-                // This ensures we capture ALL accounts with code1=500 and code1=510
-                // using the same aggregated amounts that appear in the statement
-                let revenue1 = 0;
-                let revenue2 = 0;
-                let cogs1 = 0;
-                let cogs2 = 0;
-
-                if (rawFilteredData) {
-                    const rawData = rawFilteredData.objects();
-                    rawData.forEach(row => {
-                        // Use amount_2024 and amount_2025 from aggregated data
-                        const amount1 = row.amount_2024 || 0;
-                        const amount2 = row.amount_2025 || 0;
-
-                        // Identify Revenue (Netto-omzet) by code1 = 500
-                        if (row.code1 === '500' || row.code1 === 500) {
-                            revenue1 += amount1;
-                            revenue2 += amount2;
-                        }
-
-                        // Identify COGS (Kostprijs van de omzet) by code1 = 510
-                        if (row.code1 === '510' || row.code1 === 510) {
-                            cogs1 += amount1;
-                            cogs2 += amount2;
-                        }
-                    });
-                }
-
-                // Calculate Bruto Marge (Gross Margin) = Revenue + COGS
-                // Note: COGS is already negative, so we add it
-                const grossProfit1 = revenue1 + cogs1;
-                const grossProfit2 = revenue2 + cogs2;
-
-                // Calculate Total Operating Costs (Totaal bedrijfskosten) from code1=520
-                let opCosts1 = 0;
-                let opCosts2 = 0;
-                let taxes1 = 0;
-                let taxes2 = 0;
-
-                if (rawFilteredData) {
-                    const rawData = rawFilteredData.objects();
-                    rawData.forEach(row => {
-                        const amount1 = row.amount_2024 || 0;
-                        const amount2 = row.amount_2025 || 0;
-
-                        // Identify Operating Costs (Bedrijfslasten) by code1 = 520
-                        if (row.code1 === '520' || row.code1 === 520) {
-                            opCosts1 += amount1;
-                            opCosts2 += amount2;
-                        }
-
-                        // Identify Taxes (Belastingen) by code1 = 550
-                        if (row.code1 === '550' || row.code1 === 550) {
-                            taxes1 += amount1;
-                            taxes2 += amount2;
-                        }
-                    });
-                }
-
-                // Calculate Bedrijfsresultaat (Operating Result) = Bruto Marge + Operating Costs
-                // Note: Operating costs are negative, so we add them
-                const operatingResult1 = grossProfit1 + opCosts1;
-                const operatingResult2 = grossProfit2 + opCosts2;
-
-                // Calculate Resultaat voor belastingen (Result before taxes) = Net Income - Taxes
-                // Note: We subtract taxes to get the result before taxes were deducted
-                const resultBeforeTax1 = netIncome1 - taxes1;
-                const resultBeforeTax2 = netIncome2 - taxes2;
-
-                console.log(`Income Statement - Revenue: ${year1}=${revenue1.toFixed(2)}, ${year2}=${revenue2.toFixed(2)}`);
-                console.log(`Income Statement - COGS: ${year1}=${cogs1.toFixed(2)}, ${year2}=${cogs2.toFixed(2)}`);
-                console.log(`Income Statement - Bruto Marge: ${year1}=${grossProfit1.toFixed(2)}, ${year2}=${grossProfit2.toFixed(2)}`);
-                console.log(`Income Statement - Operating Costs: ${year1}=${opCosts1.toFixed(2)}, ${year2}=${opCosts2.toFixed(2)}`);
-                console.log(`Income Statement - Bedrijfsresultaat: ${year1}=${operatingResult1.toFixed(2)}, ${year2}=${operatingResult2.toFixed(2)}`);
-                console.log(`Income Statement - Taxes: ${year1}=${taxes1.toFixed(2)}, ${year2}=${taxes2.toFixed(2)}`);
-                console.log(`Income Statement - Result before tax: ${year1}=${resultBeforeTax1.toFixed(2)}, ${year2}=${resultBeforeTax2.toFixed(2)}`);
-                console.log(`Income Statement - Net Income: ${year1}=${netIncome1.toFixed(2)}, ${year2}=${netIncome2.toFixed(2)}`);
-
-                return {
-                    grossProfit: { [year1]: grossProfit1, [year2]: grossProfit2 },
-                    operatingCosts: { [year1]: opCosts1, [year2]: opCosts2 },
-                    operatingResult: { [year1]: operatingResult1, [year2]: operatingResult2 },
-                    resultBeforeTax: { [year1]: resultBeforeTax1, [year2]: resultBeforeTax2 },
-                    netIncome: { [year1]: netIncome1, [year2]: netIncome2 }
-                };
-            }
-        });
-    }
-
-    // Generate Cash Flow Statement (Indirect Method - Calculated from Balance Sheet and Income Statement)
-    generateCashFlowStatement(options = {}) {
         try {
-            const year1 = YEAR_CONFIG.getYear(0); // First year (e.g., '2024')
-            const year2 = YEAR_CONFIG.getYear(1); // Second year (e.g., '2025')
-            const col1 = YEAR_CONFIG.getAmountColumn(year1); // 'amount_2024'
-            const col2 = YEAR_CONFIG.getAmountColumn(year2); // 'amount_2025'
+            // Get movements data based on statement type
+            const statementType = this._mapStatementType(reportDef.statementType);
+            const combinedMovements = this.validateRequiredData(statementType);
 
-            // Get Income Statement to extract Net Income
-            const incomeStatement = this.generateIncomeStatement(options);
-            const incomeDetails = incomeStatement.details.objects();
+            // Filter for specific statement type
+            let filtered = combinedMovements
+                .params({ statementType })
+                .filter(d => d.statement_type === statementType);
 
-            // Get Balance Sheet to calculate changes in working capital
-            const balanceSheet = this.generateBalanceSheet(options);
-            const balanceDetails = balanceSheet.details.objects();
+            // Build period options from the options parameter
+            const periodOptions = this._buildPeriodOptions(options);
 
-            // Get Net Income from Income Statement metrics (to ensure consistency)
-            const netIncome1 = incomeStatement.metrics.netIncome[year1];
-            const netIncome2 = incomeStatement.metrics.netIncome[year2];
+            // Apply period filtering if needed
+            filtered = this._applyPeriodFiltering(filtered, options, statementType);
 
-            // Calculate changes in Balance Sheet items (working capital changes)
-            const cashFlowData = [];
+            // Render statement using report definition
+            const statementData = this.reportRenderer.renderStatement(
+                reportDef,
+                filtered,
+                periodOptions
+            );
 
-            // Operating Activities - Net Income
-            cashFlowData.push({
-                code0: 'CF',
-                name0: 'Cash Flow',
-                code1: '10',
-                name1: 'Operating Activities',
-                code2: '01',
-                name2: 'Net Income',
-                [col1]: netIncome1,
-                [col2]: netIncome2
-            });
+            // Transform to format expected by existing UI components
+            const result = this._transformToLegacyFormat(statementData, options);
 
-            // Adjustments for non-cash items - Depreciation
-            balanceDetails.forEach(row => {
-                if (CategoryMatcher.isDepreciation(row.name2)) {
-                    // Calculate change in depreciation between periods
-                    const change1 = (row[col1] || 0);
-                    const change2 = (row[col2] || 0);
-                    cashFlowData.push({
-                        code0: 'CF',
-                        name0: 'Cash Flow',
-                        code1: '10',
-                        name1: 'Operating Activities',
-                        code2: '02',
-                        name2: 'Adjustments for non-cash items',
-                        code3: '01',
-                        name3: row.name2,
-                        [col1]: Math.abs(change1),
-                        [col2]: Math.abs(change2)
-                    });
-                }
-            });
-
-            // Working Capital Changes
-            // 1. Changes in Voorraden (code1=30 - Inventory)
-            balanceDetails.forEach(row => {
-                if (row.code1 === '30') {
-                    const change1 = 0; // No prior period comparison yet
-                    const change2 = (row[col2] || 0) - (row[col1] || 0);
-                    if (Math.abs(change2) > 0.01) { // Only show if meaningful change
-                        cashFlowData.push({
-                            code0: 'CF',
-                            name0: 'Cash Flow',
-                            code1: '10',
-                            name1: 'Operating Activities',
-                            code2: '03',
-                            name2: 'Working Capital Changes',
-                            code3: '01',
-                            name3: `Change in ${row.name2 || row.name1}`,
-                            [col1]: change1,
-                            [col2]: -change2 // Negative because increase in assets uses cash
-                        });
-                    }
-                }
-            });
-
-            // 2. Changes in Vorderingen (code1=40 - Receivables)
-            balanceDetails.forEach(row => {
-                if (row.code1 === '40') {
-                    const change1 = 0;
-                    const change2 = (row[col2] || 0) - (row[col1] || 0);
-                    if (Math.abs(change2) > 0.01) {
-                        cashFlowData.push({
-                            code0: 'CF',
-                            name0: 'Cash Flow',
-                            code1: '10',
-                            name1: 'Operating Activities',
-                            code2: '03',
-                            name2: 'Working Capital Changes',
-                            code3: '02',
-                            name3: `Change in ${row.name2 || row.name1}`,
-                            [col1]: change1,
-                            [col2]: -change2
-                        });
-                    }
-                }
-            });
-
-            // 3. Changes in Kortlopende schulden (code1=80 - Short-term liabilities)
-            balanceDetails.forEach(row => {
-                if (row.code1 === '80') {
-                    const change1 = 0;
-                    const change2 = (row[col2] || 0) - (row[col1] || 0);
-                    if (Math.abs(change2) > 0.01) {
-                        cashFlowData.push({
-                            code0: 'CF',
-                            name0: 'Cash Flow',
-                            code1: '10',
-                            name1: 'Operating Activities',
-                            code2: '03',
-                            name2: 'Working Capital Changes',
-                            code3: '03',
-                            name3: `Change in ${row.name2 || row.name1}`,
-                            [col1]: change1,
-                            [col2]: change2 // Positive because increase in liabilities provides cash
-                        });
-                    }
-                }
-            });
-
-            // Investing Activities (changes in fixed assets)
-            balanceDetails.forEach(row => {
-                if (CategoryMatcher.isFixedAsset(row.name1)) {
-                    const change = (row[col2] || 0) - (row[col1] || 0);
-                    if (Math.abs(change) > 0) {
-                        cashFlowData.push({
-                            code0: 'CF',
-                            name0: 'Cash Flow',
-                            code1: '30',
-                            name1: 'Investing Activities',
-                            code2: '01',
-                            name2: row.name2,
-                            [col1]: 0,
-                            [col2]: -change
-                        });
-                    }
-                }
-            });
-
-            // Financing Activities (changes in equity and long-term liabilities)
-            balanceDetails.forEach(row => {
-                if (CategoryMatcher.isLongTermLiability(row.name1)) {
-                    const change = (row[col2] || 0) - (row[col1] || 0);
-                    if (Math.abs(change) > 0) {
-                        cashFlowData.push({
-                            code0: 'CF',
-                            name0: 'Cash Flow',
-                            code1: '20',
-                            name1: 'Financing Activities',
-                            code2: '01',
-                            name2: row.name2,
-                            [col1]: 0,
-                            [col2]: change
-                        });
-                    }
-                }
-            });
-
-            // Convert to Arquero table
-            const cashFlowTable = aq.from(cashFlowData);
-
-            // Calculate variances
-            const withVariances = this.deriveVarianceColumns(cashFlowTable);
-
-            // Calculate category totals
-            const categoryTotals = this.calculateCategoryTotals(withVariances);
-
-            // Calculate net change in cash
-            const totals = categoryTotals.objects();
-            let operating1 = 0, operating2 = 0;
-            let investing1 = 0, investing2 = 0;
-            let financing1 = 0, financing2 = 0;
-
-            totals.forEach(row => {
-                if (row.name1 === 'Operating Activities') {
-                    operating1 = row[col1];
-                    operating2 = row[col2];
-                } else if (row.name1 === 'Investing Activities') {
-                    investing1 = row[col1];
-                    investing2 = row[col2];
-                } else if (row.name1 === 'Financing Activities') {
-                    financing1 = row[col1];
-                    financing2 = row[col2];
-                }
-            });
-
-            const netChange1 = operating1 + investing1 + financing1;
-            const netChange2 = operating2 + investing2 + financing2;
-
-            // Get ending cash from Balance Sheet for both periods
-            let endingCash1 = 0, endingCash2 = 0;
-            balanceDetails.forEach(row => {
-                if (row.name2) {
-                    const subcategoryLower = row.name2.toLowerCase();
-                    if (CATEGORY_DEFINITIONS.CASH.some(cat => subcategoryLower.includes(cat))) {
-                        endingCash1 += row[col1] || 0;
-                        endingCash2 += row[col2] || 0;
-                    }
-                }
-            });
-
-            // Calculate starting cash (reverse calculation from ending cash)
-            // Starting Cash = Ending Cash - Net Change
-            const startingCash1 = endingCash1 - netChange1;
-            const startingCash2 = endingCash2 - netChange2;
-
-            return {
-                details: withVariances,
-                totals: categoryTotals,
-                metrics: {
-                    netIncome: {
-                        [year1]: netIncome1,
-                        [year2]: netIncome2
-                    },
-                    netChange: {
-                        [year1]: netChange1,
-                        [year2]: netChange2,
-                        variance: netChange2 - netChange1
-                    },
-                    startingCash: {
-                        [year1]: startingCash1,
-                        [year2]: startingCash2
-                    },
-                    endingCash: {
-                        [year1]: endingCash1,
-                        [year2]: endingCash2
-                    }
-                }
+            // Add metadata
+            result.reportDefinition = {
+                reportId: reportDef.reportId,
+                name: reportDef.name,
+                version: reportDef.version,
+                statementType: reportDef.statementType
             };
 
+            return result;
+
         } catch (error) {
-            console.error('Error generating Cash Flow Statement:', error);
-            throw error;
+            console.error('Error generating statement from definition:', error);
+            throw new Error(`Failed to generate statement from definition: ${error.message}`);
         }
     }
+
+    // REMOVED: Feature flag methods - Configurable reports are now the only option
+
+    /**
+     * Map report definition statement type to internal statement type
+     * 
+     * @private
+     * @param {string} reportStatementType - Statement type from report definition (balance, income, cashflow)
+     * @returns {string} Internal statement type constant
+     */
+    _mapStatementType(reportStatementType) {
+        const mapping = {
+            'balance': STATEMENT_TYPES.BALANCE_SHEET,
+            'income': STATEMENT_TYPES.INCOME_STATEMENT,
+            'cashflow': STATEMENT_TYPES.CASH_FLOW_STATEMENT
+        };
+
+        const mapped = mapping[reportStatementType];
+        if (!mapped) {
+            throw new Error(`Unknown statement type in report definition: ${reportStatementType}`);
+        }
+
+        return mapped;
+    }
+
+    /**
+     * Build period options object from generation options
+     * 
+     * @private
+     * @param {Object} options - Generation options
+     * @returns {Object} Period options for report renderer
+     */
+    _buildPeriodOptions(options) {
+        const year1 = YEAR_CONFIG.getYear(0);
+        const year2 = YEAR_CONFIG.getYear(1);
+
+        return {
+            years: [year1, year2],
+            period2024: options.period2024 || `${year1}-all`,
+            period2025: options.period2025 || `${year2}-all`,
+            varianceMode: options.varianceMode || 'Both',
+            detailLevel: options.detailLevel || 'All Levels'
+        };
+    }
+
+    /**
+     * Apply period filtering to movements data
+     * 
+     * @private
+     * @param {Object} filtered - Arquero table with filtered data
+     * @param {Object} options - Generation options
+     * @param {string} statementType - Statement type
+     * @returns {Object} Filtered Arquero table
+     */
+    _applyPeriodFiltering(filtered, options, statementType) {
+        const year1 = YEAR_CONFIG.getYear(0);
+        const year2 = YEAR_CONFIG.getYear(1);
+
+        const periodYear1Value = options[`period${year1}`] || `${year1}-all`;
+        const periodYear2Value = options[`period${year2}`] || `${year2}-all`;
+
+        // Helper function to parse period value
+        const parsePeriod = (periodStr) => {
+            if (periodStr === 'all') return APP_CONFIG.ALL_PERIODS_CODE;
+            if (periodStr.startsWith('Q')) {
+                const quarter = parseInt(periodStr.substring(1));
+                return quarter * 3;
+            }
+            return parseInt(periodStr);
+        };
+
+        // Parse period selections
+        const [yearStr1, periodStr1] = periodYear1Value.split('-');
+        const yearInt1 = parseInt(yearStr1);
+        const periodInt1 = parsePeriod(periodStr1);
+
+        const [yearStr2, periodStr2] = periodYear2Value.split('-');
+        const yearInt2 = parseInt(yearStr2);
+        const periodInt2 = parsePeriod(periodStr2);
+
+        // Determine view type
+        let viewType = 'cumulative';
+        if (typeof document !== 'undefined') {
+            viewType = document.getElementById('view-type')?.value || 'cumulative';
+        }
+
+        // Balance Sheet always uses cumulative view
+        if (statementType === STATEMENT_TYPES.BALANCE_SHEET) {
+            viewType = 'cumulative';
+        }
+
+        // Check for LTM selection
+        const isLTM1 = isLTMSelected(periodStr1);
+        const isLTM2 = isLTMSelected(periodStr2);
+
+        // Skip filtering if showing all periods or if LTM is selected
+        if ((periodYear1Value === `${year1}-all` && periodYear2Value === `${year2}-all`) || isLTM1 || isLTM2) {
+            return filtered;
+        }
+
+        // Apply period filtering based on view type
+        if (viewType === 'period') {
+            // Period view: Show only the specific period
+            return filtered
+                .params({
+                    yearInt1: yearInt1,
+                    periodInt1: periodInt1,
+                    yearInt2: yearInt2,
+                    periodInt2: periodInt2
+                })
+                .filter(d =>
+                    (d.year === yearInt1 && d.period === periodInt1) ||
+                    (d.year === yearInt2 && d.period === periodInt2)
+                );
+        } else {
+            // Cumulative view: Show all periods up to selected period
+            return filtered
+                .params({
+                    yearInt1: yearInt1,
+                    periodInt1: periodInt1,
+                    yearInt2: yearInt2,
+                    periodInt2: periodInt2
+                })
+                .filter(d =>
+                    (d.year === yearInt1 && d.period <= periodInt1) ||
+                    (d.year === yearInt2 && d.period <= periodInt2)
+                );
+        }
+    }
+
+    /**
+     * Transform statement data to legacy format expected by UI components
+     * 
+     * @private
+     * @param {Object} statementData - Statement data from report renderer
+     * @param {Object} options - Generation options
+     * @returns {Object} Statement data in legacy format
+     */
+    _transformToLegacyFormat(statementData, options) {
+        // Convert rows array to Arquero table for compatibility
+        const rowsData = statementData.rows.map(row => ({
+            // Core fields
+            order: row.order,
+            label: row.label,
+            type: row.type,
+            style: row.style,
+            indent: row.indent,
+            
+            // Amount fields
+            amount_2024: row.amount_2024,
+            amount_2025: row.amount_2025,
+            variance_amount: row.variance_amount,
+            variance_percent: row.variance_percent,
+            
+            // Formatted fields
+            formatted_2024: row.formatted_2024,
+            formatted_2025: row.formatted_2025,
+            formatted_variance_amount: row.formatted_variance_amount,
+            formatted_variance_percent: row.formatted_variance_percent,
+            
+            // Metadata
+            _metadata: row._metadata
+        }));
+
+        const detailsTable = aq.from(rowsData);
+
+        // Create a simple totals table (for compatibility)
+        // In configurable reports, totals are calculated within the layout
+        const totalsTable = aq.from([]);
+
+        return {
+            details: detailsTable,
+            totals: totalsTable,
+            rows: statementData.rows, // Keep original rows for direct access
+            metadata: {
+                ...statementData.metadata,
+                generatedAt: statementData.generatedAt,
+                reportId: statementData.reportId,
+                reportName: statementData.reportName,
+                reportVersion: statementData.reportVersion
+            }
+        };
+    }
+
+    // REMOVED: generateBalanceSheet() - Use generateStatementFromDefinition() with report definitions instead
+
+    // REMOVED: generateIncomeStatement() - Use generateStatementFromDefinition() with report definitions instead
+
+    // REMOVED: generateCashFlowStatement() - Use generateStatementFromDefinition() with report definitions instead
 
     // Calculate variance between two periods
     calculateVariance(period1, period2) {

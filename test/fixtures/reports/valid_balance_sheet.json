@@ -1,0 +1,112 @@
+{
+  "reportId": "balance_sheet_nl",
+  "name": "Balance Sheet (NL)",
+  "version": "1.0.0",
+  "statementType": "balance",
+  "description": "Dutch balance sheet following local GAAP",
+  "variables": {
+    "fixed_assets": {
+      "filter": { "code1": "100" },
+      "aggregate": "sum",
+      "description": "Fixed assets"
+    },
+    "current_assets": {
+      "filter": { "code1": "150" },
+      "aggregate": "sum",
+      "description": "Current assets"
+    },
+    "equity": {
+      "filter": { "code1": "200" },
+      "aggregate": "sum",
+      "description": "Equity"
+    },
+    "liabilities": {
+      "filter": { "code1": "250" },
+      "aggregate": "sum",
+      "description": "Liabilities"
+    }
+  },
+  "layout": [
+    {
+      "order": 100,
+      "label": "ACTIVA",
+      "type": "category",
+      "filter": { "statement_type": "Balans", "code1": ["100", "150"] },
+      "format": "currency",
+      "style": "subtotal",
+      "indent": 0
+    },
+    {
+      "order": 110,
+      "label": "Vaste activa",
+      "type": "variable",
+      "variable": "fixed_assets",
+      "format": "currency",
+      "indent": 1
+    },
+    {
+      "order": 120,
+      "label": "Vlottende activa",
+      "type": "variable",
+      "variable": "current_assets",
+      "format": "currency",
+      "indent": 1
+    },
+    {
+      "order": 200,
+      "label": "Totaal activa",
+      "type": "subtotal",
+      "from": 110,
+      "to": 120,
+      "format": "currency",
+      "style": "total",
+      "indent": 0
+    },
+    {
+      "order": 300,
+      "type": "spacer"
+    },
+    {
+      "order": 400,
+      "label": "PASSIVA",
+      "type": "category",
+      "filter": { "statement_type": "Balans", "code1": ["200", "250"] },
+      "format": "currency",
+      "style": "subtotal",
+      "indent": 0
+    },
+    {
+      "order": 410,
+      "label": "Eigen vermogen",
+      "type": "variable",
+      "variable": "equity",
+      "format": "currency",
+      "indent": 1
+    },
+    {
+      "order": 420,
+      "label": "Vreemd vermogen",
+      "type": "variable",
+      "variable": "liabilities",
+      "format": "currency",
+      "indent": 1
+    },
+    {
+      "order": 500,
+      "label": "Totaal passiva",
+      "type": "subtotal",
+      "from": 410,
+      "to": 420,
+      "format": "currency",
+      "style": "total",
+      "indent": 0
+    }
+  ],
+  "formatting": {
+    "currency": {
+      "decimals": 0,
+      "thousands": true,
+      "symbol": "€"
+    }
+  }
+}

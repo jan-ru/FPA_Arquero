@@ -308,92 +308,11 @@ Deno.test("StatementGenerator.generateStatement - generates basic statement", ()
     assertExists(result.totals);
 });
 
-Deno.test("StatementGenerator.generateBalanceSheet - generates balance sheet", () => {
-    const dataStore = new MockDataStore();
-    const testData = [
-        {
-            statement_type: 'BS',
-            name1: 'Vaste Activa',
-            name2: 'Gebouwen',
-            code0: 'A',
-            name0: 'vaste activa',
-            code1: '10',
-            code2: '1010',
-            code3: '101000',
-            year: 2024,
-            period: 12,
-            movement_amount: 1000
-        },
-        {
-            statement_type: 'BS',
-            name1: 'Vaste Activa',
-            name2: 'Gebouwen',
-            code0: 'A',
-            name0: 'vaste activa',
-            code1: '10',
-            code2: '1010',
-            code3: '101000',
-            year: 2025,
-            period: 12,
-            movement_amount: 1200
-        }
-    ];
-    dataStore.setCombinedMovements(testData);
-    dataStore.setCombinedBalances(testData);
+// REMOVED: generateBalanceSheet test - method removed in favor of generateStatementFromDefinition
+// Use report definition-based tests instead (see test/unit/reports/ReportRenderer.test.ts)
 
-    const generator = new StatementGenerator(dataStore as any);
-    const result = generator.generateBalanceSheet();
-
-    assertExists(result);
-    assertExists(result.details);
-    assertExists(result.totals);
-    assertExists((result as any).balanced);
-    assertExists((result as any).imbalance);
-});
-
-Deno.test("StatementGenerator.generateIncomeStatement - generates income statement", () => {
-    const dataStore = new MockDataStore();
-    const testData = [
-        {
-            statement_type: 'IS',
-            name1: 'Omzet',
-            name2: 'Verkoop',
-            code0: '',
-            name0: '',
-            code1: '80',
-            code2: '8000',
-            code3: '800000',
-            year: 2024,
-            period: 12,
-            movement_amount: -5000 // Negative in source, will be flipped
-        },
-        {
-            statement_type: 'IS',
-            name1: 'Omzet',
-            name2: 'Verkoop',
-            code0: '',
-            name0: '',
-            code1: '80',
-            code2: '8000',
-            code3: '800000',
-            year: 2025,
-            period: 12,
-            movement_amount: -6000
-        }
-    ];
-    dataStore.setCombinedMovements(testData);
-    dataStore.setCombinedBalances(testData);
-
-    const generator = new StatementGenerator(dataStore as any);
-    const result = generator.generateIncomeStatement();
-
-    assertExists(result);
-    assertExists(result.details);
-    assertExists(result.totals);
-    assertExists((result as any).metrics);
-    assertExists((result as any).metrics.netIncome);
-    // grossProfit and operatingIncome removed in simplified version
-});
+// REMOVED: generateIncomeStatement test - method removed in favor of generateStatementFromDefinition
+// Use report definition-based tests instead (see test/unit/reports/ReportRenderer.test.ts)
 
 Deno.test("StatementGenerator.generateStatement - filters by period", () => {
     const dataStore = new MockDataStore();
@@ -451,33 +370,8 @@ Deno.test("StatementGenerator.generateStatement - filters by period", () => {
     assertExists(result.details);
 });
 
-Deno.test("StatementGenerator - sign flip for Income Statement", () => {
-    const dataStore = new MockDataStore();
-    // Income statement amounts are stored negative in source, should be flipped to positive
-    const testData = [
-        {
-            statement_type: 'IS',
-            name1: 'Omzet',
-            name2: 'Sales',
-            code0: '',
-            name0: '',
-            code1: '80',
-            code2: '8000',
-            code3: '800000',
-            year: 2024,
-            period: 12,
-            movement_amount: -1000 // Negative in source
-        }
-    ];
-    dataStore.setCombinedMovements(testData);
-    dataStore.setCombinedBalances(testData);
-
-    const generator = new StatementGenerator(dataStore as any);
-    const result = generator.generateIncomeStatement();
-
-    assertExists(result);
-    // The sign should be flipped, making revenue positive
-});
+// REMOVED: Sign flip test for generateIncomeStatement - method removed in favor of generateStatementFromDefinition
+// Sign flipping is now handled in the report renderer based on statement type
 
 Deno.test("StatementGenerator.calculateVariance - calculates variance between periods", () => {
     const dataStore = new MockDataStore();

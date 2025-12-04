@@ -1,0 +1,366 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/report-definition.schema.json",
+  "title": "Report Definition",
+  "description": "Schema for configurable financial statement report definitions",
+  "type": "object",
+  "required": ["reportId", "name", "version", "statementType", "layout"],
+  "properties": {
+    "reportId": {
+      "type": "string",
+      "description": "Unique identifier for the report",
+      "pattern": "^[a-z0-9_-]+$",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "name": {
+      "type": "string",
+      "description": "Display name for the report",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "version": {
+      "type": "string",
+      "description": "Semantic version number (e.g., 1.0.0)",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "statementType": {
+      "type": "string",
+      "description": "Type of financial statement",
+      "enum": ["balance", "income", "cashflow"]
+    },
+    "description": {
+      "type": "string",
+      "description": "Optional description of the report"
+    },
+    "variables": {
+      "type": "object",
+      "description": "Named variables that filter and aggregate data",
+      "additionalProperties": {
+        "$ref": "#/definitions/VariableDefinition"
+      }
+    },
+    "layout": {
+      "type": "array",
+      "description": "Layout items that define the report structure",
+      "items": {
+        "$ref": "#/definitions/LayoutItem"
+      },
+      "minItems": 1
+    },
+    "formatting": {
+      "$ref": "#/definitions/FormattingRules",
+      "description": "Default formatting rules for the report"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Optional metadata about the report",
+      "properties": {
+        "author": {
+          "type": "string"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "modified": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "VariableDefinition": {
+      "type": "object",
+      "description": "Definition of a variable that filters and aggregates data",
+      "required": ["filter", "aggregate"],
+      "properties": {
+        "filter": {
+          "$ref": "#/definitions/FilterSpecification"
+        },
+        "aggregate": {
+          "type": "string",
+          "description": "Aggregation function to apply",
+          "enum": ["sum", "average", "count", "min", "max", "first", "last"]
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional description of the variable"
+        }
+      }
+    },
+    "FilterSpecification": {
+      "type": "object",
+      "description": "Criteria for filtering movements data",
+      "additionalProperties": false,
+      "properties": {
+        "code1": {
+          "oneOf": [
+            { "type": "string" },
+            {
+              "type": "array",
+              "items": { "type": "string" },
+              "minItems": 1
+            }
+          ],
+          "description": "Filter by hierarchy code level 1"
+        },
+        "code2": {
+          "oneOf": [
+            { "type": "string" },
+            {
+              "type": "array",
+              "items": { "type": "string" },
+              "minItems": 1
+            }
+          ],
+          "description": "Filter by hierarchy code level 2"
+        },
+        "code3": {
+          "oneOf": [
+            { "type": "string" },
+            {
+              "type": "array",
+              "items": { "type": "string" },
+              "minItems": 1
+            }
+          ],
+          "description": "Filter by hierarchy code level 3"
+        },
+        "name1": {
+          "oneOf": [
+            { "type": "string" },
+            { "$ref": "#/definitions/PatternMatch" }
+          ],
+          "description": "Filter by hierarchy name level 1"
+        },
+        "name2": {
+          "oneOf": [
+            { "type": "string" },
+            { "$ref": "#/definitions/PatternMatch" }
+          ],
+          "description": "Filter by hierarchy name level 2"
+        },
+        "name3": {
+          "oneOf": [
+            { "type": "string" },
+            { "$ref": "#/definitions/PatternMatch" }
+          ],
+          "description": "Filter by hierarchy name level 3"
+        },
+        "statement_type": {
+          "type": "string",
+          "description": "Filter by statement type"
+        }
+      },
+      "minProperties": 1
+    },
+    "PatternMatch": {
+      "type": "object",
+      "description": "Pattern matching criteria for string fields",
+      "additionalProperties": false,
+      "properties": {
+        "contains": {
+          "type": "string",
+          "description": "Match if field contains this substring"
+        },
+        "startsWith": {
+          "type": "string",
+          "description": "Match if field starts with this string"
+        },
+        "endsWith": {
+          "type": "string",
+          "description": "Match if field ends with this string"
+        },
+        "regex": {
+          "type": "string",
+          "description": "Match if field matches this regular expression"
+        }
+      },
+      "minProperties": 1
+    },
+    "LayoutItem": {
+      "type": "object",
+      "description": "A single row in the report layout",
+      "required": ["order", "type"],
+      "properties": {
+        "order": {
+          "type": "number",
+          "description": "Sequence number for ordering rows",
+          "minimum": 0
+        },
+        "label": {
+          "type": "string",
+          "description": "Display label for the row"
+        },
+        "type": {
+          "type": "string",
+          "description": "Type of layout item",
+          "enum": ["variable", "calculated", "category", "subtotal", "spacer"]
+        },
+        "variable": {
+          "type": "string",
+          "description": "Variable reference (required for type='variable')"
+        },
+        "expression": {
+          "type": "string",
+          "description": "Calculation expression (required for type='calculated')"
+        },
+        "filter": {
+          "$ref": "#/definitions/FilterSpecification",
+          "description": "Filter specification (required for type='category')"
+        },
+        "from": {
+          "type": "number",
+          "description": "Start order number for subtotal range (required for type='subtotal')",
+          "minimum": 0
+        },
+        "to": {
+          "type": "number",
+          "description": "End order number for subtotal range (required for type='subtotal')",
+          "minimum": 0
+        },
+        "format": {
+          "type": "string",
+          "description": "Format type for displaying values",
+          "enum": ["currency", "percent", "integer", "decimal"]
+        },
+        "style": {
+          "type": "string",
+          "description": "Visual style for the row",
+          "enum": ["normal", "metric", "subtotal", "total", "spacer"]
+        },
+        "indent": {
+          "type": "integer",
+          "description": "Indentation level (0-3)",
+          "minimum": 0,
+          "maximum": 3
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional description of the layout item"
+        },
+        "_comment": {
+          "type": "string",
+          "description": "Comment field (ignored by parser)"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "type": { "const": "variable" } }
+          },
+          "then": {
+            "required": ["variable"]
+          }
+        },
+        {
+          "if": {
+            "properties": { "type": { "const": "calculated" } }
+          },
+          "then": {
+            "required": ["expression"]
+          }
+        },
+        {
+          "if": {
+            "properties": { "type": { "const": "category" } }
+          },
+          "then": {
+            "required": ["filter"]
+          }
+        },
+        {
+          "if": {
+            "properties": { "type": { "const": "subtotal" } }
+          },
+          "then": {
+            "required": ["from", "to"]
+          }
+        }
+      ]
+    },
+    "FormattingRules": {
+      "type": "object",
+      "description": "Default formatting rules for different number types",
+      "additionalProperties": false,
+      "properties": {
+        "currency": {
+          "type": "object",
+          "description": "Formatting rules for currency values",
+          "additionalProperties": false,
+          "properties": {
+            "decimals": {
+              "type": "integer",
+              "description": "Number of decimal places",
+              "minimum": 0,
+              "maximum": 4
+            },
+            "thousands": {
+              "type": "boolean",
+              "description": "Whether to use thousands separator"
+            },
+            "symbol": {
+              "type": "string",
+              "description": "Currency symbol to display",
+              "maxLength": 5
+            }
+          }
+        },
+        "percent": {
+          "type": "object",
+          "description": "Formatting rules for percentage values",
+          "additionalProperties": false,
+          "properties": {
+            "decimals": {
+              "type": "integer",
+              "description": "Number of decimal places",
+              "minimum": 0,
+              "maximum": 4
+            },
+            "symbol": {
+              "type": "string",
+              "description": "Percent symbol to display",
+              "maxLength": 5
+            }
+          }
+        },
+        "integer": {
+          "type": "object",
+          "description": "Formatting rules for integer values",
+          "additionalProperties": false,
+          "properties": {
+            "thousands": {
+              "type": "boolean",
+              "description": "Whether to use thousands separator"
+            }
+          }
+        },
+        "decimal": {
+          "type": "object",
+          "description": "Formatting rules for decimal values",
+          "additionalProperties": false,
+          "properties": {
+            "decimals": {
+              "type": "integer",
+              "description": "Number of decimal places",
+              "minimum": 0,
+              "maximum": 4
+            },
+            "thousands": {
+              "type": "boolean",
+              "description": "Whether to use thousands separator"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "_comment": "Simple Income Statement - A minimal example showing basic revenue and expenses",
+  "reportId": "income_simple",
+  "name": "Simple Income Statement",
+  "version": "1.0.0",
+  "statementType": "income",
+  "description": "A simplified income statement with just revenue, expenses, and net income. Perfect for small businesses or quick analysis.",
+  
+  "variables": {
+    "revenue": {
+      "filter": { "code1": "500" },
+      "aggregate": "sum",
+      "description": "Total revenue from all sources (code1=500)"
+    },
+    "expenses": {
+      "filter": { "code1": ["510", "520", "530"] },
+      "aggregate": "sum",
+      "description": "Total expenses including COGS and operating costs (code1=510, 520, 530)"
+    }
+  },
+  
+  "layout": [
+    {
+      "_comment": "Revenue section - shows total income",
+      "order": 100,
+      "label": "Revenue",
+      "type": "variable",
+      "variable": "revenue",
+      "format": "currency",
+      "style": "normal",
+      "indent": 0
+    },
+    
+    {
+      "_comment": "Expenses section - shows total costs",
+      "order": 200,
+      "label": "Expenses",
+      "type": "variable",
+      "variable": "expenses",
+      "format": "currency",
+      "style": "normal",
+      "indent": 0
+    },
+    
+    {
+      "_comment": "Spacer for visual separation",
+      "order": 300,
+      "type": "spacer"
+    },
+    
+    {
+      "_comment": "Net Income - calculated as revenue + expenses (expenses are negative)",
+      "order": 400,
+      "label": "Net Income",
+      "type": "calculated",
+      "expression": "revenue + expenses",
+      "format": "currency",
+      "style": "total",
+      "indent": 0
+    }
+  ],
+  
+  "formatting": {
+    "currency": {
+      "decimals": 0,
+      "thousands": true,
+      "symbol": "€"
+    }
+  },
+  
+  "metadata": {
+    "author": "Example",
+    "created": "2024-01-01T00:00:00Z",
+    "tags": ["example", "simple", "income-statement", "beginner"]
+  }
+}

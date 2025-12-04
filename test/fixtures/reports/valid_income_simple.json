@@ -1,0 +1,64 @@
+{
+  "reportId": "income_simple",
+  "name": "Simple Income Statement",
+  "version": "1.0.0",
+  "statementType": "income",
+  "description": "A simple income statement with revenue and expenses",
+  "variables": {
+    "revenue": {
+      "filter": { "code1": "700" },
+      "aggregate": "sum",
+      "description": "Total revenue from sales"
+    },
+    "expenses": {
+      "filter": { "code1": ["710", "720", "730"] },
+      "aggregate": "sum",
+      "description": "Total operating expenses"
+    }
+  },
+  "layout": [
+    {
+      "order": 10,
+      "label": "Revenue",
+      "type": "variable",
+      "variable": "revenue",
+      "format": "currency",
+      "style": "normal",
+      "indent": 0
+    },
+    {
+      "order": 20,
+      "label": "Expenses",
+      "type": "variable",
+      "variable": "expenses",
+      "format": "currency",
+      "style": "normal",
+      "indent": 0
+    },
+    {
+      "order": 30,
+      "type": "spacer"
+    },
+    {
+      "order": 40,
+      "label": "Net Income",
+      "type": "calculated",
+      "expression": "revenue + expenses",
+      "format": "currency",
+      "style": "total",
+      "indent": 0
+    }
+  ],
+  "formatting": {
+    "currency": {
+      "decimals": 0,
+      "thousands": true,
+      "symbol": "€"
+    }
+  },
+  "metadata": {
+    "author": "Test Author",
+    "created": "2024-01-01T00:00:00Z",
+    "tags": ["simple", "example"]
+  }
+}

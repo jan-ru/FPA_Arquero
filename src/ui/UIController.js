@@ -26,6 +26,9 @@ import FileSelectionService from '../services/FileSelectionService.js';
 import StatusMessageService from '../services/StatusMessageService.js';
 import FileMetricsService from '../services/FileMetricsService.js';
 import ValidationService from '../services/ValidationService.js';
+import ReportRegistry from '../reports/ReportRegistry.js';
+import ReportLoader from '../reports/ReportLoader.js';
+import ReportValidator from '../reports/ReportValidator.js';
 
 class UIController {
     constructor() {
@@ -50,11 +53,19 @@ class UIController {
         this.fileMetricsService = new FileMetricsService(this.dataStore);
         this.validationService = new ValidationService(this.statementGenerator);
 
+        // Initialize report registry and loader
+        this.reportRegistry = ReportRegistry.getInstance();
+        this.reportValidator = new ReportValidator();
+        this.reportLoader = new ReportLoader(this.reportValidator);
+
         // Initialize UI with filenames from config
         this.initializeFilenames();
 
         // Initialize status message service DOM references
         this.statusMessageService.initialize();
+
+        // Load report definitions
+        this.loadReportDefinitions();
     }
 
     /**
@@ -267,6 +278,73 @@ class UIController {
         this.validationService.validateAndDisplay();
     }
 
+    /**
+     * Generate and display statement from a report definition
+     * This method uses the configurable report system
+     * 
+     * @param {Object} reportDef - Report definition from ReportRegistry
+     * @param {string} statementType - UI statement type constant
+     */
+    generateStatementFromDefinition(reportDef, statementType) {
+        try {
+            console.log(`Generating statement from report definition: ${reportDef.name}`);
+
+            // Build period options (same as hardcoded method)
+            const periodOptions = this.buildPeriodOptions();
+
+            // Call StatementGenerator.generateStatementFromDefinition
+            const statementData = this.statementGenerator.generateStatementFromDefinition(
+                reportDef,
+                periodOptions
+            );
+
+            // Validate statement data
+            if (!statementData || !statementData.details) {
+                throw new Error('Statement generation returned invalid data');
+            }
+
+            // Render with ag-Grid
+            this.agGridRenderer.render(statementData, statementType);
+
+            // Update current statement tracking
+            this.currentStatementType = statementType;
+            this.currentStatementData = statementData;
+
+            console.log(`${reportDef.name} generated successfully with ${statementData.details.numRows()} detail rows`);
+
+        } catch (error) {
+            console.error('Error generating statement from definition:', error);
+            console.error('Error stack:', error.stack);
+
+            const display = document.getElementById('statement-display');
+            if (display) {
+                let errorMessage = 'Failed to generate statement from report definition: ';
+                errorMessage += error.message || 'Unknown error occurred.';
+
+                display.innerHTML = `
+                    <div style="padding: 20px; background: #f8d7da; border: 1px solid #dc3545; border-radius: 4px; color: #721c24;">
+                        <strong>❌ Error:</strong> ${errorMessage}
+                        <br><br>
+                        <small>Check the browser console for more details.</small>
+                    </div>
+                `;
+            }
+
+            // Fall back to hardcoded report
+            this.showErrorMessage('Falling back to default hardcoded report');
+            
+            // Clear report selection
+            const reportSelector = document.getElementById('report-selector');
+            if (reportSelector) {
+                reportSelector.value = '';
+            }
+            this.hideReportInfo();
+
+            // Regenerate with hardcoded method
+            this.generateAndDisplayStatement(statementType);
+        }
+    }
+
     // Generate and display statement
     generateAndDisplayStatement(statementType) {
         try {
@@ -275,76 +353,47 @@ class UIController {
                 throw new Error('No data loaded. Please load trial balance files first.');
             }
 
-            // Get years from config
-            const year1 = YEAR_CONFIG.getYear(0);
-            const year2 = YEAR_CONFIG.getYear(1);
-
-            // Get period selection (applies to 2025)
-            const periodValue = document.getElementById('period-selector')?.value || 'all';
-
-            // Get comparison type (YoY, LTM, MoM)
-            const comparisonType = document.getElementById('comparison-selector')?.value || 'yoy';
-
-            // Build period options based on comparison type and period selection
-            let periodOptions;
-
-            // Check if LTM is selected in period dropdown
-            if (isLTMSelected(periodValue)) {
-                // LTM (Latest Twelve Months) selected
-                // Both columns show LTM data
-                periodOptions = {
-                    [`period${year1}`]: `${year1}-ltm`,
-                    [`period${year2}`]: `${year2}-ltm`
-                };
-
-                // Hide LTM warning if it was showing
-                const ltmWarning = document.getElementById('ltm-warning');
-                if (ltmWarning) {
-                    ltmWarning.style.display = 'none';
+            // Get report definition - either selected or default
+            const reportSelector = document.getElementById('report-selector');
+            const selectedReportId = reportSelector?.value;
+            
+            let report;
+            
+            if (selectedReportId) {
+                // User has selected a specific report
+                report = this.reportRegistry.getReport(selectedReportId);
+                
+                if (!report) {
+                    throw new Error(`Report '${selectedReportId}' not found in registry`);
                 }
-            } else if (comparisonType === 'yoy') {
-                // Year-over-Year: Same period for both years
-                periodOptions = {
-                    [`period${year1}`]: `${year1}-${periodValue}`,
-                    [`period${year2}`]: `${year2}-${periodValue}`
-                };
-            } else if (comparisonType === 'ltm') {
-                // Last Twelve Months (from comparison selector):
-                // 2025 column shows last 12 months ending at selected period
-                // 2024 column shows prior 12 months ending at same period
-                periodOptions = {
-                    [`period${year1}`]: `${year1}-all`, // TODO: Implement rolling 12-month calculation
-                    [`period${year2}`]: `${year2}-all`, // TODO: Implement rolling 12-month calculation
-                    isLTM: true,
-                    ltmEndPeriod: periodValue
-                };
+                
+                // Verify report matches current statement type
+                const registryType = this.getStatementTypeForRegistry(statementType);
+                
+                if (report.statementType !== registryType) {
+                    throw new Error(
+                        `Selected report is for ${report.statementType} statements, ` +
+                        `but ${registryType} statement is selected.`
+                    );
+                }
             } else {
-                // Default to YoY
-                periodOptions = {
-                    [`period${year1}`]: `${year1}-${periodValue}`,
-                    [`period${year2}`]: `${year2}-${periodValue}`
-                };
+                // No report selected - use default report for this statement type
+                const registryType = this.getStatementTypeForRegistry(statementType);
+                report = this.reportRegistry.getDefaultReport(registryType);
+                
+                if (!report) {
+                    throw new Error(
+                        `No default report found for ${registryType} statements. ` +
+                        `Please ensure default report definitions are loaded.`
+                    );
+                }
+                
+                console.log(`Using default report: ${report.name} (${report.reportId})`);
             }
 
-            let statementData;
-            let statementName;
-
-            switch(statementType) {
-                case UI_STATEMENT_TYPES.BALANCE_SHEET:
-                    statementName = 'Balance Sheet';
-                    statementData = this.statementGenerator.generateBalanceSheet(periodOptions);
-                    break;
-                case UI_STATEMENT_TYPES.INCOME_STATEMENT:
-                    statementName = 'Income Statement';
-                    statementData = this.statementGenerator.generateIncomeStatement(periodOptions);
-                    break;
-                case UI_STATEMENT_TYPES.CASH_FLOW:
-                    statementName = 'Cash Flow Statement';
-                    statementData = this.statementGenerator.generateCashFlowStatement(periodOptions);
-                    break;
-                default:
-                    throw new Error('Unknown statement type: ' + statementType);
-            }
+            // Generate statement using report definition
+            const statementData = this.generateStatementFromDefinition(report, statementType);
+            const statementName = report.name;
 
             // Validate statement data
             if (!statementData || !statementData.details) {
@@ -684,6 +733,208 @@ class UIController {
         }
     }
 
+    /**
+     * Load report definitions from the /reports/ directory
+     * Registers them in the ReportRegistry
+     */
+    async loadReportDefinitions() {
+        try {
+            console.log('Loading report definitions...');
+            
+            // Load all report definitions from the /reports/ directory
+            const reports = await this.reportLoader.loadReportsFromDirectory('/reports/');
+            
+            console.log(`Loaded ${reports.length} report definitions`);
+            
+            // Register each report in the registry
+            for (const report of reports) {
+                try {
+                    // Check if this is a default report (ends with _default.json)
+                    const isDefault = report.reportId && report.reportId.includes('_default');
+                    this.reportRegistry.register(report, isDefault);
+                    console.log(`Registered report: ${report.name} (${report.reportId})`);
+                } catch (error) {
+                    console.error(`Failed to register report ${report.reportId}:`, error);
+                }
+            }
+            
+            // Populate the report selector dropdown
+            this.populateReportSelector();
+            
+            // Restore last selected report from localStorage
+            this.restoreSelectedReport();
+            
+        } catch (error) {
+            console.error('Error loading report definitions:', error);
+            // Don't throw - allow app to continue with hardcoded reports
+        }
+    }
+
+    /**
+     * Populate the report selector dropdown with available reports
+     * Groups reports by statement type
+     */
+    populateReportSelector() {
+        const reportSelector = document.getElementById('report-selector');
+        if (!reportSelector) {
+            console.warn('Report selector element not found');
+            return;
+        }
+
+        // Clear existing options except the default
+        reportSelector.innerHTML = '<option value="">Default (Hardcoded)</option>';
+
+        // Get current statement type to filter reports
+        const currentType = this.getStatementTypeForRegistry(this.currentStatementType);
+        
+        // Get reports for current statement type
+        const reports = this.reportRegistry.getReportsByType(currentType);
+        
+        if (reports.length === 0) {
+            console.log(`No configurable reports found for ${currentType}`);
+            return;
+        }
+
+        // Add reports to dropdown
+        reports.forEach(report => {
+            const option = document.createElement('option');
+            option.value = report.reportId;
+            option.textContent = `${report.name} (v${report.version})`;
+            reportSelector.appendChild(option);
+        });
+
+        console.log(`Populated report selector with ${reports.length} reports for ${currentType}`);
+    }
+
+    /**
+     * Map UI statement type to registry statement type
+     * @param {string} uiType - UI_STATEMENT_TYPES constant
+     * @returns {string} Registry statement type (balance, income, cashflow)
+     */
+    getStatementTypeForRegistry(uiType) {
+        const mapping = {
+            [UI_STATEMENT_TYPES.INCOME_STATEMENT]: 'income',
+            [UI_STATEMENT_TYPES.BALANCE_SHEET]: 'balance',
+            [UI_STATEMENT_TYPES.CASH_FLOW]: 'cashflow'
+        };
+        return mapping[uiType] || 'income';
+    }
+
+    /**
+     * Restore the last selected report from localStorage
+     */
+    restoreSelectedReport() {
+        const selectedReportId = this.reportRegistry.getSelectedReportId();
+        
+        if (selectedReportId) {
+            const reportSelector = document.getElementById('report-selector');
+            if (reportSelector) {
+                // Check if the report still exists
+                if (this.reportRegistry.hasReport(selectedReportId)) {
+                    reportSelector.value = selectedReportId;
+                    this.updateReportInfo(selectedReportId);
+                    console.log(`Restored selected report: ${selectedReportId}`);
+                } else {
+                    // Report no longer exists, clear selection
+                    this.reportRegistry.clearSelectedReport();
+                    console.warn(`Previously selected report ${selectedReportId} not found`);
+                }
+            }
+        }
+    }
+
+    /**
+     * Handle report selection change
+     * Persists selection to localStorage and regenerates statement
+     */
+    handleReportSelectionChange() {
+        const reportSelector = document.getElementById('report-selector');
+        if (!reportSelector) return;
+
+        const selectedReportId = reportSelector.value;
+
+        if (selectedReportId) {
+            // Save selection to localStorage
+            try {
+                this.reportRegistry.setSelectedReportId(selectedReportId);
+                console.log(`Selected report: ${selectedReportId}`);
+            } catch (error) {
+                console.error('Error saving report selection:', error);
+            }
+
+            // Update report info display
+            this.updateReportInfo(selectedReportId);
+        } else {
+            // Clear selection (using default hardcoded report)
+            this.reportRegistry.clearSelectedReport();
+            this.hideReportInfo();
+        }
+
+        // Regenerate statement with new report
+        if (this.currentStatementType) {
+            this.generateAndDisplayStatement(this.currentStatementType);
+        }
+    }
+
+    /**
+     * Update the report info display with report name and version
+     * @param {string} reportId - Report ID to display
+     */
+    updateReportInfo(reportId) {
+        const report = this.reportRegistry.getReport(reportId);
+        
+        if (!report) {
+            this.hideReportInfo();
+            return;
+        }
+
+        const reportInfoDiv = document.getElementById('report-info');
+        const reportNameSpan = document.getElementById('report-name');
+        const reportVersionSpan = document.getElementById('report-version');
+
+        if (reportInfoDiv && reportNameSpan && reportVersionSpan) {
+            reportNameSpan.textContent = report.name;
+            reportVersionSpan.textContent = `(v${report.version})`;
+            reportInfoDiv.style.display = 'block';
+        }
+    }
+
+    /**
+     * Hide the report info display
+     */
+    hideReportInfo() {
+        const reportInfoDiv = document.getElementById('report-info');
+        if (reportInfoDiv) {
+            reportInfoDiv.style.display = 'none';
+        }
+    }
+
+    /**
+     * Handle reload report definitions button click
+     * Reloads all report definitions from files
+     */
+    async handleReloadReports() {
+        try {
+            this.showLoadingMessage('Reloading report definitions...');
+            
+            // Clear existing reports
+            this.reportRegistry.clear();
+            
+            // Reload reports
+            await this.loadReportDefinitions();
+            
+            this.showSuccessMessage('Report definitions reloaded successfully');
+            
+            // Regenerate current statement
+            if (this.currentStatementType) {
+                this.generateAndDisplayStatement(this.currentStatementType);
+            }
+        } catch (error) {
+            console.error('Error reloading reports:', error);
+            this.showErrorMessage('Failed to reload report definitions: ' + error.message);
+        }
+    }
+
     // Setup event listeners
     setupEventListeners() {
         document.getElementById('select-input-dir').addEventListener('click', () => {
@@ -713,6 +964,24 @@ class UIController {
         if (statementSelector) {
             statementSelector.addEventListener('change', () => {
                 this.handleTabSwitch(statementSelector.value);
+                // Update report selector options for new statement type
+                this.populateReportSelector();
+            });
+        }
+
+        // Report selector dropdown
+        const reportSelector = document.getElementById('report-selector');
+        if (reportSelector) {
+            reportSelector.addEventListener('change', () => {
+                this.handleReportSelectionChange();
+            });
+        }
+
+        // Reload report definitions button
+        const reloadReportBtn = document.getElementById('reload-report-btn');
+        if (reloadReportBtn) {
+            reloadReportBtn.addEventListener('click', () => {
+                this.handleReloadReports();
             });
         }
 

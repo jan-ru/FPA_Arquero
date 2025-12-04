@@ -1,0 +1,11 @@
+{
+  "name": "Invalid Report - Missing reportId",
+  "version": "1.0.0",
+  "statementType": "income",
+  "layout": [
+    {
+      "order": 10,
+      "type": "spacer"
+    }
+  ]
+}

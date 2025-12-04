@@ -1,0 +1,631 @@
+{
+  "_comment": "IFRS Balance Sheet - Statement of Financial Position following IFRS",
+  "reportId": "balance_sheet_ifrs",
+  "name": "Statement of Financial Position (IFRS)",
+  "version": "1.0.0",
+  "statementType": "balance",
+  "description": "Statement of Financial Position following International Financial Reporting Standards (IFRS) with standard classifications",
+  
+  "variables": {
+    "property_plant_equipment": {
+      "filter": { "code1": "100", "code2": "101" },
+      "aggregate": "sum",
+      "description": "Property, plant and equipment (IAS 16)"
+    },
+    "intangible_assets": {
+      "filter": { "code1": "100", "code2": "102" },
+      "aggregate": "sum",
+      "description": "Intangible assets (IAS 38)"
+    },
+    "investment_property": {
+      "filter": { "code1": "100", "code2": "103" },
+      "aggregate": "sum",
+      "description": "Investment property (IAS 40)"
+    },
+    "investments_associates": {
+      "filter": { "code1": "100", "code2": "104" },
+      "aggregate": "sum",
+      "description": "Investments in associates and joint ventures (IAS 28)"
+    },
+    "financial_assets_nc": {
+      "filter": { "code1": "100", "code2": "105" },
+      "aggregate": "sum",
+      "description": "Financial assets at fair value (IFRS 9)"
+    },
+    "deferred_tax_assets": {
+      "filter": { "code1": "100", "code2": "106" },
+      "aggregate": "sum",
+      "description": "Deferred tax assets (IAS 12)"
+    },
+    "inventories": {
+      "filter": { "code1": "110", "code2": "111" },
+      "aggregate": "sum",
+      "description": "Inventories (IAS 2)"
+    },
+    "trade_receivables": {
+      "filter": { "code1": "110", "code2": "112" },
+      "aggregate": "sum",
+      "description": "Trade and other receivables (IFRS 9)"
+    },
+    "contract_assets": {
+      "filter": { "code1": "110", "code2": "113" },
+      "aggregate": "sum",
+      "description": "Contract assets (IFRS 15)"
+    },
+    "current_tax_assets": {
+      "filter": { "code1": "110", "code2": "114" },
+      "aggregate": "sum",
+      "description": "Current tax assets (IAS 12)"
+    },
+    "financial_assets_current": {
+      "filter": { "code1": "110", "code2": "115" },
+      "aggregate": "sum",
+      "description": "Other financial assets (IFRS 9)"
+    },
+    "cash_equivalents": {
+      "filter": { "code1": "110", "code2": "116" },
+      "aggregate": "sum",
+      "description": "Cash and cash equivalents (IAS 7)"
+    },
+    "share_capital": {
+      "filter": { "code1": "200", "code2": "201" },
+      "aggregate": "sum",
+      "description": "Share capital"
+    },
+    "share_premium": {
+      "filter": { "code1": "200", "code2": "202" },
+      "aggregate": "sum",
+      "description": "Share premium"
+    },
+    "retained_earnings": {
+      "filter": { "code1": "200", "code2": "203" },
+      "aggregate": "sum",
+      "description": "Retained earnings"
+    },
+    "other_reserves": {
+      "filter": { "code1": "200", "code2": "204" },
+      "aggregate": "sum",
+      "description": "Other components of equity"
+    },
+    "non_controlling_interests": {
+      "filter": { "code1": "200", "code2": "205" },
+      "aggregate": "sum",
+      "description": "Non-controlling interests (IFRS 10)"
+    },
+    "borrowings_nc": {
+      "filter": { "code1": "220", "code2": "221" },
+      "aggregate": "sum",
+      "description": "Non-current borrowings (IFRS 9)"
+    },
+    "lease_liabilities_nc": {
+      "filter": { "code1": "220", "code2": "222" },
+      "aggregate": "sum",
+      "description": "Non-current lease liabilities (IFRS 16)"
+    },
+    "provisions_nc": {
+      "filter": { "code1": "220", "code2": "223" },
+      "aggregate": "sum",
+      "description": "Non-current provisions (IAS 37)"
+    },
+    "deferred_tax_liabilities": {
+      "filter": { "code1": "220", "code2": "224" },
+      "aggregate": "sum",
+      "description": "Deferred tax liabilities (IAS 12)"
+    },
+    "employee_benefits": {
+      "filter": { "code1": "220", "code2": "225" },
+      "aggregate": "sum",
+      "description": "Employee benefit obligations (IAS 19)"
+    },
+    "trade_payables": {
+      "filter": { "code1": "230", "code2": "231" },
+      "aggregate": "sum",
+      "description": "Trade and other payables (IFRS 9)"
+    },
+    "contract_liabilities": {
+      "filter": { "code1": "230", "code2": "232" },
+      "aggregate": "sum",
+      "description": "Contract liabilities (IFRS 15)"
+    },
+    "borrowings_current": {
+      "filter": { "code1": "230", "code2": "233" },
+      "aggregate": "sum",
+      "description": "Current borrowings (IFRS 9)"
+    },
+    "lease_liabilities_current": {
+      "filter": { "code1": "230", "code2": "234" },
+      "aggregate": "sum",
+      "description": "Current lease liabilities (IFRS 16)"
+    },
+    "current_tax_liabilities": {
+      "filter": { "code1": "230", "code2": "235" },
+      "aggregate": "sum",
+      "description": "Current tax liabilities (IAS 12)"
+    },
+    "provisions_current": {
+      "filter": { "code1": "230", "code2": "236" },
+      "aggregate": "sum",
+      "description": "Current provisions (IAS 37)"
+    }
+  },
+  
+  "layout": [
+    {
+      "_comment": "=== ASSETS ===",
+      "order": 100,
+      "label": "ASSETS",
+      "type": "spacer",
+      "style": "total"
+    },
+    {
+      "order": 110,
+      "type": "spacer"
+    },
+    
+    {
+      "_comment": "=== NON-CURRENT ASSETS ===",
+      "order": 200,
+      "label": "Non-current assets",
+      "type": "spacer",
+      "style": "metric"
+    },
+    {
+      "order": 210,
+      "label": "Property, plant and equipment",
+      "type": "variable",
+      "variable": "property_plant_equipment",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal",
+      "description": "IAS 16"
+    },
+    {
+      "order": 220,
+      "label": "Intangible assets",
+      "type": "variable",
+      "variable": "intangible_assets",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal",
+      "description": "IAS 38"
+    },
+    {
+      "order": 230,
+      "label": "Investment property",
+      "type": "variable",
+      "variable": "investment_property",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal",
+      "description": "IAS 40"
+    },
+    {
+      "order": 240,
+      "label": "Investments in associates and joint ventures",
+      "type": "variable",
+      "variable": "investments_associates",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal",
+      "description": "IAS 28"
+    },
+    {
+      "order": 250,
+      "label": "Financial assets",
+      "type": "variable",
+      "variable": "financial_assets_nc",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal",
+      "description": "IFRS 9"
+    },
+    {
+      "order": 260,
+      "label": "Deferred tax assets",
+      "type": "variable",
+      "variable": "deferred_tax_assets",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal",
+      "description": "IAS 12"
+    },
+    {
+      "order": 270,
+      "label": "Total non-current assets",
+      "type": "subtotal",
+      "from": 210,
+      "to": 260,
+      "format": "currency",
+      "style": "subtotal",
+      "indent": 0
+    },
+    {
+      "order": 280,
+      "type": "spacer"
+    },
+    
+    {
+      "_comment": "=== CURRENT ASSETS ===",
+      "order": 300,
+      "label": "Current assets",
+      "type": "spacer",
+      "style": "metric"
+    },
+    {
+      "order": 310,
+      "label": "Inventories",
+      "type": "variable",
+      "variable": "inventories",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal",
+      "description": "IAS 2"
+    },
+    {
+      "order": 320,
+      "label": "Trade and other receivables",
+      "type": "variable",
+      "variable": "trade_receivables",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal",
+      "description": "IFRS 9"
+    },
+    {
+      "order": 330,
+      "label": "Contract assets",
+      "type": "variable",
+      "variable": "contract_assets",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal",
+      "description": "IFRS 15"
+    },
+    {
+      "order": 340,
+      "label": "Current tax assets",
+      "type": "variable",
+      "variable": "current_tax_assets",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal",
+      "description": "IAS 12"
+    },
+    {
+      "order": 350,
+      "label": "Other financial assets",
+      "type": "variable",
+      "variable": "financial_assets_current",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal",
+      "description": "IFRS 9"
+    },
+    {
+      "order": 360,
+      "label": "Cash and cash equivalents",
+      "type": "variable",
+      "variable": "cash_equivalents",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal",
+      "description": "IAS 7"
+    },
+    {
+      "order": 370,
+      "label": "Total current assets",
+      "type": "subtotal",
+      "from": 310,
+      "to": 360,
+      "format": "currency",
+      "style": "subtotal",
+      "indent": 0
+    },
+    {
+      "order": 380,
+      "type": "spacer"
+    },
+    
+    {
+      "_comment": "=== TOTAL ASSETS ===",
+      "order": 400,
+      "label": "TOTAL ASSETS",
+      "type": "calculated",
+      "expression": "@270 + @370",
+      "format": "currency",
+      "style": "total",
+      "indent": 0
+    },
+    {
+      "order": 410,
+      "type": "spacer"
+    },
+    {
+      "order": 420,
+      "type": "spacer"
+    },
+    
+    {
+      "_comment": "=== EQUITY AND LIABILITIES ===",
+      "order": 500,
+      "label": "EQUITY AND LIABILITIES",
+      "type": "spacer",
+      "style": "total"
+    },
+    {
+      "order": 510,
+      "type": "spacer"
+    },
+    
+    {
+      "_comment": "=== EQUITY ===",
+      "order": 600,
+      "label": "Equity",
+      "type": "spacer",
+      "style": "metric"
+    },
+    {
+      "order": 610,
+      "label": "Share capital",
+      "type": "variable",
+      "variable": "share_capital",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal"
+    },
+    {
+      "order": 620,
+      "label": "Share premium",
+      "type": "variable",
+      "variable": "share_premium",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal"
+    },
+    {
+      "order": 630,
+      "label": "Retained earnings",
+      "type": "variable",
+      "variable": "retained_earnings",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal"
+    },
+    {
+      "order": 640,
+      "label": "Other components of equity",
+      "type": "variable",
+      "variable": "other_reserves",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal"
+    },
+    {
+      "order": 650,
+      "label": "Equity attributable to owners",
+      "type": "subtotal",
+      "from": 610,
+      "to": 640,
+      "format": "currency",
+      "style": "subtotal",
+      "indent": 1
+    },
+    {
+      "order": 660,
+      "label": "Non-controlling interests",
+      "type": "variable",
+      "variable": "non_controlling_interests",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal",
+      "description": "IFRS 10"
+    },
+    {
+      "order": 670,
+      "label": "Total equity",
+      "type": "calculated",
+      "expression": "@650 + non_controlling_interests",
+      "format": "currency",
+      "style": "subtotal",
+      "indent": 0
+    },
+    {
+      "order": 680,
+      "type": "spacer"
+    },
+    
+    {
+      "_comment": "=== NON-CURRENT LIABILITIES ===",
+      "order": 700,
+      "label": "Non-current liabilities",
+      "type": "spacer",
+      "style": "metric"
+    },
+    {
+      "order": 710,
+      "label": "Borrowings",
+      "type": "variable",
+      "variable": "borrowings_nc",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal",
+      "description": "IFRS 9"
+    },
+    {
+      "order": 720,
+      "label": "Lease liabilities",
+      "type": "variable",
+      "variable": "lease_liabilities_nc",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal",
+      "description": "IFRS 16"
+    },
+    {
+      "order": 730,
+      "label": "Provisions",
+      "type": "variable",
+      "variable": "provisions_nc",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal",
+      "description": "IAS 37"
+    },
+    {
+      "order": 740,
+      "label": "Deferred tax liabilities",
+      "type": "variable",
+      "variable": "deferred_tax_liabilities",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal",
+      "description": "IAS 12"
+    },
+    {
+      "order": 750,
+      "label": "Employee benefit obligations",
+      "type": "variable",
+      "variable": "employee_benefits",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal",
+      "description": "IAS 19"
+    },
+    {
+      "order": 760,
+      "label": "Total non-current liabilities",
+      "type": "subtotal",
+      "from": 710,
+      "to": 750,
+      "format": "currency",
+      "style": "subtotal",
+      "indent": 0
+    },
+    {
+      "order": 770,
+      "type": "spacer"
+    },
+    
+    {
+      "_comment": "=== CURRENT LIABILITIES ===",
+      "order": 800,
+      "label": "Current liabilities",
+      "type": "spacer",
+      "style": "metric"
+    },
+    {
+      "order": 810,
+      "label": "Trade and other payables",
+      "type": "variable",
+      "variable": "trade_payables",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal",
+      "description": "IFRS 9"
+    },
+    {
+      "order": 820,
+      "label": "Contract liabilities",
+      "type": "variable",
+      "variable": "contract_liabilities",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal",
+      "description": "IFRS 15"
+    },
+    {
+      "order": 830,
+      "label": "Borrowings",
+      "type": "variable",
+      "variable": "borrowings_current",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal",
+      "description": "IFRS 9"
+    },
+    {
+      "order": 840,
+      "label": "Lease liabilities",
+      "type": "variable",
+      "variable": "lease_liabilities_current",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal",
+      "description": "IFRS 16"
+    },
+    {
+      "order": 850,
+      "label": "Current tax liabilities",
+      "type": "variable",
+      "variable": "current_tax_liabilities",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal",
+      "description": "IAS 12"
+    },
+    {
+      "order": 860,
+      "label": "Provisions",
+      "type": "variable",
+      "variable": "provisions_current",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal",
+      "description": "IAS 37"
+    },
+    {
+      "order": 870,
+      "label": "Total current liabilities",
+      "type": "subtotal",
+      "from": 810,
+      "to": 860,
+      "format": "currency",
+      "style": "subtotal",
+      "indent": 0
+    },
+    {
+      "order": 880,
+      "type": "spacer"
+    },
+    
+    {
+      "_comment": "=== TOTAL LIABILITIES ===",
+      "order": 900,
+      "label": "Total liabilities",
+      "type": "calculated",
+      "expression": "@760 + @870",
+      "format": "currency",
+      "style": "subtotal",
+      "indent": 0
+    },
+    {
+      "order": 910,
+      "type": "spacer"
+    },
+    
+    {
+      "_comment": "=== TOTAL EQUITY AND LIABILITIES ===",
+      "order": 1000,
+      "label": "TOTAL EQUITY AND LIABILITIES",
+      "type": "calculated",
+      "expression": "@670 + @900",
+      "format": "currency",
+      "style": "total",
+      "indent": 0
+    }
+  ],
+  
+  "formatting": {
+    "currency": {
+      "decimals": 0,
+      "thousands": true,
+      "symbol": "€"
+    }
+  },
+  
+  "metadata": {
+    "author": "Example",
+    "created": "2024-01-01T00:00:00Z",
+    "tags": ["example", "ifrs", "international", "balance-sheet"]
+  }
+}

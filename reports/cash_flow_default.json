@@ -1,0 +1,224 @@
+{
+  "reportId": "cash_flow_default",
+  "name": "Kasstroomoverzicht (Default)",
+  "version": "1.0.0",
+  "statementType": "cashflow",
+  "description": "Default Dutch cash flow statement (indirect method) - matches hardcoded report structure",
+  
+  "variables": {},
+  
+  "layout": [
+    {
+      "order": 100,
+      "label": "Operationele activiteiten",
+      "type": "spacer",
+      "style": "metric",
+      "indent": 0,
+      "_comment": "Operating Activities section header"
+    },
+    {
+      "order": 200,
+      "label": "Netto resultaat",
+      "type": "calculated",
+      "expression": "@200",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal",
+      "_comment": "Net Income from Income Statement - starting point for indirect method"
+    },
+    {
+      "order": 300,
+      "label": "Aanpassingen voor niet-kas posten",
+      "type": "spacer",
+      "style": "normal",
+      "indent": 1,
+      "_comment": "Adjustments for non-cash items subsection"
+    },
+    {
+      "order": 400,
+      "label": "Afschrijvingen",
+      "type": "calculated",
+      "expression": "@400",
+      "format": "currency",
+      "indent": 2,
+      "style": "normal",
+      "_comment": "Depreciation - calculated from Balance Sheet changes"
+    },
+    {
+      "order": 500,
+      "label": "Veranderingen in werkkapitaal",
+      "type": "spacer",
+      "style": "normal",
+      "indent": 1,
+      "_comment": "Working Capital Changes subsection"
+    },
+    {
+      "order": 600,
+      "label": "Verandering in voorraden",
+      "type": "calculated",
+      "expression": "@600",
+      "format": "currency",
+      "indent": 2,
+      "style": "normal",
+      "_comment": "Change in Inventory - calculated from Balance Sheet"
+    },
+    {
+      "order": 700,
+      "label": "Verandering in vorderingen",
+      "type": "calculated",
+      "expression": "@700",
+      "format": "currency",
+      "indent": 2,
+      "style": "normal",
+      "_comment": "Change in Receivables - calculated from Balance Sheet"
+    },
+    {
+      "order": 800,
+      "label": "Verandering in kortlopende schulden",
+      "type": "calculated",
+      "expression": "@800",
+      "format": "currency",
+      "indent": 2,
+      "style": "normal",
+      "_comment": "Change in Short-term Liabilities - calculated from Balance Sheet"
+    },
+    {
+      "order": 900,
+      "label": "Kasstroom uit operationele activiteiten",
+      "type": "subtotal",
+      "from": 200,
+      "to": 800,
+      "format": "currency",
+      "style": "metric",
+      "indent": 0,
+      "_comment": "Total Operating Cash Flow"
+    },
+    {
+      "order": 910,
+      "type": "spacer",
+      "_comment": "Blank row between sections"
+    },
+    {
+      "order": 1000,
+      "label": "Investeringsactiviteiten",
+      "type": "spacer",
+      "style": "metric",
+      "indent": 0,
+      "_comment": "Investing Activities section header"
+    },
+    {
+      "order": 1100,
+      "label": "Investeringen in vaste activa",
+      "type": "calculated",
+      "expression": "@1100",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal",
+      "_comment": "Capital Expenditures - calculated from Balance Sheet changes in fixed assets"
+    },
+    {
+      "order": 1200,
+      "label": "Kasstroom uit investeringsactiviteiten",
+      "type": "calculated",
+      "expression": "@1100",
+      "format": "currency",
+      "style": "metric",
+      "indent": 0,
+      "_comment": "Total Investing Cash Flow"
+    },
+    {
+      "order": 1210,
+      "type": "spacer",
+      "_comment": "Blank row between sections"
+    },
+    {
+      "order": 1300,
+      "label": "Financieringsactiviteiten",
+      "type": "spacer",
+      "style": "metric",
+      "indent": 0,
+      "_comment": "Financing Activities section header"
+    },
+    {
+      "order": 1400,
+      "label": "Verandering in langlopende schulden",
+      "type": "calculated",
+      "expression": "@1400",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal",
+      "_comment": "Change in Long-term Debt - calculated from Balance Sheet"
+    },
+    {
+      "order": 1500,
+      "label": "Kasstroom uit financieringsactiviteiten",
+      "type": "calculated",
+      "expression": "@1400",
+      "format": "currency",
+      "style": "metric",
+      "indent": 0,
+      "_comment": "Total Financing Cash Flow"
+    },
+    {
+      "order": 1510,
+      "type": "spacer",
+      "_comment": "Blank row before cash summary"
+    },
+    {
+      "order": 1600,
+      "label": "Beginstand liquide middelen",
+      "type": "calculated",
+      "expression": "@1600",
+      "format": "currency",
+      "style": "metric",
+      "indent": 0,
+      "_comment": "Starting Cash - from Balance Sheet prior period"
+    },
+    {
+      "order": 1700,
+      "label": "Netto verandering in liquide middelen",
+      "type": "subtotal",
+      "from": 900,
+      "to": 1500,
+      "format": "currency",
+      "style": "metric",
+      "indent": 0,
+      "_comment": "Net Change in Cash = Operating + Investing + Financing"
+    },
+    {
+      "order": 1800,
+      "label": "Eindstand liquide middelen",
+      "type": "calculated",
+      "expression": "@1600 + @1700",
+      "format": "currency",
+      "style": "total",
+      "indent": 0,
+      "_comment": "Ending Cash = Starting Cash + Net Change"
+    }
+  ],
+  
+  "formatting": {
+    "currency": {
+      "decimals": 0,
+      "thousands": true,
+      "symbol": "€"
+    },
+    "percent": {
+      "decimals": 1,
+      "symbol": "%"
+    },
+    "integer": {
+      "thousands": true
+    },
+    "decimal": {
+      "decimals": 2,
+      "thousands": true
+    }
+  },
+  
+  "metadata": {
+    "author": "System",
+    "created": "2024-01-01T00:00:00Z",
+    "tags": ["default", "dutch", "cash-flow", "indirect-method"]
+  }
+}

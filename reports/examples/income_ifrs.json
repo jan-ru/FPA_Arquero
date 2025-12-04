@@ -1,0 +1,252 @@
+{
+  "_comment": "IFRS Income Statement - International Financial Reporting Standards format",
+  "reportId": "income_ifrs",
+  "name": "Income Statement (IFRS)",
+  "version": "1.0.0",
+  "statementType": "income",
+  "description": "Income statement following International Financial Reporting Standards (IFRS) with standard classifications",
+  
+  "variables": {
+    "revenue": {
+      "filter": { "code1": "500" },
+      "aggregate": "sum",
+      "description": "Revenue from contracts with customers"
+    },
+    "cost_of_sales": {
+      "filter": { "code1": "510" },
+      "aggregate": "sum",
+      "description": "Cost of sales"
+    },
+    "distribution_costs": {
+      "filter": { "code1": "520", "code2": ["521", "522", "523"] },
+      "aggregate": "sum",
+      "description": "Distribution and selling costs"
+    },
+    "administrative_expenses": {
+      "filter": { "code1": "520", "code2": ["524", "525", "526"] },
+      "aggregate": "sum",
+      "description": "General and administrative expenses"
+    },
+    "research_development": {
+      "filter": { "code1": "530", "code2": "531" },
+      "aggregate": "sum",
+      "description": "Research and development expenses"
+    },
+    "other_operating_income": {
+      "filter": { "code1": "530", "code2": "532" },
+      "aggregate": "sum",
+      "description": "Other operating income"
+    },
+    "other_operating_expense": {
+      "filter": { "code1": "530", "code2": "533" },
+      "aggregate": "sum",
+      "description": "Other operating expenses"
+    },
+    "finance_income": {
+      "filter": { "code1": "540", "code2": "541" },
+      "aggregate": "sum",
+      "description": "Finance income"
+    },
+    "finance_costs": {
+      "filter": { "code1": "540", "code2": "542" },
+      "aggregate": "sum",
+      "description": "Finance costs"
+    },
+    "share_of_associates": {
+      "filter": { "code1": "540", "code2": "543" },
+      "aggregate": "sum",
+      "description": "Share of profit of associates and joint ventures"
+    },
+    "income_tax": {
+      "filter": { "code1": "550" },
+      "aggregate": "sum",
+      "description": "Income tax expense"
+    }
+  },
+  
+  "layout": [
+    {
+      "_comment": "=== CONTINUING OPERATIONS ===",
+      "order": 100,
+      "label": "Revenue",
+      "type": "variable",
+      "variable": "revenue",
+      "format": "currency",
+      "indent": 0,
+      "style": "normal",
+      "description": "Revenue from contracts with customers (IFRS 15)"
+    },
+    {
+      "order": 200,
+      "label": "Cost of sales",
+      "type": "variable",
+      "variable": "cost_of_sales",
+      "format": "currency",
+      "indent": 0,
+      "style": "normal"
+    },
+    {
+      "order": 300,
+      "label": "Gross profit",
+      "type": "calculated",
+      "expression": "revenue + cost_of_sales",
+      "format": "currency",
+      "style": "metric",
+      "indent": 0,
+      "description": "Gross profit = Revenue - Cost of sales"
+    },
+    {
+      "order": 310,
+      "type": "spacer"
+    },
+    
+    {
+      "_comment": "=== OPERATING EXPENSES ===",
+      "order": 400,
+      "label": "Distribution costs",
+      "type": "variable",
+      "variable": "distribution_costs",
+      "format": "currency",
+      "indent": 0,
+      "style": "normal"
+    },
+    {
+      "order": 500,
+      "label": "Administrative expenses",
+      "type": "variable",
+      "variable": "administrative_expenses",
+      "format": "currency",
+      "indent": 0,
+      "style": "normal"
+    },
+    {
+      "order": 600,
+      "label": "Research and development expenses",
+      "type": "variable",
+      "variable": "research_development",
+      "format": "currency",
+      "indent": 0,
+      "style": "normal"
+    },
+    {
+      "order": 700,
+      "label": "Other operating income",
+      "type": "variable",
+      "variable": "other_operating_income",
+      "format": "currency",
+      "indent": 0,
+      "style": "normal"
+    },
+    {
+      "order": 800,
+      "label": "Other operating expenses",
+      "type": "variable",
+      "variable": "other_operating_expense",
+      "format": "currency",
+      "indent": 0,
+      "style": "normal"
+    },
+    {
+      "order": 900,
+      "label": "Operating profit",
+      "type": "calculated",
+      "expression": "@300 + distribution_costs + administrative_expenses + research_development + other_operating_income + other_operating_expense",
+      "format": "currency",
+      "style": "metric",
+      "indent": 0,
+      "description": "Operating profit (EBIT)"
+    },
+    {
+      "order": 910,
+      "type": "spacer"
+    },
+    
+    {
+      "_comment": "=== FINANCE SECTION ===",
+      "order": 1000,
+      "label": "Finance income",
+      "type": "variable",
+      "variable": "finance_income",
+      "format": "currency",
+      "indent": 0,
+      "style": "normal"
+    },
+    {
+      "order": 1100,
+      "label": "Finance costs",
+      "type": "variable",
+      "variable": "finance_costs",
+      "format": "currency",
+      "indent": 0,
+      "style": "normal"
+    },
+    {
+      "order": 1200,
+      "label": "Share of profit of associates",
+      "type": "variable",
+      "variable": "share_of_associates",
+      "format": "currency",
+      "indent": 0,
+      "style": "normal",
+      "description": "Share of profit of associates and joint ventures (IAS 28)"
+    },
+    {
+      "order": 1300,
+      "label": "Profit before tax",
+      "type": "calculated",
+      "expression": "@900 + finance_income + finance_costs + share_of_associates",
+      "format": "currency",
+      "style": "metric",
+      "indent": 0,
+      "description": "Profit before income tax"
+    },
+    {
+      "order": 1310,
+      "type": "spacer"
+    },
+    
+    {
+      "_comment": "=== TAX AND NET PROFIT ===",
+      "order": 1400,
+      "label": "Income tax expense",
+      "type": "variable",
+      "variable": "income_tax",
+      "format": "currency",
+      "indent": 0,
+      "style": "normal",
+      "description": "Income tax expense (IAS 12)"
+    },
+    {
+      "order": 1410,
+      "type": "spacer"
+    },
+    {
+      "order": 1500,
+      "label": "Profit for the period",
+      "type": "calculated",
+      "expression": "@1300 + income_tax",
+      "format": "currency",
+      "style": "total",
+      "indent": 0,
+      "description": "Profit for the period from continuing operations"
+    }
+  ],
+  
+  "formatting": {
+    "currency": {
+      "decimals": 0,
+      "thousands": true,
+      "symbol": "€"
+    },
+    "percent": {
+      "decimals": 1,
+      "symbol": "%"
+    }
+  },
+  
+  "metadata": {
+    "author": "Example",
+    "created": "2024-01-01T00:00:00Z",
+    "tags": ["example", "ifrs", "international", "income-statement"]
+  }
+}

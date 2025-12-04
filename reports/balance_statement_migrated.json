@@ -1,0 +1,182 @@
+{
+  "reportId": "balance_sheet_migrated",
+  "name": "Balans (Migrated)",
+  "version": "1.0.0",
+  "statementType": "balance",
+  "description": "Migrated Dutch balance sheet from hardcoded logic - matches original implementation exactly",
+  "variables": {
+    "fixed_assets": {
+      "filter": {
+        "code1": "10"
+      },
+      "aggregate": "sum",
+      "description": "Vaste activa (Fixed Assets) - code1=10"
+    },
+    "current_assets": {
+      "filter": {
+        "code1": [
+          "20",
+          "30",
+          "40",
+          "50"
+        ]
+      },
+      "aggregate": "sum",
+      "description": "Vlottende activa (Current Assets) - code1=20,30,40,50"
+    },
+    "equity": {
+      "filter": {
+        "code1": "60"
+      },
+      "aggregate": "sum",
+      "description": "Eigen vermogen (Equity) - code1=60"
+    },
+    "provisions": {
+      "filter": {
+        "code1": "70"
+      },
+      "aggregate": "sum",
+      "description": "Voorzieningen (Provisions) - code1=70"
+    },
+    "liabilities": {
+      "filter": {
+        "code1": [
+          "80",
+          "90"
+        ]
+      },
+      "aggregate": "sum",
+      "description": "Schulden (Liabilities) - code1=80,90"
+    }
+  },
+  "layout": [
+    {
+      "order": 100,
+      "label": "ACTIVA",
+      "type": "category",
+      "filter": {
+        "statement_type": "Balans"
+      },
+      "format": "currency",
+      "style": "total",
+      "indent": 0,
+      "description": "Assets section header"
+    },
+    {
+      "order": 200,
+      "label": "Vaste activa",
+      "type": "variable",
+      "variable": "fixed_assets",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal",
+      "description": "Fixed assets"
+    },
+    {
+      "order": 300,
+      "label": "Vlottende activa",
+      "type": "variable",
+      "variable": "current_assets",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal",
+      "description": "Current assets"
+    },
+    {
+      "order": 400,
+      "label": "Totaal activa",
+      "type": "calculated",
+      "expression": "fixed_assets + current_assets",
+      "format": "currency",
+      "style": "total",
+      "indent": 0,
+      "description": "Total Assets"
+    },
+    {
+      "order": 410,
+      "type": "spacer",
+      "description": "Blank row after Total Assets"
+    },
+    {
+      "order": 500,
+      "label": "PASSIVA",
+      "type": "category",
+      "filter": {
+        "statement_type": "Balans"
+      },
+      "format": "currency",
+      "style": "total",
+      "indent": 0,
+      "description": "Liabilities & Equity section header"
+    },
+    {
+      "order": 600,
+      "label": "Eigen vermogen",
+      "type": "variable",
+      "variable": "equity",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal",
+      "description": "Equity"
+    },
+    {
+      "order": 700,
+      "label": "Voorzieningen",
+      "type": "variable",
+      "variable": "provisions",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal",
+      "description": "Provisions"
+    },
+    {
+      "order": 800,
+      "label": "Schulden",
+      "type": "variable",
+      "variable": "liabilities",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal",
+      "description": "Liabilities"
+    },
+    {
+      "order": 900,
+      "label": "Totaal passiva",
+      "type": "calculated",
+      "expression": "equity + provisions + liabilities",
+      "format": "currency",
+      "style": "total",
+      "indent": 0,
+      "description": "Total Liabilities & Equity"
+    }
+  ],
+  "formatting": {
+    "currency": {
+      "decimals": 0,
+      "thousands": true,
+      "symbol": "€"
+    },
+    "percent": {
+      "decimals": 1,
+      "symbol": "%"
+    },
+    "integer": {
+      "thousands": true
+    },
+    "decimal": {
+      "decimals": 2,
+      "thousands": true
+    }
+  },
+  "metadata": {
+    "author": "ReportMigrationTool",
+    "created": "2025-12-03T22:50:30.438Z",
+    "tags": [
+      "migrated",
+      "dutch",
+      "balance-sheet",
+      "hardcoded-export"
+    ],
+    "source": "StatementGenerator.generateBalanceSheet()"
+  }
+}

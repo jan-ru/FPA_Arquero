@@ -196,3 +196,89 @@ Deno.test("ColumnDefBuilder.getPeriodLabel - returns dropdown text with view ind
 
     delete globalThis.document;
 });
+
+// Tests for report definition metadata support
+
+Deno.test("ColumnDefBuilder.setReportMetadata - sets report metadata", () => {
+    const builder = new ColumnDefBuilder('IS', '2024', '2025');
+    const metadata = {
+        reportId: 'income_simple',
+        reportName: 'Simple Income Statement',
+        reportVersion: '1.0.0'
+    };
+
+    builder.setReportMetadata(metadata);
+
+    assertEquals(builder.reportMetadata, metadata);
+});
+
+Deno.test("ColumnDefBuilder.buildCategoryColumn - supports indent attribute from report definitions", () => {
+    const builder = new ColumnDefBuilder('IS', '2024', '2025');
+    const column = builder.buildCategoryColumn();
+
+    // Test with indent attribute (from report definitions)
+    const paramsWithIndent = {
+        data: { indent: 2, label: 'Test Label' }
+    };
+
+    const result = column.cellRenderer(paramsWithIndent);
+
+    // Should have indentation (8 non-breaking spaces for indent 2)
+    assertEquals(result.includes('Test Label'), true);
+    assertEquals(result.startsWith('&nbsp;'), true);
+});
+
+Deno.test("ColumnDefBuilder.buildCategoryColumn - falls back to level when indent not present", () => {
+    const builder = new ColumnDefBuilder('IS', '2024', '2025');
+    const column = builder.buildCategoryColumn();
+
+    // Test with level attribute (legacy)
+    const paramsWithLevel = {
+        data: { level: 1, label: 'Legacy Label' }
+    };
+
+    const result = column.cellRenderer(paramsWithLevel);
+
+    // Should have indentation (4 non-breaking spaces for level 1)
+    assertEquals(result.includes('Legacy Label'), true);
+    assertEquals(result.startsWith('&nbsp;'), true);
+});
+
+Deno.test("ColumnDefBuilder.buildCategoryColumn - cellClass uses indent when available", () => {
+    const builder = new ColumnDefBuilder('IS', '2024', '2025');
+    const column = builder.buildCategoryColumn();
+
+    const paramsIndent0 = { data: { indent: 0 } };
+    const paramsIndent1 = { data: { indent: 1 } };
+
+    assertEquals(column.cellClass(paramsIndent0), 'group-cell');
+    assertEquals(column.cellClass(paramsIndent1), 'detail-cell');
+});
+
+Deno.test("ColumnDefBuilder.buildCategoryColumn - cellClass falls back to level", () => {
+    const builder = new ColumnDefBuilder('IS', '2024', '2025');
+    const column = builder.buildCategoryColumn();
+
+    const paramsLevel0 = { data: { level: 0 } };
+    const paramsLevel1 = { data: { level: 1 } };
+
+    assertEquals(column.cellClass(paramsLevel0), 'group-cell');
+    assertEquals(column.cellClass(paramsLevel1), 'detail-cell');
+});
+
+Deno.test("ColumnDefBuilder.buildCategoryColumn - indent takes precedence over level", () => {
+    const builder = new ColumnDefBuilder('IS', '2024', '2025');
+    const column = builder.buildCategoryColumn();
+
+    // When both indent and level are present, indent should take precedence
+    const params = {
+        data: { indent: 2, level: 0, label: 'Test' }
+    };
+
+    const result = column.cellRenderer(params);
+
+    // Should use indent (2) not level (0)
+    // 8 non-breaking spaces for indent 2
+    const expectedIndent = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+    assertEquals(result.startsWith(expectedIndent), true);
+});

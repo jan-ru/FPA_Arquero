@@ -1,0 +1,439 @@
+{
+  "_comment": "Detailed Dutch Income Statement - Comprehensive P&L following Dutch GAAP with detailed breakdowns",
+  "reportId": "income_detailed_nl",
+  "name": "Gedetailleerde Winst & Verlies Rekening (NL)",
+  "version": "1.0.0",
+  "statementType": "income",
+  "description": "Detailed Dutch income statement with comprehensive breakdown of revenues, costs, and expenses following local GAAP standards",
+  
+  "variables": {
+    "product_revenue": {
+      "filter": { "code1": "500", "code2": "501" },
+      "aggregate": "sum",
+      "description": "Revenue from product sales"
+    },
+    "service_revenue": {
+      "filter": { "code1": "500", "code2": "502" },
+      "aggregate": "sum",
+      "description": "Revenue from services"
+    },
+    "other_revenue": {
+      "filter": { "code1": "500", "code2": "509" },
+      "aggregate": "sum",
+      "description": "Other operating revenue"
+    },
+    "material_costs": {
+      "filter": { "code1": "510", "code2": "511" },
+      "aggregate": "sum",
+      "description": "Direct material costs"
+    },
+    "production_costs": {
+      "filter": { "code1": "510", "code2": "512" },
+      "aggregate": "sum",
+      "description": "Direct production costs"
+    },
+    "subcontracting": {
+      "filter": { "code1": "510", "code2": "513" },
+      "aggregate": "sum",
+      "description": "Subcontracting costs"
+    },
+    "personnel_costs": {
+      "filter": { "code1": "520", "code2": "521" },
+      "aggregate": "sum",
+      "description": "Salaries and wages"
+    },
+    "social_costs": {
+      "filter": { "code1": "520", "code2": "522" },
+      "aggregate": "sum",
+      "description": "Social security and pension costs"
+    },
+    "depreciation": {
+      "filter": { "code1": "520", "code2": "525" },
+      "aggregate": "sum",
+      "description": "Depreciation and amortization"
+    },
+    "rent_costs": {
+      "filter": { "code1": "530", "code2": "531" },
+      "aggregate": "sum",
+      "description": "Rent and lease costs"
+    },
+    "marketing_costs": {
+      "filter": { "code1": "530", "code2": "532" },
+      "aggregate": "sum",
+      "description": "Marketing and advertising"
+    },
+    "it_costs": {
+      "filter": { "code1": "530", "code2": "533" },
+      "aggregate": "sum",
+      "description": "IT and software costs"
+    },
+    "other_opex": {
+      "filter": { "code1": "530", "code2": "539" },
+      "aggregate": "sum",
+      "description": "Other operating expenses"
+    },
+    "interest_income": {
+      "filter": { "code1": "540", "code2": "541" },
+      "aggregate": "sum",
+      "description": "Interest income"
+    },
+    "interest_expense": {
+      "filter": { "code1": "540", "code2": "542" },
+      "aggregate": "sum",
+      "description": "Interest expense"
+    },
+    "fx_results": {
+      "filter": { "code1": "540", "code2": "543" },
+      "aggregate": "sum",
+      "description": "Foreign exchange results"
+    },
+    "taxes": {
+      "filter": { "code1": "550" },
+      "aggregate": "sum",
+      "description": "Corporate income tax"
+    }
+  },
+  
+  "layout": [
+    {
+      "_comment": "=== REVENUE SECTION ===",
+      "order": 100,
+      "label": "BEDRIJFSOPBRENGSTEN",
+      "type": "spacer",
+      "style": "metric"
+    },
+    {
+      "order": 110,
+      "label": "Omzet producten",
+      "type": "variable",
+      "variable": "product_revenue",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal"
+    },
+    {
+      "order": 120,
+      "label": "Omzet diensten",
+      "type": "variable",
+      "variable": "service_revenue",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal"
+    },
+    {
+      "order": 130,
+      "label": "Overige bedrijfsopbrengsten",
+      "type": "variable",
+      "variable": "other_revenue",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal"
+    },
+    {
+      "order": 140,
+      "label": "Totale bedrijfsopbrengsten",
+      "type": "subtotal",
+      "from": 110,
+      "to": 130,
+      "format": "currency",
+      "style": "subtotal",
+      "indent": 0
+    },
+    {
+      "order": 150,
+      "type": "spacer"
+    },
+    
+    {
+      "_comment": "=== COST OF GOODS SOLD SECTION ===",
+      "order": 200,
+      "label": "KOSTPRIJS VAN DE OMZET",
+      "type": "spacer",
+      "style": "metric"
+    },
+    {
+      "order": 210,
+      "label": "Materiaalkosten",
+      "type": "variable",
+      "variable": "material_costs",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal"
+    },
+    {
+      "order": 220,
+      "label": "Productiekosten",
+      "type": "variable",
+      "variable": "production_costs",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal"
+    },
+    {
+      "order": 230,
+      "label": "Uitbesteding",
+      "type": "variable",
+      "variable": "subcontracting",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal"
+    },
+    {
+      "order": 240,
+      "label": "Totale kostprijs",
+      "type": "subtotal",
+      "from": 210,
+      "to": 230,
+      "format": "currency",
+      "style": "subtotal",
+      "indent": 0
+    },
+    {
+      "order": 250,
+      "type": "spacer"
+    },
+    
+    {
+      "_comment": "=== GROSS MARGIN ===",
+      "order": 300,
+      "label": "BRUTO MARGE",
+      "type": "calculated",
+      "expression": "@140 + @240",
+      "format": "currency",
+      "style": "metric",
+      "indent": 0
+    },
+    {
+      "order": 310,
+      "type": "spacer"
+    },
+    
+    {
+      "_comment": "=== PERSONNEL COSTS SECTION ===",
+      "order": 400,
+      "label": "PERSONEELSKOSTEN",
+      "type": "spacer",
+      "style": "metric"
+    },
+    {
+      "order": 410,
+      "label": "Lonen en salarissen",
+      "type": "variable",
+      "variable": "personnel_costs",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal"
+    },
+    {
+      "order": 420,
+      "label": "Sociale lasten",
+      "type": "variable",
+      "variable": "social_costs",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal"
+    },
+    {
+      "order": 430,
+      "label": "Totale personeelskosten",
+      "type": "subtotal",
+      "from": 410,
+      "to": 420,
+      "format": "currency",
+      "style": "subtotal",
+      "indent": 0
+    },
+    {
+      "order": 440,
+      "type": "spacer"
+    },
+    
+    {
+      "_comment": "=== OTHER OPERATING COSTS ===",
+      "order": 500,
+      "label": "OVERIGE BEDRIJFSKOSTEN",
+      "type": "spacer",
+      "style": "metric"
+    },
+    {
+      "order": 510,
+      "label": "Afschrijvingen",
+      "type": "variable",
+      "variable": "depreciation",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal"
+    },
+    {
+      "order": 520,
+      "label": "Huisvestingskosten",
+      "type": "variable",
+      "variable": "rent_costs",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal"
+    },
+    {
+      "order": 530,
+      "label": "Marketing en reclame",
+      "type": "variable",
+      "variable": "marketing_costs",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal"
+    },
+    {
+      "order": 540,
+      "label": "IT en automatisering",
+      "type": "variable",
+      "variable": "it_costs",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal"
+    },
+    {
+      "order": 550,
+      "label": "Overige kosten",
+      "type": "variable",
+      "variable": "other_opex",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal"
+    },
+    {
+      "order": 560,
+      "label": "Totale overige bedrijfskosten",
+      "type": "subtotal",
+      "from": 510,
+      "to": 550,
+      "format": "currency",
+      "style": "subtotal",
+      "indent": 0
+    },
+    {
+      "order": 570,
+      "type": "spacer"
+    },
+    
+    {
+      "_comment": "=== OPERATING RESULT ===",
+      "order": 600,
+      "label": "BEDRIJFSRESULTAAT",
+      "type": "calculated",
+      "expression": "@300 + @430 + @560",
+      "format": "currency",
+      "style": "metric",
+      "indent": 0
+    },
+    {
+      "order": 610,
+      "type": "spacer"
+    },
+    
+    {
+      "_comment": "=== FINANCIAL SECTION ===",
+      "order": 700,
+      "label": "FINANCIËLE BATEN EN LASTEN",
+      "type": "spacer",
+      "style": "metric"
+    },
+    {
+      "order": 710,
+      "label": "Rentebaten",
+      "type": "variable",
+      "variable": "interest_income",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal"
+    },
+    {
+      "order": 720,
+      "label": "Rentelasten",
+      "type": "variable",
+      "variable": "interest_expense",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal"
+    },
+    {
+      "order": 730,
+      "label": "Valutaresultaten",
+      "type": "variable",
+      "variable": "fx_results",
+      "format": "currency",
+      "indent": 1,
+      "style": "normal"
+    },
+    {
+      "order": 740,
+      "label": "Totaal financiële baten en lasten",
+      "type": "subtotal",
+      "from": 710,
+      "to": 730,
+      "format": "currency",
+      "style": "subtotal",
+      "indent": 0
+    },
+    {
+      "order": 750,
+      "type": "spacer"
+    },
+    
+    {
+      "_comment": "=== RESULT BEFORE TAX ===",
+      "order": 800,
+      "label": "RESULTAAT VOOR BELASTINGEN",
+      "type": "calculated",
+      "expression": "@600 + @740",
+      "format": "currency",
+      "style": "metric",
+      "indent": 0
+    },
+    {
+      "order": 810,
+      "type": "spacer"
+    },
+    
+    {
+      "_comment": "=== TAX AND NET RESULT ===",
+      "order": 900,
+      "label": "Belastingen",
+      "type": "variable",
+      "variable": "taxes",
+      "format": "currency",
+      "indent": 0,
+      "style": "normal"
+    },
+    {
+      "order": 910,
+      "type": "spacer"
+    },
+    {
+      "order": 1000,
+      "label": "RESULTAAT NA BELASTINGEN",
+      "type": "calculated",
+      "expression": "@800 + @900",
+      "format": "currency",
+      "style": "total",
+      "indent": 0
+    }
+  ],
+  
+  "formatting": {
+    "currency": {
+      "decimals": 0,
+      "thousands": true,
+      "symbol": "€"
+    },
+    "percent": {
+      "decimals": 1,
+      "symbol": "%"
+    }
+  },
+  
+  "metadata": {
+    "author": "Example",
+    "created": "2024-01-01T00:00:00Z",
+    "tags": ["example", "detailed", "dutch", "income-statement", "gaap"]
+  }
+}

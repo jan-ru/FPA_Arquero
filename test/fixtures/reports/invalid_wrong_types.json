@@ -1,0 +1,12 @@
+{
+  "reportId": "invalid_types",
+  "name": "Invalid Report - Wrong Types",
+  "version": "1.0.0",
+  "statementType": "invalid_type",
+  "layout": [
+    {
+      "order": 10,
+      "type": "invalid_layout_type"
+    }
+  ]
+}
