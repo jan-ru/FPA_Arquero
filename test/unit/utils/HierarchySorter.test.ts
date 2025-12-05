@@ -4,7 +4,7 @@
 
 // @ts-nocheck - Test file with dynamic test cases
 import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
-import HierarchySorter from "../../../src/utils/HierarchySorter.js";
+import HierarchySorter from "../../../src/utils/HierarchySorter.ts";
 
 Deno.test("HierarchySorter.toNum - converts numeric strings", () => {
     assertEquals(HierarchySorter.toNum("10"), 10);

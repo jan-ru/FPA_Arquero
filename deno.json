@@ -33,12 +33,14 @@
     "include": ["test/"]
   },
   "tasks": {
-    "test": "deno test --allow-read test/unit/",
-    "test:watch": "deno test --allow-read --watch test/unit/",
-    "test:coverage": "deno test --allow-read --coverage=coverage test/unit/",
+    "dev": "deno run --allow-net --allow-read --allow-env server.ts",
+    "test": "deno test --allow-read --allow-write test/unit/",
+    "test:watch": "deno test --allow-read --allow-write --watch test/unit/",
+    "test:coverage": "deno test --allow-read --allow-write --coverage=coverage test/unit/",
     "check": "deno check src/**/*.ts",
     "lint": "deno lint src/ test/",
     "fmt": "deno fmt src/ test/",
-    "fmt:check": "deno fmt --check src/ test/"
+    "fmt:check": "deno fmt --check src/ test/",
+    "ci": "deno fmt --check src/ test/ && deno lint src/ test/ && deno check src/**/*.ts && deno test --allow-read --allow-write test/unit/"
   }
 }

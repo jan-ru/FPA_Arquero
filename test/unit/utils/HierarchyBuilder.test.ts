@@ -4,7 +4,7 @@
 
 // @ts-nocheck - Test file with dynamic test data
 import { assertEquals, assertExists } from "https://deno.land/std@0.208.0/assert/mod.ts";
-import HierarchyBuilder from "../../../src/utils/HierarchyBuilder.js";
+import HierarchyBuilder from "../../../src/utils/HierarchyBuilder.ts";
 
 Deno.test("HierarchyBuilder.getMaxDepth - returns correct depth for each level", () => {
     assertEquals(HierarchyBuilder.getMaxDepth('level0'), 1);

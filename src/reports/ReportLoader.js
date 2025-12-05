@@ -1,4 +1,4 @@
-import ValidationResult from '../utils/ValidationResult.js';
+import ValidationResult from '../utils/ValidationResult.ts';
 
 /**
  * ReportLoader - Loads and validates report definitions from JSON files
@@ -38,21 +38,29 @@ export default class ReportLoader {
      * Load a single report definition from a file path
      * 
      * @param {string} filePath - Path to the report definition JSON file
+     * @param {Object} options - Loading options
+     * @param {boolean} options.forceReload - Force reload from file, bypassing cache
      * @returns {Promise<Object|null>} Report definition object or null if loading fails
      * @throws {Error} If file cannot be loaded or parsed
      * 
      * @example
      * const report = await loader.loadReport('/reports/income_statement.json');
+     * const report = await loader.loadReport('/reports/income_statement.json', { forceReload: true });
      */
-    async loadReport(filePath) {
+    async loadReport(filePath, options = {}) {
         try {
-            // Check cache first
-            if (this.cache.has(filePath)) {
+            // Check cache first (unless force reload)
+            if (!options.forceReload && this.cache.has(filePath)) {
                 return this.cache.get(filePath);
             }
 
+            // Convert file path to URL if needed
+            const url = filePath.startsWith('http://') || filePath.startsWith('https://') || filePath.startsWith('file://')
+                ? filePath
+                : `file://${filePath.startsWith('/') ? '' : '/'}${filePath}`;
+
             // Fetch the file
-            const response = await fetch(filePath);
+            const response = await fetch(url);
             
             if (!response.ok) {
                 throw new Error(`Failed to load report from ${filePath}: ${response.status} ${response.statusText}`);
@@ -85,6 +93,12 @@ export default class ReportLoader {
             return reportDef;
         } catch (error) {
             console.error(`Error loading report from ${filePath}:`, error);
+            
+            // Provide more helpful error messages
+            if (error.message && error.message.includes('NetworkError')) {
+                throw new Error(`Failed to load report from ${filePath}: File not found or network error`);
+            }
+            
             throw error;
         }
     }
@@ -107,8 +121,39 @@ export default class ReportLoader {
             // Ensure dirPath ends with /
             const normalizedPath = dirPath.endsWith('/') ? dirPath : `${dirPath}/`;
             
-            // Try to fetch a manifest file that lists available reports
-            // This is a common pattern for browser-based applications
+            // Check if we're running in Deno and can use file system API
+            if (typeof Deno !== 'undefined' && Deno.readDir) {
+                try {
+                    const files = [];
+                    for await (const entry of Deno.readDir(dirPath)) {
+                        if (entry.isFile && entry.name.endsWith('.json')) {
+                            files.push(entry.name);
+                        }
+                    }
+                    
+                    if (files.length === 0) {
+                        return [];
+                    }
+                    
+                    const loadPromises = files.map(filename => 
+                        this.loadReport(`${normalizedPath}${filename}`)
+                    );
+                    
+                    const results = await Promise.allSettled(loadPromises);
+                    
+                    // Filter out failed loads and return successful ones
+                    return results
+                        .filter(result => result.status === 'fulfilled')
+                        .map(result => result.value);
+                } catch (denoError) {
+                    if (denoError.name === 'NotFound') {
+                        throw new Error(`Failed to load reports from ${dirPath}: Directory not found`);
+                    }
+                    throw denoError;
+                }
+            }
+            
+            // Browser environment: Try to fetch a manifest file that lists available reports
             const manifestPath = `${normalizedPath}manifest.json`;
             
             try {
@@ -156,6 +201,12 @@ export default class ReportLoader {
             return results.filter(report => report !== null);
         } catch (error) {
             console.error(`Error loading reports from directory ${dirPath}:`, error);
+            
+            // Re-throw if it's a "not found" error
+            if (error.message && error.message.includes('Directory not found')) {
+                throw error;
+            }
+            
             return [];
         }
     }

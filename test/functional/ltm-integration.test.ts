@@ -91,7 +91,7 @@ const mockAq = {
 (globalThis as any).aq = mockAq;
 
 // Import modules after setting up Arquero
-const LTMCalculator = (await import("../../src/utils/LTMCalculator.js")).default;
+const LTMCalculator = (await import("../../src/utils/LTMCalculator.ts")).default;
 const { YEAR_CONFIG } = await import("../../src/constants.js");
 
 // =============================================================================

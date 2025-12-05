@@ -8,12 +8,12 @@ import { CATEGORY_DEFINITIONS } from '../constants.js';
 export default class CategoryMatcher {
     /**
      * Check if a category name matches any of the given patterns
-     * @param {string} categoryName - The category name to check
-     * @param {string[]} patterns - Array of patterns to match
-     * @param {string[]} excludePatterns - Optional patterns to exclude
-     * @returns {boolean} True if matches any pattern and not excluded
+     * @param categoryName - The category name to check
+     * @param patterns - Array of patterns to match
+     * @param excludePatterns - Optional patterns to exclude
+     * @returns True if matches any pattern and not excluded
      */
-    static matches(categoryName, patterns, excludePatterns = []) {
+    static matches(categoryName: string | null | undefined, patterns: string[], excludePatterns: string[] = []): boolean {
         if (!categoryName) return false;
 
         const lower = categoryName.toLowerCase();
@@ -25,38 +25,38 @@ export default class CategoryMatcher {
     }
 
     // Balance Sheet category matchers
-    static isAsset(categoryName) {
+    static isAsset(categoryName: string | null | undefined): boolean {
         return CATEGORY_DEFINITIONS.ASSETS.some(cat =>
             this.matches(categoryName, [cat])
         );
     }
 
-    static isLiability(categoryName) {
+    static isLiability(categoryName: string | null | undefined): boolean {
         return CATEGORY_DEFINITIONS.LIABILITIES.some(cat =>
             this.matches(categoryName, [cat])
         );
     }
 
-    static isEquity(categoryName) {
+    static isEquity(categoryName: string | null | undefined): boolean {
         return CATEGORY_DEFINITIONS.EQUITY.some(cat =>
             this.matches(categoryName, [cat])
         );
     }
 
     // Income Statement category matchers
-    static isRevenue(categoryName) {
+    static isRevenue(categoryName: string | null | undefined): boolean {
         return this.matches(categoryName, ['omzet'], ['kostprijs']);
     }
 
-    static isCOGS(categoryName) {
+    static isCOGS(categoryName: string | null | undefined): boolean {
         return this.matches(categoryName, ['kostprijs']);
     }
 
-    static isOperatingExpense(categoryName) {
+    static isOperatingExpense(categoryName: string | null | undefined): boolean {
         return this.matches(categoryName, ['kosten', 'bedrijf']);
     }
 
-    static isOtherIncome(categoryName) {
+    static isOtherIncome(categoryName: string | null | undefined): boolean {
         return this.matches(categoryName, [
             'overige', 'opbrengst',
             'financiële', 'baten', 'lasten',  // Financiële baten en lasten
@@ -65,29 +65,29 @@ export default class CategoryMatcher {
         ]);
     }
 
-    static isTax(categoryName) {
+    static isTax(categoryName: string | null | undefined): boolean {
         return this.matches(categoryName, ['belasting', 'tax']);
     }
 
     // Cash Flow category matchers
-    static isDepreciation(categoryName) {
+    static isDepreciation(categoryName: string | null | undefined): boolean {
         return this.matches(categoryName, ['afschrijving', 'depreciation', 'amortization']);
     }
 
-    static isCurrentAsset(categoryName) {
+    static isCurrentAsset(categoryName: string | null | undefined): boolean {
         return this.matches(categoryName, ['vlottende', 'current']);
     }
 
-    static isFixedAsset(categoryName) {
+    static isFixedAsset(categoryName: string | null | undefined): boolean {
         return this.matches(categoryName, ['vaste activa', 'fixed assets']);
     }
 
-    static isLongTermLiability(categoryName) {
+    static isLongTermLiability(categoryName: string | null | undefined): boolean {
         return this.matches(categoryName, ['eigen vermogen', 'equity', 'langlopend', 'long-term']);
     }
 
     // UI rendering helpers
-    static isLiabilityOrEquity(categoryName) {
+    static isLiabilityOrEquity(categoryName: string | null | undefined): boolean {
         return this.matches(categoryName, ['passiva', 'vermogen', 'liabilit', 'equity', 'schuld']);
     }
 }

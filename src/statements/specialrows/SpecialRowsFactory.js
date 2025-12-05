@@ -1,6 +1,9 @@
 /**
  * SpecialRowsFactory - Creates statement-specific special rows handlers
  *
+ * @deprecated This system is deprecated. Use report definitions with calculated
+ * and subtotal layout items instead. Will be removed in next major version.
+ *
  * Factory pattern for creating different special row handlers for
  * Balance Sheet, Income Statement, and Cash Flow statements
  */
@@ -14,8 +17,10 @@ export class SpecialRowsFactory {
      * Create appropriate special rows handler for statement type
      * @param {string} statementType - Statement type (BS, IS, CF or balance-sheet, income-statement, cash-flow)
      * @returns {Object} Special rows handler
+     * @deprecated Use report definitions with calculated and subtotal layout items instead
      */
     static create(statementType) {
+        console.warn('SpecialRowsFactory is deprecated. Use report definitions with calculated and subtotal layout items instead.');
         // Normalize statement type (handle both 'BS' and 'balance-sheet' formats)
         const normalized = this.normalizeStatementType(statementType);
 

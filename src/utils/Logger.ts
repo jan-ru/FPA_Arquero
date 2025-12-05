@@ -12,9 +12,9 @@ export class Logger {
 
     /**
      * Log debug messages (only when DEBUG is true)
-     * @param {...any} args - Arguments to log
+     * @param args - Arguments to log
      */
-    static debug(...args) {
+    static debug(...args: unknown[]): void {
         if (this.DEBUG) {
             console.log(...args);
         }
@@ -22,25 +22,25 @@ export class Logger {
 
     /**
      * Log informational messages (always shown)
-     * @param {...any} args - Arguments to log
+     * @param args - Arguments to log
      */
-    static info(...args) {
+    static info(...args: unknown[]): void {
         console.log(...args);
     }
 
     /**
      * Log error messages (always shown)
-     * @param {...any} args - Arguments to log
+     * @param args - Arguments to log
      */
-    static error(...args) {
+    static error(...args: unknown[]): void {
         console.error(...args);
     }
 
     /**
      * Log warning messages (always shown)
-     * @param {...any} args - Arguments to log
+     * @param args - Arguments to log
      */
-    static warn(...args) {
+    static warn(...args: unknown[]): void {
         console.warn(...args);
     }
 }

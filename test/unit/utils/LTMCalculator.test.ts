@@ -76,7 +76,7 @@ const mockAq = {
 (globalThis as any).aq = mockAq;
 
 // Import LTMCalculator
-const LTMCalculator = (await import("../../../src/utils/LTMCalculator.js")).default;
+const LTMCalculator = (await import("../../../src/utils/LTMCalculator.ts")).default;
 
 /**
  * Helper function to create test movements data

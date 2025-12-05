@@ -5,7 +5,7 @@
  */
 
 import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
-import CategoryMatcher from "../../../src/utils/CategoryMatcher.js";
+import CategoryMatcher from "../../../src/utils/CategoryMatcher.ts";
 
 Deno.test("CategoryMatcher.matches - basic pattern matching", () => {
     assertEquals(CategoryMatcher.matches("Vaste Activa", ["vaste"]), true);

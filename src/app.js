@@ -12,8 +12,8 @@ import DataLoader from './data/DataLoader.js';
 import DataStore from './data/DataStore.js';
 import StatementGenerator from './statements/StatementGenerator.js';
 import AgGridStatementRenderer from './ui/AgGridStatementRenderer.js';
-import CategoryMatcher from './utils/CategoryMatcher.js';
-import VarianceCalculator from './utils/VarianceCalculator.js';
+import CategoryMatcher from './utils/CategoryMatcher.ts';
+import VarianceCalculator from './utils/VarianceCalculator.ts';
 import ExportHandler from './export/ExportHandler.js';
 import InteractiveUI from './ui/InteractiveUI.js';
 

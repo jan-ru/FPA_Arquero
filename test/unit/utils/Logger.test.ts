@@ -3,7 +3,7 @@
  */
 
 import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
-import Logger from "../../../src/utils/Logger.js";
+import Logger from "../../../src/utils/Logger.ts";
 
 Deno.test("Logger - debug mode off by default", () => {
     assertEquals(Logger.DEBUG, false);

@@ -12,15 +12,21 @@ This application uses **ES6 modules** and must be served from a web server. Open
 
 Choose one of these options:
 
-#### Option 1: Python 3 (Recommended - Usually Pre-installed)
+#### Option 1: Deno Dev Server (Recommended - Handles TypeScript)
+```bash
+# Easy way - automatically handles port conflicts
+./start-dev.sh
+
+# Or manually
+deno task dev
+```
+This starts a development server that automatically transpiles TypeScript files.
+
+#### Option 2: Python 3 (Simple but doesn't handle TypeScript)
 ```bash
 python3 -m http.server 8000
 ```
-
-#### Option 2: Python 2
-```bash
-python -m SimpleHTTPServer 8000
-```
+⚠️ **Note:** Python server won't transpile TypeScript. Use Option 1 for development.
 
 #### Option 3: Node.js http-server
 ```bash
@@ -30,16 +36,14 @@ npm install -g http-server
 # Run
 http-server -p 8000
 ```
+⚠️ **Note:** This won't transpile TypeScript. Use Option 1 for development.
 
 #### Option 4: VS Code Live Server
 1. Install "Live Server" extension in VS Code
 2. Right-click `index.html`
 3. Select "Open with Live Server"
 
-#### Option 5: Deno
-```bash
-deno run --allow-net --allow-read https://deno.land/std/http/file_server.ts
-```
+⚠️ **Note:** Live Server won't transpile TypeScript. Use Option 1 for development.
 
 ### Step 2: Open in Browser
 

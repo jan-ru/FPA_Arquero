@@ -21,17 +21,17 @@ import {
     APP_CONFIG,
     isLTMSelected
 } from '../constants.js';
-import CategoryMatcher from '../utils/CategoryMatcher.js';
-import VarianceCalculator from '../utils/VarianceCalculator.js';
-import Logger from '../utils/Logger.js';
-import AccountSignHandler from '../utils/AccountSignHandler.js';
-import LTMCalculator from '../utils/LTMCalculator.js';
+import CategoryMatcher from '../utils/CategoryMatcher.ts';
+import VarianceCalculator from '../utils/VarianceCalculator.ts';
+import Logger from '../utils/Logger.ts';
+import AccountSignHandler from '../utils/AccountSignHandler.ts';
+import LTMCalculator from '../utils/LTMCalculator.ts';
 import {
     buildNormalModeSpec,
     buildLTMModeSpec,
     buildLTMCategoryTotalsSpec,
     buildCategoryTotalsSpec
-} from '../utils/RollupSpecBuilder.js';
+} from '../utils/RollupSpecBuilder.ts';
 import ReportRenderer from '../reports/ReportRenderer.js';
 import VariableResolver from '../reports/VariableResolver.js';
 import ExpressionEvaluator from '../reports/ExpressionEvaluator.js';

@@ -22,10 +22,10 @@ import AgGridStatementRenderer from './AgGridStatementRenderer.js';
 import { UI_CONFIG, UI_STATEMENT_TYPES, isLTMSelected } from '../constants.js';
 import { YEAR_CONFIG } from '../constants.js';
 import APP_CONFIG from '../config/appConfig.js';
-import FileSelectionService from '../services/FileSelectionService.js';
-import StatusMessageService from '../services/StatusMessageService.js';
-import FileMetricsService from '../services/FileMetricsService.js';
-import ValidationService from '../services/ValidationService.js';
+import FileSelectionService from '../services/FileSelectionService.ts';
+import StatusMessageService from '../services/StatusMessageService.ts';
+import FileMetricsService from '../services/FileMetricsService.ts';
+import ValidationService from '../services/ValidationService.ts';
 import ReportRegistry from '../reports/ReportRegistry.js';
 import ReportLoader from '../reports/ReportLoader.js';
 import ReportValidator from '../reports/ReportValidator.js';
@@ -101,23 +101,7 @@ class UIController {
         this.statusMessageService.updateFileStatus(fileId, status, message);
     }
 
-    // Unified status message display - delegate to service
-    showStatusMessage(message, type = 'info') {
-        this.statusMessageService.showMessage(message, type);
-    }
-
-    // Convenience methods - delegate to service
-    showLoadingMessage(message) {
-        this.statusMessageService.showLoading(message);
-    }
-
-    showErrorMessage(message) {
-        this.statusMessageService.showError(message);
-    }
-
-    showSuccessMessage(message) {
-        this.statusMessageService.showSuccess(message);
-    }
+    // Status message methods removed - use this.statusMessageService directly
 
     // Handle input directory selection - delegate to service
     async handleSelectInputDirectory() {
@@ -140,11 +124,11 @@ class UIController {
 
     // Load all files
     async handleLoadAllFiles() {
-        this.showLoadingMessage('Loading trial balance files...');
+        this.statusMessageService.showLoading('Loading trial balance files...');
 
         try {
             // Step 1: Load trial balance for 2024 (movements and balances with hierarchy included)
-            this.showLoadingMessage('Loading 2024 trial balance...');
+            this.statusMessageService.showLoading('Loading 2024 trial balance...');
             this.updateFileStatus('tb2024', 'loading');
             const { movements: movements2024, balances: balances2024, metadata: metadata2024 } = await this.dataLoader.loadTrialBalance('2024');
 
@@ -160,7 +144,7 @@ class UIController {
             };
 
             // Step 2: Load trial balance for 2025 (movements and balances with hierarchy included)
-            this.showLoadingMessage('Loading 2025 trial balance...');
+            this.statusMessageService.showLoading('Loading 2025 trial balance...');
             this.updateFileStatus('tb2025', 'loading');
             const { movements: movements2025, balances: balances2025, metadata: metadata2025 } = await this.dataLoader.loadTrialBalance('2025');
 
@@ -179,7 +163,7 @@ class UIController {
             this.updateFileStatusProfit();
 
             // Step 3: Create combined data tables for both years (movements and balances)
-            this.showLoadingMessage('Combining data...');
+            this.statusMessageService.showLoading('Combining data...');
             const combinedMovements = movements2024.concat(movements2025);
             const combinedBalances = balances2024.concat(balances2025);
 
@@ -258,7 +242,7 @@ class UIController {
                 userMessage += error.message || 'Unknown error occurred.';
             }
 
-            this.showErrorMessage(userMessage);
+            this.statusMessageService.showError(userMessage);
 
             // Update status indicators to show error
             this.updateFileStatus('tb2024', 'error');
@@ -331,7 +315,7 @@ class UIController {
             }
 
             // Fall back to hardcoded report
-            this.showErrorMessage('Falling back to default hardcoded report');
+            this.statusMessageService.showError('Falling back to default hardcoded report');
             
             // Clear report selection
             const reportSelector = document.getElementById('report-selector');
@@ -509,17 +493,24 @@ class UIController {
     async generateAllStatementsForExport(periodOptions) {
         const statements = [];
         const statementTypes = [
-            { type: UI_STATEMENT_TYPES.BALANCE_SHEET, name: 'Balance Sheet', generator: 'generateBalanceSheet' },
-            { type: UI_STATEMENT_TYPES.INCOME_STATEMENT, name: 'Income Statement', generator: 'generateIncomeStatement' },
-            { type: UI_STATEMENT_TYPES.CASH_FLOW, name: 'Cash Flow Statement', generator: 'generateCashFlowStatement' }
+            { type: UI_STATEMENT_TYPES.BALANCE_SHEET, name: 'Balance Sheet', reportId: 'balance_sheet_default' },
+            { type: UI_STATEMENT_TYPES.INCOME_STATEMENT, name: 'Income Statement', reportId: 'income_statement_default' },
+            { type: UI_STATEMENT_TYPES.CASH_FLOW, name: 'Cash Flow Statement', reportId: 'cash_flow_default' }
         ];
 
-        for (const { type, name, generator } of statementTypes) {
+        for (const { type, name, reportId } of statementTypes) {
             try {
                 console.log(`Generating ${name} for export...`);
 
-                // Generate statement data directly (without rendering to UI)
-                const statementData = this.statementGenerator[generator](periodOptions);
+                // Get report definition
+                const reportDef = await this.reportRegistry.getReport(reportId);
+                if (!reportDef) {
+                    console.warn(`Report definition not found: ${reportId}`);
+                    continue;
+                }
+
+                // Generate statement data using report definition
+                const statementData = this.statementGenerator.generateStatementFromDefinition(reportDef, periodOptions);
 
                 // Validate statement data
                 if (!statementData || !statementData.details) {
@@ -915,7 +906,7 @@ class UIController {
      */
     async handleReloadReports() {
         try {
-            this.showLoadingMessage('Reloading report definitions...');
+            this.statusMessageService.showLoading('Reloading report definitions...');
             
             // Clear existing reports
             this.reportRegistry.clear();
@@ -923,7 +914,7 @@ class UIController {
             // Reload reports
             await this.loadReportDefinitions();
             
-            this.showSuccessMessage('Report definitions reloaded successfully');
+            this.statusMessageService.showSuccess('Report definitions reloaded successfully');
             
             // Regenerate current statement
             if (this.currentStatementType) {
@@ -931,7 +922,7 @@ class UIController {
             }
         } catch (error) {
             console.error('Error reloading reports:', error);
-            this.showErrorMessage('Failed to reload report definitions: ' + error.message);
+            this.statusMessageService.showError('Failed to reload report definitions: ' + error.message);
         }
     }
 

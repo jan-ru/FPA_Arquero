@@ -296,7 +296,18 @@ describe("ReportLoader", () => {
         name: "Test",
         version: "1.0.0",
         statementType: "income",
-        layout: []
+        layout: [{
+          order: 10,
+          label: "Test Item",
+          type: "variable",
+          variable: "test_var"
+        }],
+        variables: {
+          test_var: {
+            filter: { code1: "100" },
+            aggregate: "sum"
+          }
+        }
       }));
       await Deno.writeTextFile(`${tempDir}/readme.txt`, "Not a JSON file");
       
@@ -340,7 +351,18 @@ describe("ReportLoader", () => {
         name: "Valid",
         version: "1.0.0",
         statementType: "income",
-        layout: []
+        layout: [{
+          order: 10,
+          label: "Test Item",
+          type: "variable",
+          variable: "test_var"
+        }],
+        variables: {
+          test_var: {
+            filter: { code1: "100" },
+            aggregate: "sum"
+          }
+        }
       }));
       
       // Invalid JSON
@@ -399,7 +421,18 @@ describe("ReportLoader", () => {
         name: "Version 1",
         version: "1.0.0",
         statementType: "income",
-        layout: []
+        layout: [{
+          order: 10,
+          label: "Test Item",
+          type: "variable",
+          variable: "test_var"
+        }],
+        variables: {
+          test_var: {
+            filter: { code1: "100" },
+            aggregate: "sum"
+          }
+        }
       };
       await Deno.writeTextFile(tempPath, JSON.stringify(report1));
       
@@ -417,7 +450,18 @@ describe("ReportLoader", () => {
           name: "Version 2",
           version: "2.0.0",
           statementType: "income",
-          layout: []
+          layout: [{
+            order: 10,
+            label: "Test Item",
+            type: "variable",
+            variable: "test_var"
+          }],
+          variables: {
+            test_var: {
+              filter: { code1: "100" },
+              aggregate: "sum"
+            }
+          }
         };
         await Deno.writeTextFile(tempPath, JSON.stringify(report2));
         

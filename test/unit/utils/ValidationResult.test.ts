@@ -1,5 +1,5 @@
 import { assertEquals, assert, assertFalse } from "https://deno.land/std@0.208.0/assert/mod.ts";
-import ValidationResult from "../../../src/utils/ValidationResult.js";
+import ValidationResult from "../../../src/utils/ValidationResult.ts";
 
 Deno.test("ValidationResult - constructor creates valid result by default", () => {
     const result = new ValidationResult();

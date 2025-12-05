@@ -1,4 +1,4 @@
-import ValidationResult from '../utils/ValidationResult.js';
+import ValidationResult from '../utils/ValidationResult.ts';
 
 /**
  * ReportValidator - Validates report definitions against schema and business rules

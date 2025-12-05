@@ -6,9 +6,9 @@
  */
 
 import { MONTH_MAP, EXCEL_COLUMNS, STATEMENT_TYPES, VALIDATION_CONFIG } from '../constants.js';
-import DateUtils from '../utils/DateUtils.js';
-import ValidationResult from '../utils/ValidationResult.js';
-import HierarchyCodeMapper from '../utils/HierarchyCodeMapper.js';
+import DateUtils from '../utils/DateUtils.ts';
+import ValidationResult from '../utils/ValidationResult.ts';
+import HierarchyCodeMapper from '../utils/HierarchyCodeMapper.ts';
 import { AccountMapper } from '../config/accountMappings.js';
 
 export default class DataLoader {

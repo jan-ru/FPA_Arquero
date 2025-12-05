@@ -7,6 +7,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0] - 2024-12-05
+
+### Added
+- **Development Server with TypeScript Support**:
+  - Created `server.ts` - Deno-based development server with on-the-fly TypeScript transpilation
+  - Uses esbuild for fast TypeScript to JavaScript conversion
+  - Serves all files with correct MIME types
+  - Enables hot reload during development
+  - Added `deno task dev` command to start server
+  - Created `start-dev.sh` helper script to handle port conflicts automatically
+
+### Fixed
+- **TypeScript MIME Type Errors**:
+  - Resolved browser errors: "Expected a JavaScript or Wasm module script but the server responded with a MIME type of 'video/mp2t'"
+  - Fixed all `.ts` file loading issues (CategoryMatcher, VarianceCalculator, Logger, etc.)
+  - Browsers can now properly load and execute TypeScript modules
+
+### Changed
+- **Utilities Layer - Complete TypeScript Migration**:
+  - Migrated all 12 utility files from JavaScript to TypeScript
+  - Added comprehensive type interfaces and type safety
+  - Updated all imports across codebase (src and test files)
+  - All 281 tests passing with full type checking
+
+### Documentation
+- Added `SERVER_SETUP.md` - Detailed server documentation
+- Added `TYPESCRIPT_SETUP_FIX.md` - Complete explanation of MIME type fix
+- Added `DEV_SERVER_RUNNING.md` - Server status and commands reference
+- Updated `QUICK_START.md` with development server instructions
+- Updated `deno.json` with dev task configuration
+
+### Migration Details
+**TypeScript Utilities Completed**:
+- ✅ Logger.ts
+- ✅ VarianceCalculator.ts
+- ✅ PeriodParser.ts
+- ✅ AccountSignHandler.ts
+- ✅ CategoryMatcher.ts
+- ✅ LTMCalculator.ts
+- ✅ DateUtils.ts
+- ✅ ValidationResult.ts
+- ✅ RollupSpecBuilder.ts
+- ✅ HierarchyCodeMapper.ts
+- ✅ HierarchySorter.ts
+- ✅ HierarchyBuilder.ts
+
+## [0.11.0] - Previous Release
+
 ### Added - LTM (Latest Twelve Months) Feature
 
 - **LTM Period Selection** (v3.2):

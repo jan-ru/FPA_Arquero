@@ -241,7 +241,7 @@ export const MONTH_MAP = {
 /**
  * @deprecated Use DateUtils.getMonthNumber() for month name to number conversion
  * @example
- * import DateUtils from './utils/DateUtils.js';
+ * import DateUtils from './utils/DateUtils.ts';
  * DateUtils.initialize();
  * const monthNum = DateUtils.getMonthNumber('januari'); // 1
  */

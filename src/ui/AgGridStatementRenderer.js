@@ -6,16 +6,16 @@
  *
  * Depends on:
  * - ag-Grid (agGrid) - loaded globally from CDN
- * - CategoryMatcher for category identification
  * - VarianceCalculator for variance calculations
  * - YEAR_CONFIG, UI_CONFIG, UI_STATEMENT_TYPES constants
+ * - Report definitions for calculated rows and subtotals
  */
 
-import CategoryMatcher from '../utils/CategoryMatcher.js';
-import VarianceCalculator from '../utils/VarianceCalculator.js';
-import Logger from '../utils/Logger.js';
-import HierarchyBuilder from '../utils/HierarchyBuilder.js';
-import SpecialRowsFactory from '../statements/specialrows/SpecialRowsFactory.js';
+// CategoryMatcher removed - no longer needed with configurable report system
+import VarianceCalculator from '../utils/VarianceCalculator.ts';
+import Logger from '../utils/Logger.ts';
+import HierarchyBuilder from '../utils/HierarchyBuilder.ts';
+// SpecialRowsFactory removed - all statements now use configurable report system with calculated/subtotal rows
 import ColumnDefBuilder from './columns/ColumnDefBuilder.js';
 import { YEAR_CONFIG, UI_CONFIG, UI_STATEMENT_TYPES } from '../constants.js';
 import { exportGridToExcel, exportLTMGridToExcel } from '../export/excel-export.js';
@@ -114,26 +114,15 @@ class AgGridStatementRenderer {
 
     // Prepare data for ag-Grid
     prepareDataForGrid(statementData, statementType) {
-        // Check if this is a configurable report (has rows array from report definition)
+        // All statements now use configurable report system with rows array
         if (statementData.rows && Array.isArray(statementData.rows)) {
             Logger.debug('Using configurable report data', { rowCount: statementData.rows.length });
             return this._prepareConfigurableReportData(statementData);
         }
 
-        // Legacy path: use hierarchical tree builder
-        const details = statementData.details.objects();
-
-        // Get detail level setting
-        const detailLevel = document.getElementById('detail-level')?.value || 'level5';
-
-        // Build hierarchical tree structure using HierarchyBuilder
-        let gridData = HierarchyBuilder.buildTree(details, detailLevel);
-
-        // Insert special rows based on statement type using factory
-        const specialRowsHandler = SpecialRowsFactory.create(statementType);
-        gridData = specialRowsHandler.insert(gridData, statementData);
-
-        return gridData;
+        // Fallback for unexpected data format
+        Logger.error('Statement data missing rows array - expected configurable report format', statementData);
+        throw new Error('Invalid statement data format: missing rows array. All statements must use configurable report definitions.');
     }
 
     /**
@@ -418,285 +407,9 @@ class AgGridStatementRenderer {
         return result;
     }
 
-    // Insert Balance Sheet special rows (Totaal activa, Totaal passiva)
-    insertBalanceSheetSpecialRows(data, statementData) {
-        const result = [...data];
-        const totals = statementData.totals?.objects() || [];
-
-        // Calculate Total Assets from category totals
-        let totalAssetsYear1 = 0, totalAssetsYear2 = 0;
-        totals.forEach(row => {
-            if (CategoryMatcher.isAsset(row.name1)) {
-                totalAssetsYear1 += row.amount_2024 || 0;
-                totalAssetsYear2 += row.amount_2025 || 0;
-            }
-        });
-
-        // Find insertion point: before first liability/equity category
-        let insertIndex = result.findIndex(row =>
-            CategoryMatcher.isLiabilityOrEquity(row.name1) ||
-            CategoryMatcher.isLiabilityOrEquity(row.name0)
-        );
-
-        if (insertIndex > 0) {
-            const assetsVariance = totalAssetsYear2 - totalAssetsYear1;
-            const assetsVariancePercent = VarianceCalculator.calculatePercent(totalAssetsYear2, totalAssetsYear1);
-
-            // Insert Totaal activa row
-            result.splice(insertIndex, 0, {
-                hierarchy: ['Totaal activa'],
-                level: 0,
-                label: 'Totaal activa',
-                name0: '',
-                name1: '',
-                name2: 'Totaal activa',
-                amount_2024: totalAssetsYear1,
-                amount_2025: totalAssetsYear2,
-                variance_amount: assetsVariance,
-                variance_percent: assetsVariancePercent,
-                _isMetric: true,
-                _rowType: 'total'
-            });
-
-            // Insert blank/spacer row after Totaal activa
-            result.splice(insertIndex + 1, 0, {
-                hierarchy: ['SPACER_1'],
-                level: 0,
-                label: '',
-                name0: '',
-                name1: '',
-                name2: '',
-                amount_2024: null,
-                amount_2025: null,
-                variance_amount: null,
-                variance_percent: null,
-                _isMetric: false,
-                _rowType: 'spacer'
-            });
-        }
-
-        // Calculate Total Liabilities & Equity
-        let totalLEYear1 = 0, totalLEYear2 = 0;
-        totals.forEach(row => {
-            if (CategoryMatcher.isLiabilityOrEquity(row.name1)) {
-                totalLEYear1 += row.amount_2024 || 0;
-                totalLEYear2 += row.amount_2025 || 0;
-            }
-        });
-
-        // Append TOTAL LIABILITIES & EQUITY at end
-        const leVariance = totalLEYear2 - totalLEYear1;
-        const leVariancePercent = VarianceCalculator.calculatePercent(totalLEYear2, totalLEYear1);
-
-        result.push({
-            hierarchy: ['Totaal passiva'],
-            level: 0,
-            label: 'Totaal passiva',
-            name0: '',
-            name1: '',
-            name2: 'Totaal passiva',
-            amount_2024: totalLEYear1,
-            amount_2025: totalLEYear2,
-            variance_amount: leVariance,
-            variance_percent: leVariancePercent,
-            _isMetric: true,
-            _rowType: 'total'
-        });
-
-        return result;
-    }
-
-    // Insert Income Statement metrics (Gross Profit, Operating Income, Net Income)
-    insertIncomeStatementMetrics(data, statementData) {
-        if (!statementData.metrics) return data;
-
-        const result = [...data];
-        const metrics = statementData.metrics;
-        const year1 = YEAR_CONFIG.getYear(0);
-        const year2 = YEAR_CONFIG.getYear(1);
-
-        // 1. Insert Bruto marge (Gross Margin) after COGS
-        // Try multiple patterns to find COGS row
-        let cogsIndex = result.findIndex(row =>
-            row.label && (
-                row.label.toLowerCase().includes('kostprijs') ||
-                row.label.toLowerCase().includes('cogs') ||
-                row.label.toLowerCase().includes('cost of goods')
-            )
-        );
-
-        console.log('Income Statement - looking for COGS:', { cogsIndex, hasMetrics: !!metrics.grossProfit });
-        console.log('Sample rows:', result.slice(0, 10).map(r => ({ label: r.label, name2: r.name2 })));
-
-        if (cogsIndex >= 0 && metrics.grossProfit) {
-            const gpVariance = metrics.grossProfit[year2] - metrics.grossProfit[year1];
-            const gpVariancePercent = VarianceCalculator.calculatePercent(metrics.grossProfit[year2], metrics.grossProfit[year1]);
-
-            // Insert Bruto marge subtotal
-            result.splice(cogsIndex + 1, 0, {
-                hierarchy: ['Bruto marge'],
-                level: 0,
-                label: 'Bruto marge',
-                name0: '',
-                name1: '',
-                name2: 'Bruto marge',
-                amount_2024: metrics.grossProfit[year1],
-                amount_2025: metrics.grossProfit[year2],
-                variance_amount: gpVariance,
-                variance_percent: gpVariancePercent,
-                _isMetric: true,
-                _rowType: 'metric'
-            });
-
-            // Insert blank/spacer row after Bruto marge
-            result.splice(cogsIndex + 2, 0, {
-                hierarchy: ['SPACER_GROSS_MARGIN'],
-                level: 0,
-                label: '',
-                name0: '',
-                name1: '',
-                name2: '',
-                amount_2024: null,
-                amount_2025: null,
-                variance_amount: null,
-                variance_percent: null,
-                _isMetric: false,
-                _rowType: 'spacer'
-            });
-        }
-
-        // 2. Insert Operating Income after operating expenses
-        // Try multiple patterns to find last operating expense row
-        let opexIndex = result.findIndex(row =>
-            row.name2 && (
-                row.name2.toLowerCase().includes('overige personeelskosten') ||
-                row.name2.toLowerCase().includes('operating expense') ||
-                row.name1 && row.name1.toLowerCase().includes('operating')
-            )
-        );
-
-        // If not found, try to find the last expense before "Other" categories
-        if (opexIndex < 0) {
-            opexIndex = result.findIndex(row =>
-                row.name1 && row.name1.toLowerCase().includes('overige')
-            );
-            if (opexIndex > 0) opexIndex -= 1;  // Insert before "Other" section
-        }
-
-        if (opexIndex >= 0 && metrics.operatingIncome) {
-            const oiVariance = metrics.operatingIncome[year2] - metrics.operatingIncome[year1];
-            const oiVariancePercent = VarianceCalculator.calculatePercent(metrics.operatingIncome[year2], metrics.operatingIncome[year1]);
-
-            result.splice(opexIndex + 1, 0, {
-                hierarchy: ['Operating Income'],
-                level: 0,
-                label: 'Operating Income',
-                name1: '',
-                name2: 'Operating Income',
-                amount_2024: metrics.operatingIncome[year1],
-                amount_2025: metrics.operatingIncome[year2],
-                variance_amount: oiVariance,
-                variance_percent: oiVariancePercent,
-                _isMetric: true,
-                _rowType: 'metric'
-            });
-        }
-
-        // 3. Append Net Income at bottom
-        if (metrics.netIncome) {
-            const niVariance = metrics.netIncome[year2] - metrics.netIncome[year1];
-            const niVariancePercent = VarianceCalculator.calculatePercent(metrics.netIncome[year2], metrics.netIncome[year1]);
-
-            result.push({
-                hierarchy: ['NET INCOME'],
-                level: 0,
-                label: 'NET INCOME',
-                name1: '',
-                name2: 'NET INCOME',
-                amount_2024: metrics.netIncome[year1],
-                amount_2025: metrics.netIncome[year2],
-                variance_amount: niVariance,
-                variance_percent: niVariancePercent,
-                _isMetric: true,
-                _rowType: 'total'
-            });
-        }
-
-        return result;
-    }
-
-    // Insert Cash Flow reconciliation rows
-    insertCashFlowReconciliation(data, statementData) {
-        if (!statementData.metrics) return data;
-
-        const result = [...data];
-        const metrics = statementData.metrics;
-        const year1 = YEAR_CONFIG.getYear(0);
-        const year2 = YEAR_CONFIG.getYear(1);
-
-        // Starting Cash
-        if (metrics.startingCash) {
-            const scVariance = metrics.startingCash[year2] - metrics.startingCash[year1];
-            const scVariancePercent = VarianceCalculator.calculatePercent(metrics.startingCash[year2], metrics.startingCash[year1]);
-
-            result.push({
-                hierarchy: ['Cash Reconciliation', 'Starting Cash'],
-                level: 1,
-                label: 'Starting Cash',
-                name1: 'Cash Reconciliation',
-                name2: 'Starting Cash',
-                amount_2024: metrics.startingCash[year1],
-                amount_2025: metrics.startingCash[year2],
-                variance_amount: scVariance,
-                variance_percent: scVariancePercent,
-                _isMetric: false,
-                _rowType: 'detail'
-            });
-        }
-
-        // Net Change in Cash
-        if (metrics.netChange) {
-            const ncVariance = metrics.netChange.variance;
-            const ncVariancePercent = metrics.netChange[year1] !== 0 ?
-                (ncVariance / Math.abs(metrics.netChange[year1])) * 100 : 0;
-
-            result.push({
-                hierarchy: ['Cash Reconciliation', 'Changes in Cash'],
-                level: 1,
-                label: 'Changes in Cash',
-                name1: 'Cash Reconciliation',
-                name2: 'Changes in Cash',
-                amount_2024: metrics.netChange[year1],
-                amount_2025: metrics.netChange[year2],
-                variance_amount: ncVariance,
-                variance_percent: ncVariancePercent,
-                _isMetric: false,
-                _rowType: 'detail'
-            });
-        }
-
-        // Ending Cash
-        if (metrics.endingCash) {
-            const ecVariance = metrics.endingCash[year2] - metrics.endingCash[year1];
-            const ecVariancePercent = VarianceCalculator.calculatePercent(metrics.endingCash[year2], metrics.endingCash[year1]);
-
-            result.push({
-                hierarchy: ['Cash Reconciliation', 'Ending Cash'],
-                level: 1,
-                label: 'Ending Cash',
-                name1: 'Cash Reconciliation',
-                name2: 'Ending Cash',
-                amount_2024: metrics.endingCash[year1],
-                amount_2025: metrics.endingCash[year2],
-                variance_amount: ecVariance,
-                variance_percent: ecVariancePercent,
-                _isMetric: true,
-                _rowType: 'total'
-            });
-        }
-
-        return result;
-    }
+    // Legacy special row insertion methods removed
+    // All calculated rows, subtotals, and metrics are now handled by report definitions
+    // using 'calculated' and 'subtotal' layout item types
 
     // Get column definitions based on statement type
     getColumnDefs(statementType, year1, year2) {

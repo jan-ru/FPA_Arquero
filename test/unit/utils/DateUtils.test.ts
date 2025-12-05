@@ -18,7 +18,7 @@ Deno.test("DateUtils - test suite placeholder", () => {
 // The following tests would work in a browser environment:
 
 /*
-import DateUtils from "../../../src/utils/DateUtils.js";
+import DateUtils from "../../../src/utils/DateUtils.ts";
 
 Deno.test("DateUtils - initialize sets up Day.js", () => {
     DateUtils.initialize();

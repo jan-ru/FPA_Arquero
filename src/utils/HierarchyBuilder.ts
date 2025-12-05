@@ -5,18 +5,58 @@
  * aggregated amounts at each level. Supports flexible depth levels.
  */
 
-import HierarchySorter from './HierarchySorter.js';
-import Logger from './Logger.js';
-import VarianceCalculator from './VarianceCalculator.js';
+import HierarchySorter from './HierarchySorter.ts';
+import Logger from './Logger.ts';
+import VarianceCalculator from './VarianceCalculator.ts';
+
+export type DetailLevel = 'level0' | 'level1' | 'level2' | 'level3' | 'level4' | 'level5';
+
+export interface DetailRow {
+    code0?: string;
+    name0?: string;
+    code1?: string | number;
+    name1?: string;
+    code2?: string | number;
+    name2?: string;
+    code3?: string | number;
+    name3?: string;
+    account_code?: string;
+    account_description?: string;
+    amount_2024?: number;
+    amount_2025?: number;
+    [key: string]: unknown;
+}
+
+export interface HierarchyNode {
+    hierarchy: string[];
+    level: number;
+    label: string;
+    code0: string;
+    name0: string;
+    code1: string | number;
+    name1: string;
+    code2: string | number;
+    name2: string;
+    code3: string | number;
+    name3: string;
+    account_code: string;
+    account_description: string;
+    amount_2024: number;
+    amount_2025: number;
+    variance_amount: number;
+    variance_percent: number;
+    _rowType: 'detail' | 'group';
+    [key: string]: unknown;
+}
 
 export class HierarchyBuilder {
     /**
      * Build hierarchical tree from flat detail data
-     * @param {Array<Object>} details - Flat array of detail objects
-     * @param {string} detailLevel - Level identifier (level0-level5)
-     * @returns {Array<Object>} Sorted array of hierarchy nodes with aggregated amounts
+     * @param details - Flat array of detail objects
+     * @param detailLevel - Level identifier (level0-level5)
+     * @returns Sorted array of hierarchy nodes with aggregated amounts
      */
-    static buildTree(details, detailLevel) {
+    static buildTree(details: DetailRow[], detailLevel: DetailLevel): HierarchyNode[] {
         Logger.debug('HierarchyBuilder.buildTree called', { detailCount: details.length, detailLevel });
 
         // Determine max depth based on detail level
@@ -24,7 +64,7 @@ export class HierarchyBuilder {
         Logger.debug('Max depth:', maxDepth);
 
         // Create hierarchy map to aggregate data
-        const hierarchyMap = new Map();
+        const hierarchyMap = new Map<string, HierarchyNode>();
 
         // Process each detail row
         details.forEach((row, idx) => {
@@ -87,11 +127,11 @@ export class HierarchyBuilder {
 
     /**
      * Get maximum depth for a detail level
-     * @param {string} detailLevel - Level identifier
-     * @returns {number} Maximum depth (1-6)
+     * @param detailLevel - Level identifier
+     * @returns Maximum depth (1-6)
      */
-    static getMaxDepth(detailLevel) {
-        const depthMap = {
+    static getMaxDepth(detailLevel: DetailLevel): number {
+        const depthMap: Record<DetailLevel, number> = {
             'level0': 1,  // Show code0 only (Activa/Passiva)
             'level1': 2,  // Show code0 + name0
             'level2': 3,  // Show code0 + name0 + name1
@@ -104,12 +144,12 @@ export class HierarchyBuilder {
 
     /**
      * Build hierarchy path parts from a data row
-     * @param {Object} row - Data row
-     * @param {number} maxDepth - Maximum depth to build
-     * @returns {Array<string>} Array of path parts
+     * @param row - Data row
+     * @param maxDepth - Maximum depth to build
+     * @returns Array of path parts
      */
-    static buildPathParts(row, maxDepth) {
-        const pathParts = [];
+    static buildPathParts(row: DetailRow, maxDepth: number): string[] {
+        const pathParts: string[] = [];
 
         // Level 0: code0 (Activa or Passiva)
         if (maxDepth >= 1 && row.code0) {
@@ -149,17 +189,17 @@ export class HierarchyBuilder {
 
     /**
      * Add path to hierarchy map and aggregate amounts
-     * @param {Map} hierarchyMap - Map of hierarchy nodes
-     * @param {Array<string>} pathParts - Path parts
-     * @param {Object} row - Source data row
+     * @param hierarchyMap - Map of hierarchy nodes
+     * @param pathParts - Path parts
+     * @param row - Source data row
      */
-    static addToHierarchy(hierarchyMap, pathParts, row) {
+    static addToHierarchy(hierarchyMap: Map<string, HierarchyNode>, pathParts: string[], row: DetailRow): void {
         for (let i = 0; i < pathParts.length; i++) {
             const path = pathParts.slice(0, i + 1);
             const pathKey = path.join('|');
 
             if (!hierarchyMap.has(pathKey)) {
-                const node = {
+                const node: HierarchyNode = {
                     hierarchy: [...path],
                     level: i,
                     label: pathParts[i],
@@ -184,7 +224,7 @@ export class HierarchyBuilder {
             }
 
             // Aggregate amounts at ALL levels (so parents show totals)
-            const node = hierarchyMap.get(pathKey);
+            const node = hierarchyMap.get(pathKey)!;
             node.amount_2024 += row.amount_2024 || 0;
             node.amount_2025 += row.amount_2025 || 0;
         }

@@ -14,8 +14,8 @@
  * - YEAR_CONFIG, UI_CONFIG, UI_STATEMENT_TYPES constants
  */
 
-import CategoryMatcher from '../utils/CategoryMatcher.js';
-import VarianceCalculator from '../utils/VarianceCalculator.js';
+import CategoryMatcher from '../utils/CategoryMatcher.ts';
+import VarianceCalculator from '../utils/VarianceCalculator.ts';
 import {
     YEAR_CONFIG,
     UI_CONFIG,

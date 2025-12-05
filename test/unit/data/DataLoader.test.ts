@@ -7,7 +7,7 @@
 import { assertEquals, assertExists } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import DataLoader from "../../../src/data/DataLoader.js";
 import { MONTH_MAP } from "../../../src/constants.js";
-import DateUtils from "../../../src/utils/DateUtils.js";
+import DateUtils from "../../../src/utils/DateUtils.ts";
 
 // Mock dayjs for DateUtils with proper month names
 const dutchMonthNames = [

@@ -15,7 +15,7 @@
  */
 
 import ReportValidator from './ReportValidator.js';
-import Logger from '../utils/Logger.js';
+import Logger from '../utils/Logger.ts';
 
 class ReportMigrationTool {
     /**

@@ -1,5 +1,5 @@
 /**
- * Tests for RollupSpecBuilder.js
+ * Tests for RollupSpecBuilder.ts
  *
  * Tests the utility class for building Arquero rollup specifications
  */
@@ -11,7 +11,7 @@ import {
     buildLTMModeSpec,
     buildLTMCategoryTotalsSpec,
     buildCategoryTotalsSpec
-} from "../../../src/utils/RollupSpecBuilder.js";
+} from "../../../src/utils/RollupSpecBuilder.ts";
 import { STATEMENT_TYPES } from "../../../src/constants.js";
 
 Deno.test("RollupSpecBuilder - constructor creates empty spec", () => {

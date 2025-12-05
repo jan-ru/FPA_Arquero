@@ -10,6 +10,8 @@
  * Extracted from UIController to improve separation of concerns
  */
 
+import PeriodParser from '../utils/PeriodParser.ts';
+
 // Type definitions
 export interface DebitCreditTotals {
     readonly debit: number;
@@ -129,17 +131,9 @@ export class FileMetricsService {
      * @returns Maximum period number
      */
     parsePeriodValue(periodValue: PeriodValue): number {
-        if (periodValue === 'all') {
-            return 12;
-        } else if (periodValue.toUpperCase().startsWith('Q')) {
-            // Quarter: Q1 = period 3, Q2 = 6, Q3 = 9, Q4 = 12
-            const quarter = parseInt(periodValue.substring(1));
-            return quarter * 3;
-        } else {
-            // Individual period (e.g., "9" or "p9")
-            const match = periodValue.match(/\d+/);
-            return match ? parseInt(match[0]) : 12;
-        }
+        // Delegate to PeriodParser utility
+        const result = PeriodParser.parse(periodValue);
+        return typeof result === 'number' ? result : 12;
     }
 
     /**
