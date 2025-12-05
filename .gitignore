@@ -6,3 +6,5 @@ input/
 output/
 # Test coverage
 coverage/
+# Dependencies
+node_modules/
