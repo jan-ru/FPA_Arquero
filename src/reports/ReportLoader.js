@@ -1,4 +1,6 @@
 import ValidationResult from '../utils/ValidationResult.ts';
+import Logger from '../utils/Logger.ts';
+import { ErrorFactory } from '../errors/index.ts';
 
 /**
  * ReportLoader - Loads and validates report definitions from JSON files
@@ -55,15 +57,17 @@ export default class ReportLoader {
             }
 
             // Convert file path to URL if needed
-            const url = filePath.startsWith('http://') || filePath.startsWith('https://') || filePath.startsWith('file://')
+            // For browser environments, use relative URLs (served by HTTP server)
+            // For absolute paths starting with /, use them as-is (relative to server root)
+            const url = filePath.startsWith('http://') || filePath.startsWith('https://')
                 ? filePath
-                : `file://${filePath.startsWith('/') ? '' : '/'}${filePath}`;
+                : filePath; // Use path as-is for HTTP server
 
             // Fetch the file
             const response = await fetch(url);
             
             if (!response.ok) {
-                throw new Error(`Failed to load report from ${filePath}: ${response.status} ${response.statusText}`);
+                throw ErrorFactory.fetchFailed(url, response.status, response.statusText);
             }
 
             // Get the JSON text
@@ -76,9 +80,9 @@ export default class ReportLoader {
             const validationResult = this.validateReport(reportDef);
             
             if (!validationResult.isValid) {
-                const errorMsg = `Report definition validation failed for ${filePath}:\n${validationResult.formatMessages()}`;
-                console.error(errorMsg);
-                throw new Error(errorMsg);
+                const errors = validationResult.errors.map(e => e.message);
+                Logger.error(`Report definition validation failed for ${filePath}`);
+                throw ErrorFactory.schemaValidation('ReportDefinition', errors);
             }
 
             // Cache the loaded definition
@@ -92,14 +96,22 @@ export default class ReportLoader {
 
             return reportDef;
         } catch (error) {
-            console.error(`Error loading report from ${filePath}:`, error);
+            Logger.error(`Error loading report from ${filePath}:`, error);
             
-            // Provide more helpful error messages
-            if (error.message && error.message.includes('NetworkError')) {
-                throw new Error(`Failed to load report from ${filePath}: File not found or network error`);
+            // Re-throw custom errors as-is
+            if (error.code) {
+                throw error;
             }
             
-            throw error;
+            // Wrap other errors
+            if (error.message && error.message.includes('NetworkError')) {
+                throw ErrorFactory.reportNotFound(filePath);
+            }
+            
+            throw ErrorFactory.wrap(error, { 
+                operation: 'loadReport',
+                filePath 
+            });
         }
     }
 
@@ -147,9 +159,12 @@ export default class ReportLoader {
                         .map(result => result.value);
                 } catch (denoError) {
                     if (denoError.name === 'NotFound') {
-                        throw new Error(`Failed to load reports from ${dirPath}: Directory not found`);
+                        throw ErrorFactory.directoryNotFound(dirPath, denoError);
                     }
-                    throw denoError;
+                    throw ErrorFactory.wrap(denoError, { 
+                        operation: 'loadReportsFromDirectory',
+                        dirPath 
+                    });
                 }
             }
             
@@ -177,7 +192,7 @@ export default class ReportLoader {
                     }
                 }
             } catch (manifestError) {
-                console.warn(`No manifest found at ${manifestPath}, trying alternative approach`);
+                Logger.warn(`No manifest found at ${manifestPath}, trying alternative approach`);
             }
 
             // Alternative: Try common report filenames
@@ -200,10 +215,10 @@ export default class ReportLoader {
             // Filter out null results (failed loads)
             return results.filter(report => report !== null);
         } catch (error) {
-            console.error(`Error loading reports from directory ${dirPath}:`, error);
+            Logger.error(`Error loading reports from directory ${dirPath}:`, error);
             
-            // Re-throw if it's a "not found" error
-            if (error.message && error.message.includes('Directory not found')) {
+            // Re-throw custom errors
+            if (error.code) {
                 throw error;
             }
             
@@ -288,7 +303,7 @@ export default class ReportLoader {
             }
 
             // Build helpful error message
-            let errorMsg = `JSON parse error in ${source}`;
+            let errorMsg = `JSON parse error`;
             
             if (lineNumber !== null) {
                 errorMsg += ` at line ${lineNumber}`;
@@ -312,7 +327,7 @@ export default class ReportLoader {
                 }
             }
 
-            throw new Error(errorMsg);
+            throw ErrorFactory.fileParse(source, new Error(errorMsg));
         }
     }
 
@@ -390,7 +405,7 @@ export default class ReportLoader {
 
             return currentModified > cachedModified;
         } catch (error) {
-            console.error(`Error checking if report changed: ${filePath}`, error);
+            Logger.error(`Error checking if report changed: ${filePath}`, error);
             return false;
         }
     }

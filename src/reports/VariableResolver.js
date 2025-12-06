@@ -1,3 +1,5 @@
+import Logger from '../utils/Logger.ts';
+
 /**
  * VariableResolver - Resolves variable definitions to calculated values
  * 
@@ -109,7 +111,8 @@ export default class VariableResolver {
                     this.resolutionStack.pop();
                 }
             } catch (error) {
-                throw new Error(`Failed to resolve variable '${varName}': ${error.message}`);
+                const errorMessage = error?.message || String(error) || 'Unknown error';
+                throw new Error(`Failed to resolve variable '${varName}': ${errorMessage}`);
             }
         }
 
@@ -140,8 +143,26 @@ export default class VariableResolver {
             throw new Error(`Invalid variable definition: ${validation.errors.join(', ')}`);
         }
 
+        // Check if movementsData is valid
+        if (!movementsData || typeof movementsData.filter !== 'function') {
+            throw new Error('Invalid movements data provided. Data may not be loaded yet.');
+        }
+
         // Apply filter to movements data
-        const filteredData = this.filterEngine.applyFilter(movementsData, varDef.filter);
+        let filteredData;
+        try {
+            filteredData = this.filterEngine.applyFilter(movementsData, varDef.filter);
+        } catch (filterError) {
+            const filterDesc = JSON.stringify(varDef.filter);
+            Logger.error(`Filter application failed for: ${filterDesc}`, filterError);
+            throw new Error(`Filter failed: ${filterError?.message || String(filterError)}. Filter: ${filterDesc}`);
+        }
+        
+        // Check if filter returned any data
+        if (!filteredData || filteredData.numRows() === 0) {
+            const filterDesc = JSON.stringify(varDef.filter);
+            Logger.warn(`No data found matching filter: ${filterDesc}. Variable will have zero values.`);
+        }
 
         // Execute aggregate function for each year/period
         const result = this._aggregateByPeriod(filteredData, varDef.aggregate, periodOptions, movementsData);
@@ -187,7 +208,14 @@ export default class VariableResolver {
 
             // Apply aggregate function
             let value;
-            const amounts = yearData.array('amount');
+            let amounts;
+            
+            try {
+                amounts = yearData.array('amount');
+            } catch (error) {
+                Logger.error(`Failed to get 'amount' column for year ${year}. Available columns:`, yearData.columnNames());
+                throw new Error(`Column 'amount' not found in data. Available columns: ${yearData.columnNames().join(', ')}`);
+            }
             
             switch (aggregateFunc.toLowerCase()) {
                 case 'sum':

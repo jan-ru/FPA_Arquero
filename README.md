@@ -12,6 +12,8 @@ A browser-based application that transforms trial balance data into professional
 - **Flexible Period Selection**: Choose from yearly, quarterly (Q1-Q4), monthly (P1-P12), or LTM
 - **CSV Export**: Export statements to CSV format (opens in Excel)
 - **Data Validation**: Automatic detection of unmapped accounts and balance verification
+- **Debug Tools**: View report definitions, inspect data columns, and diagnose issues (Dev mode)
+- **Robust Error Handling**: Comprehensive error system with detailed error messages and tracking
 
 ## Quick Start
 
@@ -28,7 +30,7 @@ python3 -m http.server 8000
 # Then open: http://localhost:8000
 ```
 
-See [QUICK_START.md](QUICK_START.md) for more options.
+See [docs/QUICK_START.md](docs/QUICK_START.md) for more options.
 
 ### Browser Compatibility
 
@@ -142,7 +144,8 @@ deno test --allow-read --watch test/unit/
 
 ### Test Coverage
 
-- 96 unit tests with 68.3% line coverage
+- 273+ unit tests with comprehensive coverage
+- Custom error system: 177 tests with 100% coverage
 - Property-based tests for core logic
 - Integration tests for end-to-end workflows
 
@@ -150,13 +153,15 @@ See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for detailed development guide.
 
 ## Documentation
 
-- **[QUICK_START.md](QUICK_START.md)** - Quick start guide
+- **[docs/QUICK_START.md](docs/QUICK_START.md)** - Quick start guide
 - **[docs/USER_GUIDE.md](docs/USER_GUIDE.md)** - Complete user guide
 - **[docs/REPORT_DEFINITIONS.md](docs/REPORT_DEFINITIONS.md)** - Report definition reference
 - **[docs/MIGRATION_GUIDE.md](docs/MIGRATION_GUIDE.md)** - Migration from hardcoded reports
 - **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** - Technical architecture
 - **[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)** - Development guide
-- **[CHANGELOG.md](CHANGELOG.md)** - Version history
+- **[docs/CHANGELOG.md](docs/CHANGELOG.md)** - Version history and release notes
+- **[docs/SERVER_SETUP.md](docs/SERVER_SETUP.md)** - Development server setup
+- **[docs/TYPESCRIPT_SETUP_FIX.md](docs/TYPESCRIPT_SETUP_FIX.md)** - TypeScript configuration
 
 ## Troubleshooting
 
@@ -189,9 +194,9 @@ See [docs/USER_GUIDE.md](docs/USER_GUIDE.md) for more troubleshooting tips.
 
 ## Version
 
-**Current Version:** 0.11.0
+**Current Version:** 0.13.0
 
-See [CHANGELOG.md](CHANGELOG.md) for detailed version history and release notes.
+See [docs/CHANGELOG.md](docs/CHANGELOG.md) for detailed version history and release notes.
 
 ## License
 

@@ -1,3 +1,6 @@
+import Logger from '../utils/Logger.ts';
+import { ErrorFactory } from '../errors/index.ts';
+
 /**
  * StatementGenerator - Generates financial statements from trial balance data
  *
@@ -23,7 +26,6 @@ import {
 } from '../constants.js';
 import CategoryMatcher from '../utils/CategoryMatcher.ts';
 import VarianceCalculator from '../utils/VarianceCalculator.ts';
-import Logger from '../utils/Logger.ts';
 import AccountSignHandler from '../utils/AccountSignHandler.ts';
 import LTMCalculator from '../utils/LTMCalculator.ts';
 import {
@@ -73,10 +75,11 @@ class StatementGenerator {
             : this.dataStore.getCombinedBalances();
 
         if (!combinedData) {
-            throw new Error(`Required ${viewType} data not loaded`);
+            throw ErrorFactory.missingConfig('trialBalanceData', 
+                new Error(`Required ${viewType} data not loaded`));
         }
 
-        console.log(`Using ${viewType} view for statement generation (${combinedData.numRows()} rows)`);
+        Logger.debug(`Using ${viewType} view for statement generation (${combinedData.numRows()} rows)`);
         return combinedData;
     }
 
@@ -145,13 +148,13 @@ class StatementGenerator {
             this.unmappedAccounts = allUnmapped;
 
             if (allUnmapped.length > 0) {
-                console.warn(`Found ${allUnmapped.length} unmapped accounts:`, allUnmapped);
+                Logger.warn(`Found ${allUnmapped.length} unmapped accounts:`, allUnmapped);
             }
 
             return allUnmapped;
 
         } catch (error) {
-            console.error('Error detecting unmapped accounts:', error);
+            Logger.error('Error detecting unmapped accounts:', error);
             return [];
         }
     }
@@ -260,11 +263,13 @@ class StatementGenerator {
 
                 // Validate that we have data for LTM calculation
                 if (availableYears.length === 0) {
-                    throw new Error('No data available for LTM calculation. Please load trial balance files first.');
+                    throw ErrorFactory.missingConfig('trialBalanceData',
+                        new Error('No data available for LTM calculation'));
                 }
 
                 if (filtered.numRows() === 0) {
-                    throw new Error('No movements data available for LTM calculation. The selected statement type may not have any data.');
+                    throw ErrorFactory.invalidValue('statementType', statementType, 
+                        'statement type with available data');
                 }
 
                 // Calculate LTM info
@@ -299,7 +304,7 @@ class StatementGenerator {
 
                     // Display warning if incomplete data
                     if (!ltmInfo.availability.complete) {
-                        console.warn(`LTM Column 1: ${ltmInfo.availability.message}`);
+                        Logger.warn(`LTM Column 1: ${ltmInfo.availability.message}`);
                         if (typeof document !== 'undefined') {
                             const warningEl = document.getElementById('ltm-warning');
                             if (warningEl) {
@@ -318,7 +323,7 @@ class StatementGenerator {
 
                     // Display warning if incomplete data
                     if (!ltmInfo.availability.complete) {
-                        console.warn(`LTM Column 2: ${ltmInfo.availability.message}`);
+                        Logger.warn(`LTM Column 2: ${ltmInfo.availability.message}`);
                         if (typeof document !== 'undefined') {
                             const warningEl = document.getElementById('ltm-warning');
                             if (warningEl) {
@@ -468,7 +473,7 @@ class StatementGenerator {
 
         } catch (error) {
             const statementName = options.name || 'Statement';
-            console.error(`Error generating ${statementName}:`, error);
+            Logger.error(`Error generating ${statementName}:`, error);
             throw error;
         }
     }
@@ -499,7 +504,7 @@ class StatementGenerator {
      */
     generateStatementFromDefinition(reportDef, options = {}) {
         if (!reportDef) {
-            throw new Error('Report definition is required');
+            throw ErrorFactory.missingField('reportDef', 'generateStatementFromDefinition');
         }
 
         try {
@@ -539,8 +544,17 @@ class StatementGenerator {
             return result;
 
         } catch (error) {
-            console.error('Error generating statement from definition:', error);
-            throw new Error(`Failed to generate statement from definition: ${error.message}`);
+            Logger.error('Error generating statement from definition:', error);
+            
+            // Re-throw custom errors as-is
+            if (error.code) {
+                throw error;
+            }
+            
+            throw ErrorFactory.wrap(error, {
+                operation: 'generateStatementFromDefinition',
+                reportId: reportDef?.reportId
+            });
         }
     }
 
@@ -562,7 +576,8 @@ class StatementGenerator {
 
         const mapped = mapping[reportStatementType];
         if (!mapped) {
-            throw new Error(`Unknown statement type in report definition: ${reportStatementType}`);
+            throw ErrorFactory.invalidValue('statementType', reportStatementType, 
+                'income, balance, or cashflow');
         }
 
         return mapped;
@@ -740,7 +755,8 @@ class StatementGenerator {
             const factTable2 = this.dataStore.getFactTable(period2);
 
             if (!factTable1 || !factTable2) {
-                throw new Error(`Data for periods ${period1} or ${period2} not loaded`);
+                throw ErrorFactory.missingConfig('periodData',
+                    new Error(`Data for periods ${period1} or ${period2} not loaded`));
             }
 
             // Rename amount columns to distinguish periods
@@ -775,7 +791,7 @@ class StatementGenerator {
             return joined;
 
         } catch (error) {
-            console.error('Error calculating variance:', error);
+            Logger.error('Error calculating variance:', error);
             throw error;
         }
     }

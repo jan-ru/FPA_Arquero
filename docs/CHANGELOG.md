@@ -7,6 +7,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0] - 2024-12-06
+
+### Added
+- **Custom Error System**:
+  - Implemented comprehensive error hierarchy with ApplicationError base class
+  - Added specialized error types: DataLoadError, ValidationError, ReportGenerationError, NetworkError, ConfigurationError
+  - Created ErrorFactory for consistent error creation
+  - Added ErrorGuards for type checking and error identification
+  - Implemented ErrorMetrics for error tracking and analysis
+  - 177 comprehensive unit tests for error system (100% coverage)
+
+- **UI Debugging Tools**:
+  - Added "View Report Definition" button (👁️) - displays current report JSON in read-only modal
+  - Added "Debug Columns" button (🔍) - shows available data columns (visible in Dev mode)
+  - Added copy-to-clipboard functionality for report definitions
+  - Added dedicated report status display showing report count
+
+- **Report Status Display**:
+  - Created persistent report status area that shows "Loaded X report definitions"
+  - Status persists and is not overwritten by other messages
+  - Color-coded status indicators (success, error, loading)
+  - Shows count on initial load and when reloading reports
+
+### Fixed
+- **Error Handling Improvements**:
+  - Fixed error message handling when error objects lack `message` property
+  - Added better error context in VariableResolver for filter failures
+  - Improved error messages to show available columns when 'amount' column is missing
+  - Enhanced ErrorFactory.wrap() to handle non-Error objects gracefully
+
+### Changed
+- **UI Layout Improvements**:
+  - Moved View and Detail controls to separate line below Financials section
+  - Improved spacing and organization of control panels
+  - Better visual hierarchy for statement controls
+
+- **Report Loading**:
+  - loadReportDefinitions() now returns report count
+  - handleReloadReports() displays count in success message
+  - Report status uses dedicated display area instead of shared loading status
+
+### Documentation
+- Moved CHANGELOG.md to docs/CHANGELOG.md
+- Moved CODEBASE_ANALYSIS.md to docs/CODEBASE_ANALYSIS.md
+- Updated documentation structure for better organization
+
 ## [0.12.0] - 2024-12-05
 
 ### Added

@@ -191,8 +191,8 @@ class AgGridStatementRenderer {
 
     // Build hierarchical tree structure - creates ALL levels for outline display
     buildHierarchicalTree(details, detailLevel) {
-        console.log('buildHierarchicalTree called', { detailCount: details.length, detailLevel });
-        console.log('Sample detail row received:', details[0]);
+        Logger.debug('buildHierarchicalTree called', { detailCount: details.length, detailLevel });
+        Logger.debug('Sample detail row received:', details[0]);
 
         // Check how many rows have name3 and account data populated
         const rowsWithName3 = details.filter(d => d.name3 && d.name3.trim() !== '').length;
@@ -203,14 +203,14 @@ class AgGridStatementRenderer {
         const rowsWithEmptyAccount = details.filter(d => !d.account_code || d.account_code === '').length;
         const rowsWithUndefinedAccount = details.filter(d => d.account_code === undefined).length;
 
-        console.log(`Rows with name3: ${rowsWithName3} out of ${details.length}`);
-        console.log(`Rows with account_code (non-empty): ${rowsWithAccounts} out of ${details.length}`);
-        console.log(`Rows with empty account_code: ${rowsWithEmptyAccount}`);
-        console.log(`Rows with undefined account_code: ${rowsWithUndefinedAccount}`);
+        Logger.debug(`Rows with name3: ${rowsWithName3} out of ${details.length}`);
+        Logger.debug(`Rows with account_code (non-empty): ${rowsWithAccounts} out of ${details.length}`);
+        Logger.debug(`Rows with empty account_code: ${rowsWithEmptyAccount}`);
+        Logger.debug(`Rows with undefined account_code: ${rowsWithUndefinedAccount}`);
 
         // Show sample of first few rows with account data
         const samplesWithAccounts = details.filter(d => d.account_code && typeof d.account_code === 'string' && d.account_code.trim() !== '').slice(0, 3);
-        console.log('Sample rows with accounts:', samplesWithAccounts);
+        Logger.debug('Sample rows with accounts:', samplesWithAccounts);
 
         // Create hierarchy map to aggregate data
         const hierarchyMap = new Map();
@@ -226,7 +226,7 @@ class AgGridStatementRenderer {
             'level5': 6   // Show all including account_code + account_description
         }[detailLevel] || 6;
 
-        console.log('Max depth:', maxDepth);
+        Logger.debug('Max depth:', maxDepth);
 
         // Process each detail row
         details.forEach((row, idx) => {
@@ -270,7 +270,7 @@ class AgGridStatementRenderer {
 
             // Log first few rows for debugging
             if (idx < 5) {
-                console.log(`Row ${idx}:`, {
+                Logger.debug(`Row ${idx}:`, {
                     code0: row.code0,
                     name0: row.name0,
                     code1: row.code1,
@@ -387,7 +387,7 @@ class AgGridStatementRenderer {
             return 0;
         });
 
-        console.log('Built hierarchy tree:', {
+        Logger.debug('Built hierarchy tree:', {
             nodeCount: result.length,
             sample: result.slice(0, 20).map(r => ({
                 level: r.level,
@@ -593,7 +593,7 @@ class AgGridStatementRenderer {
     // Export to Excel using ExcelJS
     async exportToExcel(statementName) {
         if (!this.gridApi) {
-            console.error('Grid not initialized');
+            Logger.error('Grid not initialized');
             return;
         }
 
@@ -617,9 +617,9 @@ class AgGridStatementRenderer {
                 });
             }
 
-            console.log('Successfully exported to Excel');
+            Logger.info('Successfully exported to Excel');
         } catch (error) {
-            console.error('Error exporting to Excel:', error);
+            Logger.error('Error exporting to Excel:', error);
             alert('Failed to export to Excel. Please try again.');
         }
     }

@@ -9,7 +9,8 @@
 5. [Report Selection](#report-selection)
 6. [Variance Analysis](#variance-analysis)
 7. [Exporting Data](#exporting-data)
-8. [Troubleshooting](#troubleshooting)
+8. [Debug Tools](#debug-tools)
+9. [Troubleshooting](#troubleshooting)
 
 ## Getting Started
 
@@ -220,6 +221,56 @@ CSV files open directly in Excel:
 - Or: Open Excel → File → Open → Select CSV file
 - Data imports with proper formatting
 
+## Debug Tools
+
+### View Report Definition
+
+The **"👁️ View Definition"** button allows you to inspect the current report's JSON configuration:
+
+1. Select a report from the dropdown
+2. Click **"👁️ View Definition"** button
+3. Modal displays:
+   - Report name, version, and type
+   - Complete JSON definition (read-only)
+   - **"📋 Copy JSON"** button to copy to clipboard
+
+**Use Cases**:
+- Understand how a report is structured
+- Diagnose variable resolution issues
+- Copy report definition for modification
+- Learn report definition syntax
+
+### Debug Columns (Dev Mode)
+
+The **"🔍 Debug Columns"** button helps diagnose data issues:
+
+1. Enable **Dev mode** (check the Dev checkbox)
+2. Load your data files
+3. Click **"🔍 Debug Columns"** button
+4. Alert displays:
+   - All available column names in your data
+   - Sample row showing actual data structure
+   - Expected column names for filters
+
+**Use Cases**:
+- Diagnose "Failed to resolve variable" errors
+- Verify column names match report filters
+- Check if hierarchy columns (code1, code2, code3) exist
+- Inspect data structure after loading
+
+### Report Status Display
+
+The report status bar shows:
+- **Loading**: "Loading report definitions..."
+- **Success**: "✓ Loaded X report definitions"
+- **Reload**: "✓ Reloaded X report definitions successfully"
+- **Error**: "⚠️ Failed to load report definitions"
+
+This persistent status helps you:
+- Confirm reports loaded successfully
+- Know how many reports are available
+- Diagnose report loading issues
+
 ## Troubleshooting
 
 ### Application Won't Load
@@ -268,6 +319,29 @@ python3 -m http.server 8000
 - Check for missing accounts in trial balance
 - Verify all accounts are properly mapped in hierarchy
 - Look for data entry errors in amounts
+
+### Failed to Resolve Variable Error
+
+**Problem**: Error message "Failed to resolve variable 'revenue'" or similar
+
+**Diagnosis Steps**:
+1. Enable **Dev mode** (check Dev checkbox)
+2. Click **"🔍 Debug Columns"** to see available columns
+3. Click **"👁️ View Definition"** to see what the report expects
+4. Compare column names in your data vs. report filters
+
+**Common Causes**:
+- Column name mismatch (e.g., report expects `code1` but data has `account_code`)
+- Missing hierarchy columns (`code1`, `code2`, `code3`)
+- Data not fully loaded when report tries to use it
+- Filter criteria doesn't match any rows in data
+
+**Solutions**:
+- Verify your data has the expected columns (use Debug Columns button)
+- Check that hierarchy columns exist and are populated
+- Ensure `statement_type` column matches report filters
+- Reload data files if loading was interrupted
+- Edit report JSON to match your actual column names
 
 ### No Data Displayed
 

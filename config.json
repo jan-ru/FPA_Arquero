@@ -1,14 +1,52 @@
 {
+  "version": "1.0",
+  
   "inputFiles": {
-    "trialBalance2024": "2024_BalansenWinstverliesperperiode.xlsx",
-    "trialBalance2025": "2025_BalansenWinstverliesperperiode.xlsx",
-    "dates": "DimDates.xlsx"
+    "trialBalance2024": "2024_BalansenWinstVerliesperperiode.xlsx",
+    "trialBalance2025": "2025_BalansenWinstVerliesperperiode.xlsx"
   },
-  "outputFiles": {
-    "allStatements": "financial_statements_all.xlsx"
+  
+  "dataSources": {
+    "reportDefinitions": {
+      "type": "local",
+      "config": {
+        "basePath": "./input/reports"
+      }
+    },
+    
+    "factTable": {
+      "type": "local",
+      "config": {
+        "basePath": "./input/data"
+      }
+    },
+    
+    "dimTables": {
+      "type": "local",
+      "config": {
+        "basePath": "./input/data"
+      }
+    },
+    
+    "default": {
+      "type": "local",
+      "config": {
+        "basePath": "./input"
+      }
+    }
   },
-  "directories": {
-    "input": "input",
-    "output": "output"
+  
+  "cache": {
+    "enabled": true,
+    "ttl": 3600,
+    "storage": "localStorage",
+    "keyPrefix": "datasource_"
+  },
+  
+  "fallback": {
+    "enabled": true,
+    "order": ["cache", "primary", "fallback"],
+    "retryAttempts": 2,
+    "retryDelay": 500
   }
 }

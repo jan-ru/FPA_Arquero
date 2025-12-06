@@ -1,3 +1,5 @@
+import { ErrorFactory } from '../errors/index.ts';
+
 /**
  * ReportRenderer - Generates statement data from report definitions
  * 
@@ -47,10 +49,10 @@ export default class ReportRenderer {
      */
     constructor(variableResolver, expressionEvaluator) {
         if (!variableResolver) {
-            throw new Error('VariableResolver is required');
+            throw ErrorFactory.missingField('variableResolver', 'ReportRenderer constructor');
         }
         if (!expressionEvaluator) {
-            throw new Error('ExpressionEvaluator is required');
+            throw ErrorFactory.missingField('expressionEvaluator', 'ReportRenderer constructor');
         }
 
         this.variableResolver = variableResolver;
@@ -83,13 +85,13 @@ export default class ReportRenderer {
      */
     renderStatement(reportDef, movementsData, periodOptions) {
         if (!reportDef) {
-            throw new Error('Report definition is required');
+            throw ErrorFactory.missingField('reportDef', 'renderStatement');
         }
         if (!movementsData) {
-            throw new Error('Movements data is required');
+            throw ErrorFactory.missingField('movementsData', 'renderStatement');
         }
         if (!periodOptions) {
-            throw new Error('Period options are required');
+            throw ErrorFactory.missingField('periodOptions', 'renderStatement');
         }
 
         // Validate report definition structure
@@ -161,7 +163,7 @@ export default class ReportRenderer {
      */
     processLayoutItems(layout, context) {
         if (!Array.isArray(layout)) {
-            throw new Error('Layout must be an array');
+            throw ErrorFactory.invalidValue('layout', layout, 'array');
         }
 
         // Sort layout items by order number
@@ -179,9 +181,11 @@ export default class ReportRenderer {
                 
                 rows.push(row);
             } catch (error) {
-                throw new Error(
-                    `Failed to process layout item at order ${item.order}: ${error.message}`
-                );
+                // Re-throw custom errors
+                if (error.code) {
+                    throw error;
+                }
+                throw ErrorFactory.layoutError(item.order, item.type, error);
             }
         }
 
@@ -251,7 +255,8 @@ export default class ReportRenderer {
                 break;
 
             default:
-                throw new Error(`Unknown layout item type: ${item.type}`);
+                throw ErrorFactory.invalidValue('type', item.type, 
+                    'variable, calculated, category, subtotal, or spacer');
         }
 
         return row;
@@ -274,7 +279,8 @@ export default class ReportRenderer {
      */
     calculateSubtotal(fromOrder, toOrder, rows) {
         if (fromOrder > toOrder) {
-            throw new Error(`Invalid subtotal range: from (${fromOrder}) > to (${toOrder})`);
+            throw ErrorFactory.invalidValue('subtotalRange', `${fromOrder}-${toOrder}`, 
+                'from <= to');
         }
 
         const subtotals = {
@@ -374,12 +380,13 @@ export default class ReportRenderer {
         
         for (const field of required) {
             if (!(field in reportDef)) {
-                throw new Error(`Missing required field in report definition: ${field}`);
+                throw ErrorFactory.missingField(field, 'report definition', reportDef.reportId);
             }
         }
 
         if (!reportDef.layout || !Array.isArray(reportDef.layout)) {
-            throw new Error('Report definition must have a layout array');
+            throw ErrorFactory.invalidReport(reportDef.reportId || 'unknown', 
+                'Report definition must have a layout array');
         }
     }
 
@@ -392,47 +399,49 @@ export default class ReportRenderer {
      */
     _validateLayoutItem(item) {
         if (!item || typeof item !== 'object') {
-            throw new Error('Layout item must be an object');
+            throw ErrorFactory.invalidValue('layoutItem', item, 'object');
         }
 
         if (!('order' in item)) {
-            throw new Error('Layout item must have an order number');
+            throw ErrorFactory.missingField('order', 'layout item');
         }
 
         if (!('type' in item)) {
-            throw new Error('Layout item must have a type');
+            throw ErrorFactory.missingField('type', 'layout item');
         }
 
         if (!ReportRenderer.LAYOUT_TYPES.includes(item.type)) {
-            throw new Error(
-                `Invalid layout item type: ${item.type}. ` +
-                `Valid types are: ${ReportRenderer.LAYOUT_TYPES.join(', ')}`
-            );
+            throw ErrorFactory.invalidValue('type', item.type, 
+                ReportRenderer.LAYOUT_TYPES.join(', '));
         }
 
         // Type-specific validation
         switch (item.type) {
             case 'variable':
                 if (!item.variable) {
-                    throw new Error('Variable layout item must have a variable reference');
+                    throw ErrorFactory.missingField('variable', 'variable layout item', 
+                        `order ${item.order}`);
                 }
                 break;
 
             case 'calculated':
                 if (!item.expression) {
-                    throw new Error('Calculated layout item must have an expression');
+                    throw ErrorFactory.missingField('expression', 'calculated layout item', 
+                        `order ${item.order}`);
                 }
                 break;
 
             case 'category':
                 if (!item.filter) {
-                    throw new Error('Category layout item must have a filter');
+                    throw ErrorFactory.missingField('filter', 'category layout item', 
+                        `order ${item.order}`);
                 }
                 break;
 
             case 'subtotal':
                 if (!('from' in item) || !('to' in item)) {
-                    throw new Error('Subtotal layout item must have from and to order numbers');
+                    throw ErrorFactory.missingField('from/to', 'subtotal layout item', 
+                        `order ${item.order}`);
                 }
                 break;
         }
@@ -450,7 +459,8 @@ export default class ReportRenderer {
         const variableValue = context.variables.get(item.variable);
         
         if (!variableValue) {
-            throw new Error(`Variable not found: ${item.variable}`);
+            throw ErrorFactory.variableNotFound(item.variable, 
+                context.reportDef?.reportId || 'unknown');
         }
 
         // Set amounts from variable
@@ -479,7 +489,11 @@ export default class ReportRenderer {
             row.amount_2024 = this.expressionEvaluator.evaluate(item.expression, evalContext);
             row.amount_2025 = this.expressionEvaluator.evaluate(item.expression, evalContext2025);
         } catch (error) {
-            throw new Error(`Failed to evaluate expression '${item.expression}': ${error.message}`);
+            // Re-throw custom errors
+            if (error.code) {
+                throw error;
+            }
+            throw ErrorFactory.expressionError(item.expression, error);
         }
 
         // Store metadata

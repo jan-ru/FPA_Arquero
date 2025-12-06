@@ -8,6 +8,7 @@
     <!-- External Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/arquero@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/exceljs@latest/dist/exceljs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/loglevel@1.9.1/dist/loglevel.min.js"></script>
 
     <!-- Day.js for date/period handling -->
     <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script>
@@ -571,7 +572,7 @@
 </head>
 <body>
     <div id="app">
-        <h1>Statement Generator <span id="app-version" style="font-size: 0.6em; color: rgba(255,255,255,0.8);">v0.9.0</span></h1>
+        <h1>Statement Generator <span id="app-version" style="font-size: 0.6em; color: rgba(255,255,255,0.8);">v0.13.0</span></h1>
         
         <!-- File Upload Section -->
         <div id="file-upload-section" class="section">
@@ -650,58 +651,67 @@
         <!-- Statement Display Section -->
         <div id="statement-section" class="section" style="display: none;">
             <h2>Statements</h2>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <label style="font-size: 13px; color: #4a5568; font-weight: 500;">Financials:</label>
-                    <select id="statement-selector" style="padding: 8px 16px; border-radius: 4px; border: 1px solid #e2e8f0; background: white; color: #4a5568; cursor: pointer; font-size: 13px; font-weight: 500;">
-                        <option value="income-statement">Income Statement</option>
-                        <option value="balance-sheet">Balance Sheet</option>
-                        <option value="cash-flow">Cash Flow</option>
-                    </select>
+            <!-- First row: Financials, Report, Comparisons, Performance -->
+            <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+                <label style="font-size: 13px; color: #4a5568; font-weight: 500;">Financials:</label>
+                <select id="statement-selector" style="padding: 8px 16px; border-radius: 4px; border: 1px solid #e2e8f0; background: white; color: #4a5568; cursor: pointer; font-size: 13px; font-weight: 500;">
+                    <option value="income-statement">Income Statement</option>
+                    <option value="balance-sheet">Balance Sheet</option>
+                    <option value="cash-flow">Cash Flow</option>
+                </select>
 
-                    <label style="font-size: 13px; color: #4a5568; font-weight: 500; margin-left: 10px;">Report:</label>
-                    <select id="report-selector" style="padding: 8px 16px; border-radius: 4px; border: 1px solid #e2e8f0; background: white; color: #4a5568; cursor: pointer; font-size: 13px; font-weight: 500;">
-                        <option value="">Default (Hardcoded)</option>
-                    </select>
-                    
-                    <button id="reload-report-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px; margin-left: 5px;" title="Reload report definitions from files">
-                        🔄 Reload
-                    </button>
+                <label style="font-size: 13px; color: #4a5568; font-weight: 500; margin-left: 10px;">Report:</label>
+                <select id="report-selector" style="padding: 8px 16px; border-radius: 4px; border: 1px solid #e2e8f0; background: white; color: #4a5568; cursor: pointer; font-size: 13px; font-weight: 500;">
+                    <!-- Report options will be populated dynamically -->
+                </select>
+                
+                <button id="reload-report-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px; margin-left: 5px;" title="Reload report definitions from files">
+                    🔄 Reload
+                </button>
 
-                    <label style="font-size: 13px; color: #4a5568; font-weight: 500; margin-left: 10px;">Comparisons:</label>
-                    <select id="comparison-selector" style="padding: 8px 16px; border-radius: 4px; border: 1px solid #e2e8f0; background: white; color: #4a5568; cursor: pointer; font-size: 13px; font-weight: 500;">
-                        <option value="yoy" selected>YoY (Year-over-Year)</option>
-                        <option value="ltm">LTM (Last Twelve Months)</option>
-                        <option value="mom">MoM (Month-over-Month)</option>
-                    </select>
+                <button id="view-report-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px; margin-left: 5px;" title="View current report definition">
+                    👁️ View Definition
+                </button>
 
-                    <label style="font-size: 13px; color: #4a5568; font-weight: 500; margin-left: 10px;">Performance:</label>
-                    <select id="performance-selector" style="padding: 8px 16px; border-radius: 4px; border: 1px solid #e2e8f0; background: white; color: #4a5568; cursor: pointer; font-size: 13px; font-weight: 500;">
-                        <option value="none">None</option>
-                        <option value="budget-actual">Budget vs Actual</option>
-                        <option value="forecast-actual">Forecast vs Actual</option>
-                        <option value="budget-forecast">Budget vs Forecast</option>
-                    </select>
-                </div>
-                <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
-                    <!-- View type control -->
-                    <label style="font-size: 13px; color: #4a5568; font-weight: 500;">View:</label>
-                    <select id="view-type" style="padding: 8px 12px; border-radius: 4px; border: 1px solid #e2e8f0; background: white; color: #4a5568; cursor: pointer; font-size: 13px; font-weight: 500;">
-                        <option value="cumulative" selected>Cumulative</option>
-                        <option value="period">Period</option>
-                    </select>
+                <button id="debug-columns-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px; margin-left: 5px; display: none;" title="Show available data columns">
+                    🔍 Debug Columns
+                </button>
 
-                    <!-- Detail level control -->
-                    <label style="font-size: 13px; color: #4a5568; font-weight: 500;">Detail:</label>
-                    <select id="detail-level" style="padding: 8px 12px; border-radius: 4px; border: 1px solid #e2e8f0; background: white; color: #4a5568; cursor: pointer; font-size: 13px; font-weight: 500;">
-                        <option value="level0">Level 0 (Activa/Passiva)</option>
-                        <option value="level1">Level 1 (Vaste/Vlottende activa)</option>
-                        <option value="level2">Level 2 (Main categories)</option>
-                        <option value="level3" selected>Level 3 (Sub-categories)</option>
-                        <option value="level4">Level 4 (Detail categories)</option>
-                        <option value="level5">Level 5 (All accounts)</option>
-                    </select>
-                </div>
+                <label style="font-size: 13px; color: #4a5568; font-weight: 500; margin-left: 10px;">Comparisons:</label>
+                <select id="comparison-selector" style="padding: 8px 16px; border-radius: 4px; border: 1px solid #e2e8f0; background: white; color: #4a5568; cursor: pointer; font-size: 13px; font-weight: 500;">
+                    <option value="yoy" selected>YoY (Year-over-Year)</option>
+                    <option value="ltm">LTM (Last Twelve Months)</option>
+                    <option value="mom">MoM (Month-over-Month)</option>
+                </select>
+
+                <label style="font-size: 13px; color: #4a5568; font-weight: 500; margin-left: 10px;">Performance:</label>
+                <select id="performance-selector" style="padding: 8px 16px; border-radius: 4px; border: 1px solid #e2e8f0; background: white; color: #4a5568; cursor: pointer; font-size: 13px; font-weight: 500;">
+                    <option value="none">None</option>
+                    <option value="budget-actual">Budget vs Actual</option>
+                    <option value="forecast-actual">Forecast vs Actual</option>
+                    <option value="budget-forecast">Budget vs Forecast</option>
+                </select>
+            </div>
+
+            <!-- Second row: View and Detail controls -->
+            <div style="display: flex; gap: 15px; align-items: center; margin-bottom: 15px;">
+                <!-- View type control -->
+                <label style="font-size: 13px; color: #4a5568; font-weight: 500;">View:</label>
+                <select id="view-type" style="padding: 8px 12px; border-radius: 4px; border: 1px solid #e2e8f0; background: white; color: #4a5568; cursor: pointer; font-size: 13px; font-weight: 500;">
+                    <option value="cumulative" selected>Cumulative</option>
+                    <option value="period">Period</option>
+                </select>
+
+                <!-- Detail level control -->
+                <label style="font-size: 13px; color: #4a5568; font-weight: 500;">Detail:</label>
+                <select id="detail-level" style="padding: 8px 12px; border-radius: 4px; border: 1px solid #e2e8f0; background: white; color: #4a5568; cursor: pointer; font-size: 13px; font-weight: 500;">
+                    <option value="level0">Level 0 (Activa/Passiva)</option>
+                    <option value="level1">Level 1 (Vaste/Vlottende activa)</option>
+                    <option value="level2">Level 2 (Main categories)</option>
+                    <option value="level3" selected>Level 3 (Sub-categories)</option>
+                    <option value="level4">Level 4 (Detail categories)</option>
+                    <option value="level5">Level 5 (All accounts)</option>
+                </select>
             </div>
 
             <!-- Period and Variance Controls -->
@@ -743,9 +753,14 @@
                 </div>
             </div>
 
+            <!-- Report Status Display -->
+            <div id="report-status" style="padding: 6px 10px; background: #f0f4f8; border-left: 3px solid #667eea; border-radius: 4px; color: #4a5568; font-size: 11px; margin-bottom: 10px;">
+                <span id="report-status-text">Loading report definitions...</span>
+            </div>
+
             <!-- Report Info Display -->
             <div id="report-info" style="display: none; padding: 8px 12px; background: #e6f2ff; border: 1px solid #667eea; border-radius: 4px; color: #2c5282; font-size: 12px; margin-bottom: 10px;">
-                <strong>Report:</strong> <span id="report-name"></span> <span id="report-version" style="color: #666;"></span>
+                <strong>Report:</strong> <span id="report-name"></span> <span id="report-version" style="color: #666;"></span> <span id="report-default-badge" style="display: none; margin-left: 8px; padding: 2px 6px; background: #667eea; color: white; border-radius: 3px; font-size: 10px; font-weight: 600;">DEFAULT</span>
             </div>
 
             <!-- LTM Warning Message -->
@@ -758,6 +773,42 @@
             <div class="export-controls">
                 <button id="export-all" class="btn btn-secondary">Export to Excel</button>
                 <span id="export-status" class="status-text"></span>
+            </div>
+        </div>
+
+        <!-- Report Definition Modal -->
+        <div id="report-definition-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; overflow: auto;">
+            <div style="position: relative; margin: 50px auto; max-width: 900px; background: white; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+                <!-- Modal Header -->
+                <div style="padding: 20px; border-bottom: 2px solid #667eea; display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="margin: 0; color: #2d3748; font-size: 1.2em;">Report Definition</h3>
+                    <button id="close-report-modal" style="background: none; border: none; font-size: 28px; cursor: pointer; color: #666; line-height: 1; padding: 0; width: 32px; height: 32px;">&times;</button>
+                </div>
+                
+                <!-- Modal Body -->
+                <div style="padding: 20px; max-height: calc(100vh - 200px); overflow: auto;">
+                    <div style="margin-bottom: 15px; padding: 10px; background: #e6f2ff; border-left: 4px solid #667eea; border-radius: 4px;">
+                        <strong style="color: #2c5282;">Report:</strong> <span id="modal-report-name" style="color: #2d3748;"></span>
+                        <br>
+                        <strong style="color: #2c5282;">Version:</strong> <span id="modal-report-version" style="color: #2d3748;"></span>
+                        <br>
+                        <strong style="color: #2c5282;">Type:</strong> <span id="modal-report-type" style="color: #2d3748;"></span>
+                    </div>
+                    
+                    <div style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                        <p style="margin: 0; color: #666; font-size: 13px;">Read-only view. Edit the JSON file directly to make changes.</p>
+                        <button id="copy-report-json" class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;">
+                            📋 Copy JSON
+                        </button>
+                    </div>
+                    
+                    <pre id="report-definition-content" style="background: #f7fafc; padding: 15px; border-radius: 4px; border: 1px solid #e2e8f0; overflow-x: auto; font-size: 12px; line-height: 1.5; color: #2d3748; font-family: 'Courier New', Consolas, monospace; max-height: 500px;"></pre>
+                </div>
+                
+                <!-- Modal Footer -->
+                <div style="padding: 15px 20px; border-top: 1px solid #e2e8f0; background: #f7fafc; border-radius: 0 0 8px 8px; text-align: right;">
+                    <button id="close-report-modal-btn" class="btn btn-primary" style="padding: 8px 20px;">Close</button>
+                </div>
             </div>
         </div>
     </div>

@@ -1,3 +1,5 @@
+import Logger from '../utils/Logger.ts';
+
 /**
  * ReportRegistry - Manages collection of available report definitions
  * 
@@ -257,7 +259,7 @@ export default class ReportRegistry {
         try {
             return localStorage.getItem(this.STORAGE_KEY);
         } catch (error) {
-            console.warn('Failed to read selected report from localStorage:', error);
+            Logger.warn('Failed to read selected report from localStorage:', error);
             return null;
         }
     }
@@ -279,7 +281,7 @@ export default class ReportRegistry {
         try {
             localStorage.setItem(this.STORAGE_KEY, reportId);
         } catch (error) {
-            console.warn('Failed to save selected report to localStorage:', error);
+            Logger.warn('Failed to save selected report to localStorage:', error);
         }
     }
 
@@ -323,7 +325,7 @@ export default class ReportRegistry {
         try {
             localStorage.removeItem(this.STORAGE_KEY);
         } catch (error) {
-            console.warn('Failed to clear selected report from localStorage:', error);
+            Logger.warn('Failed to clear selected report from localStorage:', error);
         }
     }
 
@@ -423,7 +425,7 @@ export default class ReportRegistry {
             try {
                 this.setSelectedReportId(state.selectedReportId);
             } catch (error) {
-                console.warn('Could not restore selected report:', error);
+                Logger.warn('Could not restore selected report:', error);
             }
         }
     }

@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Example configuration for data source management system",
+  
+  "version": "1.0",
+  
+  "dataSources": {
+    "reportDefinitions": {
+      "type": "local",
+      "config": {
+        "basePath": "./input/reports"
+      },
+      "fallback": {
+        "type": "local",
+        "config": {
+          "basePath": "./input/reports/backup"
+        }
+      }
+    },
+    
+    "factTable": {
+      "type": "local",
+      "config": {
+        "basePath": "./input/data"
+      }
+    },
+    
+    "dimTables": {
+      "type": "local",
+      "config": {
+        "basePath": "./input/data"
+      }
+    },
+    
+    "default": {
+      "type": "local",
+      "config": {
+        "basePath": "./input"
+      }
+    }
+  },
+  
+  "cache": {
+    "enabled": true,
+    "ttl": 3600,
+    "storage": "localStorage",
+    "maxSize": 10485760,
+    "keyPrefix": "datasource_"
+  },
+  
+  "fallback": {
+    "enabled": true,
+    "order": ["cache", "primary", "fallback"],
+    "retryAttempts": 3,
+    "retryDelay": 1000
+  },
+  
+  "_comments": {
+    "version": "Configuration version (format: major.minor)",
+    
+    "dataSources": {
+      "_description": "Data source configurations for different resource types",
+      "reportDefinitions": "Source for report definition JSON files",
+      "factTable": "Source for fact table data files",
+      "dimTables": "Source for dimension table data files",
+      "default": "Default source for unspecified resource types",
+      
+      "type": "Provider type: 'local', 'github', 's3', or 'gdrive'",
+      
+      "local": {
+        "basePath": "Base path for local files (relative or absolute)"
+      },
+      
+      "github": {
+        "owner": "GitHub repository owner",
+        "repo": "GitHub repository name",
+        "branch": "Branch name (optional, defaults to 'main')",
+        "token": "GitHub personal access token (optional, use ${GITHUB_TOKEN} for env var)"
+      },
+      
+      "s3": {
+        "bucket": "S3 bucket name",
+        "region": "AWS region (e.g., 'us-east-1')",
+        "prefix": "Key prefix (optional)",
+        "credentials": {
+          "accessKeyId": "AWS access key ID (use ${AWS_ACCESS_KEY_ID})",
+          "secretAccessKey": "AWS secret access key (use ${AWS_SECRET_ACCESS_KEY})"
+        }
+      },
+      
+      "gdrive": {
+        "folderId": "Google Drive folder ID",
+        "credentials": "Path to service account credentials JSON file"
+      },
+      
+      "fallback": "Optional fallback source if primary fails"
+    },
+    
+    "cache": {
+      "_description": "Cache configuration",
+      "enabled": "Enable/disable caching (boolean)",
+      "ttl": "Time-to-live in seconds (default: 3600 = 1 hour)",
+      "storage": "Storage backend: 'localStorage' or 'indexedDB'",
+      "maxSize": "Maximum cache size in bytes (optional)",
+      "keyPrefix": "Prefix for cache keys (default: 'datasource_')"
+    },
+    
+    "fallback": {
+      "_description": "Fallback and retry configuration",
+      "enabled": "Enable/disable fallback mechanism (boolean)",
+      "order": "Order to try sources: ['cache', 'primary', 'fallback']",
+      "retryAttempts": "Number of retry attempts (default: 3)",
+      "retryDelay": "Delay between retries in milliseconds (default: 1000)"
+    },
+    
+    "environmentVariables": {
+      "_description": "Use ${VAR_NAME} syntax to reference environment variables",
+      "_examples": [
+        "${GITHUB_TOKEN}",
+        "${AWS_ACCESS_KEY_ID}",
+        "${AWS_SECRET_ACCESS_KEY}",
+        "${GDRIVE_CREDENTIALS_PATH}"
+      ]
+    }
+  }
+}

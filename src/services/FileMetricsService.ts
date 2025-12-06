@@ -1,3 +1,5 @@
+import Logger from '../utils/Logger.ts';
+
 /**
  * FileMetricsService - Calculates and displays file metrics
  *
@@ -11,6 +13,15 @@
  */
 
 import PeriodParser from '../utils/PeriodParser.ts';
+
+// Access arquero from global window object (loaded via CDN in index.html)
+declare global {
+    interface Window {
+        aq: any;
+    }
+}
+
+const aq = (typeof window !== 'undefined' && window.aq) || (globalThis as any).aq;
 
 // Type definitions
 export interface DebitCreditTotals {
@@ -98,18 +109,25 @@ export class FileMetricsService {
                     .filter('(d, $) => d.period <= $.maxPeriod');
             }
 
+            // Derive debit/credit columns from movement_amount
+            // Positive movement_amount = debit, negative = credit
+            const withDebitCredit = filtered.derive({
+                debit: (d: any) => d.movement_amount > 0 ? d.movement_amount : 0,
+                credit: (d: any) => d.movement_amount < 0 ? -d.movement_amount : 0
+            });
+
             // Calculate totals for BAL (Balance Sheet) and PNL (Income Statement)
-            const balData = filtered.filter((d: MovementRow) => d.statement_type === 'BS');
-            const pnlData = filtered.filter((d: MovementRow) => d.statement_type === 'IS');
+            const balData = withDebitCredit.filter((d: MovementRow) => d.statement_type === 'BS');
+            const pnlData = withDebitCredit.filter((d: MovementRow) => d.statement_type === 'IS');
 
             const balTotals = balData.rollup({
-                debit: (aq as any).op.sum('debit'),
-                credit: (aq as any).op.sum('credit')
+                debit: aq.op.sum('debit'),
+                credit: aq.op.sum('credit')
             }).objects()[0] || { debit: 0, credit: 0 };
 
             const pnlTotals = pnlData.rollup({
-                debit: (aq as any).op.sum('debit'),
-                credit: (aq as any).op.sum('credit')
+                debit: aq.op.sum('debit'),
+                credit: aq.op.sum('credit')
             }).objects()[0] || { debit: 0, credit: 0 };
 
             return {
@@ -117,7 +135,7 @@ export class FileMetricsService {
                 pnl: pnlTotals
             };
         } catch (error) {
-            console.warn('Error calculating debit/credit totals:', error);
+            Logger.warn('Error calculating debit/credit totals:', error);
             return {
                 bal: { debit: 0, credit: 0 },
                 pnl: { debit: 0, credit: 0 }
@@ -186,7 +204,7 @@ export class FileMetricsService {
         if (!metricsElement) return;
 
         if (!metadata) {
-            console.warn(`No metadata found for year ${year}`);
+            Logger.warn(`No metadata found for year ${year}`);
             return;
         }
 
@@ -281,7 +299,7 @@ export class FileMetricsService {
             const profit = isAccounts.numRows() > 0 ? isAccounts.get('total', 0) : 0;
             return profit || 0;
         } catch (error) {
-            console.warn(`Error calculating profit for ${year} ${periodValue}:`, error);
+            Logger.warn(`Error calculating profit for ${year} ${periodValue}:`, error);
             return 0;
         }
     }

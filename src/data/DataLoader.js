@@ -10,6 +10,8 @@ import DateUtils from '../utils/DateUtils.ts';
 import ValidationResult from '../utils/ValidationResult.ts';
 import HierarchyCodeMapper from '../utils/HierarchyCodeMapper.ts';
 import { AccountMapper } from '../config/accountMappings.js';
+import Logger from '../utils/Logger.ts';
+import { ErrorFactory } from '../errors/index.ts';
 
 export default class DataLoader {
     constructor() {
@@ -28,7 +30,7 @@ export default class DataLoader {
 
     // Request access to input directory
     async selectInputDirectory() {
-        console.log('Opening directory picker...');
+        Logger.debug('Opening directory picker...');
         try {
             // Note: The File System Access API doesn't support relative paths or specific subdirectories
             // as starting points. We can only use well-known directories like 'documents', 'desktop', etc.
@@ -38,23 +40,23 @@ export default class DataLoader {
                 startIn: 'documents',
                 id: 'financial-statement-input' // Helps browser remember the last location
             });
-            console.log('Input directory selected:', this.inputDirHandle.name);
+            Logger.info('Input directory selected:', this.inputDirHandle.name);
 
             // Provide helpful feedback if user didn't select 'input' directory
             if (this.inputDirHandle.name.toLowerCase() !== 'input') {
-                console.warn('Note: Expected directory name is "input". Selected:', this.inputDirHandle.name);
+                Logger.warn('Note: Expected directory name is "input". Selected:', this.inputDirHandle.name);
             }
 
             return this.inputDirHandle;
         } catch (error) {
             // If user canceled the dialog, don't treat it as an error
             if (error.name === 'AbortError') {
-                console.log('Directory selection canceled by user');
+                Logger.debug('Directory selection canceled by user');
                 throw error; // Re-throw the AbortError so the caller can handle it
             }
 
-            console.error('Error selecting input directory:', error);
-            throw new Error('Failed to select input directory: ' + error.message);
+            Logger.error('Error selecting input directory:', error);
+            throw ErrorFactory.wrap(error, { operation: 'selectInputDirectory' });
         }
     }
 
@@ -65,18 +67,19 @@ export default class DataLoader {
                 mode: 'readwrite',
                 startIn: 'documents'
             });
-            console.log('Output directory selected:', this.outputDirHandle.name);
+            Logger.info('Output directory selected:', this.outputDirHandle.name);
             return this.outputDirHandle;
         } catch (error) {
-            console.error('Error selecting output directory:', error);
-            throw new Error('Failed to select output directory');
+            Logger.error('Error selecting output directory:', error);
+            throw ErrorFactory.wrap(error, { operation: 'selectOutputDirectory' });
         }
     }
 
     // Read file from input directory
     async readFileFromDirectory(filename) {
         if (!this.inputDirHandle) {
-            throw new Error('Input directory not selected. Please select input directory first.');
+            throw ErrorFactory.missingConfig('inputDirectory', 
+                new Error('Input directory not selected'));
         }
 
         try {
@@ -84,8 +87,8 @@ export default class DataLoader {
             const file = await fileHandle.getFile();
             return file;
         } catch (error) {
-            console.error(`Error reading file ${filename}:`, error);
-            throw new Error(`File not found: ${filename}`);
+            Logger.error(`Error reading file ${filename}:`, error);
+            throw ErrorFactory.fileNotFound(filename, error);
         }
     }
 
@@ -201,7 +204,7 @@ export default class DataLoader {
             const profit = isAccounts.numRows() > 0 ? isAccounts.get('total', 0) : 0;
             return profit || 0;
         } catch (error) {
-            console.warn('Error calculating cumulative profit:', error);
+            Logger.warn('Error calculating cumulative profit:', error);
             return 0;
         }
     }
@@ -221,7 +224,7 @@ export default class DataLoader {
         // Identify period columns
         const periodColumns = this.identifyPeriodColumns(headers, year);
 
-        console.log(`Found ${periodColumns.movements.length} movement columns and ${periodColumns.balances.length} balance columns for ${year}`);
+        Logger.debug(`Found ${periodColumns.movements.length} movement columns and ${periodColumns.balances.length} balance columns for ${year}`);
 
         // Process each data row
         worksheet.eachRow((row, rowNumber) => {
@@ -322,7 +325,7 @@ export default class DataLoader {
             });
         });
 
-        console.log(`Transformed to ${movements.length} movement rows and ${balances.length} balance rows`);
+        Logger.debug(`Transformed to ${movements.length} movement rows and ${balances.length} balance rows`);
 
         return { movements, balances };
     }
@@ -333,7 +336,8 @@ export default class DataLoader {
         const config = this.config || window.config;
 
         if (!config) {
-            throw new Error('Configuration not loaded. Call setConfig() first or ensure window.config is available.');
+            throw ErrorFactory.missingConfig('config.json', 
+                new Error('Configuration not loaded'));
         }
 
         const filename = period === '2024'
@@ -343,7 +347,7 @@ export default class DataLoader {
         try {
             // Validate period parameter
             if (!period || (period !== '2024' && period !== '2025')) {
-                throw new Error(`Invalid period: ${period}. Must be '2024' or '2025'.`);
+                throw ErrorFactory.invalidValue('period', period, 'string (2024 or 2025)');
             }
 
             // Read file
@@ -351,7 +355,7 @@ export default class DataLoader {
 
             // Validate file size (warn if > threshold)
             if (file.size > VALIDATION_CONFIG.LARGE_FILE_THRESHOLD) {
-                console.warn(`Large file detected: ${filename} (${(file.size / 1024 / 1024).toFixed(2)} MB). Loading may take longer.`);
+                Logger.warn(`Large file detected: ${filename} (${(file.size / 1024 / 1024).toFixed(2)} MB). Loading may take longer.`);
             }
 
             const arrayBuffer = await file.arrayBuffer();
@@ -360,26 +364,26 @@ export default class DataLoader {
 
             // Validate workbook has worksheets
             if (!workbook.worksheets || workbook.worksheets.length === 0) {
-                throw new Error(`File ${filename} contains no worksheets`);
+                throw ErrorFactory.invalidFormat(filename, 'Excel file with worksheets');
             }
 
             const worksheet = workbook.worksheets[0];
 
             // Validate worksheet has data
             if (!worksheet || worksheet.rowCount < 2) {
-                throw new Error(`File ${filename} is empty or has insufficient data (needs at least header + 1 data row)`);
+                throw ErrorFactory.emptyFile(filename);
             }
 
-            console.log(`Transforming ${filename} from wide to long format...`);
-            console.log(`  - Worksheet: ${worksheet.name}`);
-            console.log(`  - Rows: ${worksheet.rowCount}, Columns: ${worksheet.columnCount}`);
+            Logger.debug(`Transforming ${filename} from wide to long format...`);
+            Logger.debug(`  - Worksheet: ${worksheet.name}`);
+            Logger.debug(`  - Rows: ${worksheet.rowCount}, Columns: ${worksheet.columnCount}`);
 
             // Transform wide format to long format
             const { movements, balances } = this.transformWideToLong(worksheet, period);
 
             // Validate transformation results
             if (!movements || movements.length === 0) {
-                console.warn(`No movements found in ${filename}. This may indicate a data issue.`);
+                Logger.warn(`No movements found in ${filename}. This may indicate a data issue.`);
             }
 
             // Convert arrays to Arquero tables
@@ -395,9 +399,9 @@ export default class DataLoader {
                 balancesTable = balancesTable.rename({ balance_amount: 'movement_amount' });
             }
 
-            console.log(`Trial Balance ${period} loaded successfully:`);
-            console.log(`  - Movements: ${movementsTable.numRows()} rows`);
-            console.log(`  - Balances: ${balancesTable.numRows()} rows`);
+            Logger.info(`Trial Balance ${period} loaded successfully:`);
+            Logger.debug(`  - Movements: ${movementsTable.numRows()} rows`);
+            Logger.debug(`  - Balances: ${balancesTable.numRows()} rows`);
 
             // Validate required columns exist
             const requiredColumns = ['account_code', 'statement_type', 'code1', 'name1'];
@@ -405,7 +409,7 @@ export default class DataLoader {
             const missingColumns = requiredColumns.filter(col => !movementColumns.includes(col));
 
             if (missingColumns.length > 0) {
-                throw new Error(`Transformed data missing required columns: ${missingColumns.join(', ')}`);
+                throw ErrorFactory.missingColumns(filename, requiredColumns, movementColumns);
             }
 
             return {
@@ -419,15 +423,24 @@ export default class DataLoader {
             };
 
         } catch (error) {
-            console.error(`Error loading trial balance for ${period}:`, error);
+            Logger.error(`Error loading trial balance for ${period}:`, error);
+
+            // Re-throw custom errors as-is
+            if (error.code) {
+                throw error;
+            }
 
             // Enhance error message for common issues
             if (error.message.includes('getFileHandle')) {
-                throw new Error(`File not found: ${filename}. Please ensure the file exists in the selected directory.`);
+                throw ErrorFactory.fileNotFound(filename, error);
             } else if (error.message.includes('xlsx.load')) {
-                throw new Error(`Failed to parse ${filename}. Please ensure it is a valid Excel file (.xlsx).`);
+                throw ErrorFactory.fileParse(filename, error);
             } else {
-                throw error;
+                throw ErrorFactory.wrap(error, { 
+                    operation: 'loadTrialBalance',
+                    filename,
+                    period 
+                });
             }
         }
     }

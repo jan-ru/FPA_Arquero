@@ -1,0 +1,9 @@
+{
+  "reports": [
+    "income_simple.json",
+    "income_detailed_nl.json",
+    "income_ifrs.json",
+    "balance_sheet_nl.json",
+    "balance_sheet_ifrs.json"
+  ]
+}

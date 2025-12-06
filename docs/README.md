@@ -60,10 +60,17 @@ docs/
 ├── DEVELOPMENT.md             # Development guide (for contributors)
 └── archive/                   # Historical documentation
     ├── README.md              # Archive index
+    ├── PHASE_1_QUICK_WINS_COMPLETE.md
+    ├── PHASE_2_PROGRESS.md
+    ├── DENO_MIGRATION.md
+    ├── TYPESCRIPT_SETUP_FIX.md
+    ├── SERVER_SETUP.md
     ├── v0.11.0-changes.md
     ├── RELEASE-v2.4.0.md
     └── ...
 ```
+
+**Note**: Historical progress tracking, implementation details, and completed migration docs are in the `archive/` directory for reference.
 
 ## Getting Started
 

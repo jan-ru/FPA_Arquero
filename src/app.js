@@ -13,6 +13,7 @@ import DataStore from './data/DataStore.js';
 import StatementGenerator from './statements/StatementGenerator.js';
 import AgGridStatementRenderer from './ui/AgGridStatementRenderer.js';
 import CategoryMatcher from './utils/CategoryMatcher.ts';
+import Logger from './utils/Logger.ts';
 import VarianceCalculator from './utils/VarianceCalculator.ts';
 import ExportHandler from './export/ExportHandler.js';
 import InteractiveUI from './ui/InteractiveUI.js';
@@ -28,14 +29,14 @@ async function loadConfig() {
     try {
         const response = await fetch('config.json');
         config = await response.json();
-        console.log('Configuration loaded:', config);
+        Logger.info('Configuration loaded:', config);
 
         // Make config globally accessible
         window.config = config;
 
         return config;
     } catch (error) {
-        console.error('Error loading config:', error);
+        Logger.error('Error loading config:', error);
         // Use default configuration
         config = {
             inputFiles: {
@@ -76,7 +77,7 @@ async function loadVersion() {
         }
         return packageData.version;
     } catch (error) {
-        console.warn('Could not load version from package.json:', error);
+        Logger.warn('Could not load version from package.json:', error);
         return '3.0.0'; // Fallback version
     }
 }
@@ -120,9 +121,9 @@ function showLibraryVersions() {
  * - Sets up event listeners
  */
 async function init() {
-    console.log('Financial Statement Generator initialized');
-    console.log('Arquero loaded:', typeof aq !== 'undefined');
-    console.log('ExcelJS loaded:', typeof ExcelJS !== 'undefined');
+    Logger.info('Financial Statement Generator initialized');
+    Logger.debug('Arquero loaded:', typeof aq !== 'undefined');
+    Logger.debug('ExcelJS loaded:', typeof ExcelJS !== 'undefined');
 
     // Load and display version
     await loadVersion();
@@ -133,7 +134,7 @@ async function init() {
     // Check browser compatibility
     if (!window.showDirectoryPicker) {
         alert('Your browser does not support the File System Access API. Please use Chrome, Edge, or another compatible browser.');
-        console.error('File System Access API not supported');
+        Logger.error('File System Access API not supported');
     }
 
     // Load configuration
@@ -146,8 +147,8 @@ async function init() {
     // Initial state: disable export button until data is loaded
     document.getElementById('export-all').disabled = true;
 
-    console.log('Application ready');
-    console.log('Configuration:', config);
+    Logger.info('Application ready');
+    Logger.debug('Configuration:', config);
 }
 
 // Export all classes for testing

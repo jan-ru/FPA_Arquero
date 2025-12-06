@@ -103,7 +103,8 @@
   },
   "workspace": {
     "dependencies": [
-      "npm:fast-check@3.15.0"
+      "npm:fast-check@3.15.0",
+      "npm:loglevel@1.9.1"
     ]
   }
 }

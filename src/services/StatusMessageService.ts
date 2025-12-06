@@ -1,3 +1,5 @@
+import Logger from '../utils/Logger.ts';
+
 /**
  * StatusMessageService - Handles all status message and UI feedback operations
  *
@@ -62,7 +64,7 @@ export class StatusMessageService {
      */
     showMessage(message: string, type: MessageType = 'info'): void {
         if (!this.loadingStatusElement) {
-            console.warn('Loading status element not initialized');
+            Logger.warn('Loading status element not initialized');
             return;
         }
 
@@ -138,7 +140,7 @@ export class StatusMessageService {
      */
     updateDirectoryStatus(pathDisplay: string, success: boolean = true): void {
         if (!this.inputDirStatusElement) {
-            console.warn('Input directory status element not initialized');
+            Logger.warn('Input directory status element not initialized');
             return;
         }
 
@@ -157,7 +159,7 @@ export class StatusMessageService {
     updateFileStatus(fileId: string, status: FileStatus, message: string = ''): void {
         const statusElement = document.getElementById(`status-${fileId}`);
         if (!statusElement) {
-            console.warn(`File status element not found: status-${fileId}`);
+            Logger.warn(`File status element not found: status-${fileId}`);
             return;
         }
 

@@ -10,7 +10,8 @@ Technical architecture and design of the Financial Statement Generator.
 4. [Data Flow](#data-flow)
 5. [Core Components](#core-components)
 6. [Report System](#report-system)
-7. [Testing Architecture](#testing-architecture)
+7. [Error System](#error-system)
+8. [Testing Architecture](#testing-architecture)
 
 ## System Overview
 
@@ -92,15 +93,30 @@ src/
 │   ├── DataLoader.js          # Excel file loading
 │   ├── DataStore.js           # Centralized data storage
 │   └── DataProcessor.js       # Data transformation
-├── utils/                      # Utility modules
-│   ├── DateUtils.js           # Date manipulation
-│   ├── HierarchyBuilder.js    # Account hierarchy
-│   ├── CategoryMatcher.js     # Account categorization
-│   ├── VarianceCalculator.js  # Variance calculations
-│   ├── LTMCalculator.js       # LTM period calculations
-│   └── ValidationResult.js    # Validation utilities
+├── utils/                      # Utility modules (TypeScript)
+│   ├── DateUtils.ts           # Date manipulation
+│   ├── HierarchyBuilder.ts    # Account hierarchy
+│   ├── CategoryMatcher.ts     # Account categorization
+│   ├── VarianceCalculator.ts  # Variance calculations
+│   ├── LTMCalculator.ts       # LTM period calculations
+│   ├── ValidationResult.ts    # Validation utilities
+│   └── Logger.ts              # Logging utility
 ├── services/                   # Service layer (TypeScript)
-│   └── ExcelParserService.ts  # Excel parsing service
+│   ├── FileSelectionService.ts    # File selection
+│   ├── StatusMessageService.ts    # Status messages
+│   ├── FileMetricsService.ts      # File metrics
+│   └── ValidationService.ts       # Validation
+├── errors/                     # Error system (TypeScript)
+│   ├── ApplicationError.ts    # Base error class
+│   ├── DataLoadError.ts       # Data loading errors
+│   ├── ValidationError.ts     # Validation errors
+│   ├── ReportGenerationError.ts   # Report errors
+│   ├── NetworkError.ts        # Network errors
+│   ├── ConfigurationError.ts  # Config errors
+│   ├── ErrorFactory.ts        # Error creation
+│   ├── ErrorGuards.ts         # Type guards
+│   ├── ErrorMetrics.ts        # Error tracking
+│   └── ErrorCodes.ts          # Error code constants
 ├── reports/                    # Configurable report system
 │   ├── ReportLoader.js        # Load JSON definitions
 │   ├── ReportRegistry.js      # Manage available reports
@@ -337,6 +353,94 @@ Simple arithmetic expressions with variables:
 { "name1": { "contains": "omzet" } }
 ```
 
+## Error System
+
+### Error Hierarchy
+
+The application uses a comprehensive error system with specialized error types:
+
+```
+ApplicationError (base class)
+├── DataLoadError
+│   ├── FileNotFoundError
+│   ├── FileParseError
+│   └── InvalidDataError
+├── ValidationError
+│   ├── MissingFieldError
+│   ├── InvalidFormatError
+│   └── ValidationFailedError
+├── ReportGenerationError
+│   ├── TemplateError
+│   ├── RenderError
+│   └── ExpressionError
+├── NetworkError
+│   ├── TimeoutError
+│   ├── ConnectionError
+│   └── ResponseError
+└── ConfigurationError
+    ├── MissingConfigError
+    ├── InvalidConfigError
+    └── ConfigLoadError
+```
+
+### Error Components
+
+**ApplicationError** (`src/errors/ApplicationError.ts`):
+- Base class for all application errors
+- Includes error code, user message, context, and cause
+- Supports error chaining and stack traces
+- Provides structured error information
+
+**ErrorFactory** (`src/errors/ErrorFactory.ts`):
+- Factory methods for creating specific error types
+- Consistent error creation across the application
+- Automatic error wrapping and context addition
+- Type-safe error construction
+
+**ErrorGuards** (`src/errors/ErrorGuards.ts`):
+- Type guards for error identification
+- Check if error is specific type
+- Extract error information safely
+- Enable type-safe error handling
+
+**ErrorMetrics** (`src/errors/ErrorMetrics.ts`):
+- Track error occurrences
+- Analyze error patterns
+- Generate error reports
+- Monitor application health
+
+### Error Handling Pattern
+
+```typescript
+try {
+    // Operation that might fail
+    const data = await loadData();
+} catch (error) {
+    // Wrap and enrich error
+    throw ErrorFactory.wrap(error, {
+        operation: 'loadData',
+        context: { filename: 'data.xlsx' }
+    });
+}
+```
+
+### Error Context
+
+Errors include rich context information:
+- **code**: Machine-readable error code
+- **userMessage**: User-friendly error message
+- **context**: Additional context (operation, parameters, state)
+- **cause**: Original error that caused this error
+- **timestamp**: When the error occurred
+- **stack**: Stack trace for debugging
+
+### Testing
+
+- 177 comprehensive unit tests
+- 100% coverage of error system
+- Tests for all error types and scenarios
+- Property-based tests for error handling
+
 ## Testing Architecture
 
 ### Test Structure
@@ -358,11 +462,14 @@ test/
 
 ### Test Categories
 
-**Unit Tests** (280 tests):
+**Unit Tests** (273+ tests):
 - Test individual functions and classes
 - Mock external dependencies
 - Fast execution (< 1ms per test)
-- 68.3% line coverage
+- Comprehensive coverage including:
+  - Error system: 177 tests (100% coverage)
+  - Core utilities and services
+  - Report system components
 
 **Property-Based Tests**:
 - Test universal properties

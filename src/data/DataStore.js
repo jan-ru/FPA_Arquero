@@ -1,3 +1,5 @@
+import Logger from '../utils/Logger.ts';
+
 /**
  * DataStore - Singleton state management for financial data
  * Manages fact tables, hierarchy tables, and combined movements data
@@ -22,7 +24,7 @@ export default class DataStore {
             this.factTables[period] = {};
         }
         this.factTables[period][type] = table;
-        console.log(`FactTable ${type} for ${period} stored (${table.numRows()} rows)`);
+        Logger.debug(`FactTable ${type} for ${period} stored (${table.numRows()} rows)`);
     }
 
     // Retrieve FactTable for a specific period and type
@@ -53,7 +55,7 @@ export default class DataStore {
     // Store Hierarchy Table
     setHierarchyTable(table) {
         this.hierarchyTable = table;
-        console.log('Hierarchy Table stored');
+        Logger.debug('Hierarchy Table stored');
     }
 
     // Retrieve Hierarchy Table
@@ -69,7 +71,7 @@ export default class DataStore {
     // Store combined movements table
     setCombinedMovements(table) {
         this.combinedMovements = table;
-        console.log(`Combined movements table stored (${table.numRows()} rows)`);
+        Logger.debug(`Combined movements table stored (${table.numRows()} rows)`);
     }
 
     // Retrieve combined movements table
@@ -80,7 +82,7 @@ export default class DataStore {
     // Store combined balances table
     setCombinedBalances(table) {
         this.combinedBalances = table;
-        console.log(`Combined balances table stored (${table.numRows()} rows)`);
+        Logger.debug(`Combined balances table stored (${table.numRows()} rows)`);
     }
 
     // Retrieve combined balances table
@@ -103,6 +105,6 @@ export default class DataStore {
         this.factTables = {};
         this.combinedMovements = null;
         this.combinedBalances = null;
-        console.log('DataStore cleared');
+        Logger.debug('DataStore cleared');
     }
 }

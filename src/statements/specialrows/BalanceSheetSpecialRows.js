@@ -8,6 +8,7 @@
  */
 
 import CategoryMatcher from '../../utils/CategoryMatcher.ts';
+import Logger from '../../utils/Logger.ts';
 import VarianceCalculator from '../../utils/VarianceCalculator.ts';
 import { YEAR_CONFIG } from '../../constants.js';
 
@@ -282,24 +283,24 @@ export class BalanceSheetSpecialRows {
         // Validate year 1
         const diff1 = Math.abs(totalAssets.year1 - totalLE.year1);
         if (diff1 > tolerance) {
-            console.warn(`⚠️ Balance Sheet ${year1} does not balance!`);
-            console.warn(`   Assets: ${totalAssets.year1.toFixed(2)}`);
-            console.warn(`   Liabilities + Equity: ${totalLE.year1.toFixed(2)}`);
-            console.warn(`   Difference: ${diff1.toFixed(2)}`);
+            Logger.warn(`⚠️ Balance Sheet ${year1} does not balance!`);
+            Logger.warn(`   Assets: ${totalAssets.year1.toFixed(2)}`);
+            Logger.warn(`   Liabilities + Equity: ${totalLE.year1.toFixed(2)}`);
+            Logger.warn(`   Difference: ${diff1.toFixed(2)}`);
         }
 
         // Validate year 2
         const diff2 = Math.abs(totalAssets.year2 - totalLE.year2);
         if (diff2 > tolerance) {
-            console.warn(`⚠️ Balance Sheet ${year2} does not balance!`);
-            console.warn(`   Assets: ${totalAssets.year2.toFixed(2)}`);
-            console.warn(`   Liabilities + Equity: ${totalLE.year2.toFixed(2)}`);
-            console.warn(`   Difference: ${diff2.toFixed(2)}`);
+            Logger.warn(`⚠️ Balance Sheet ${year2} does not balance!`);
+            Logger.warn(`   Assets: ${totalAssets.year2.toFixed(2)}`);
+            Logger.warn(`   Liabilities + Equity: ${totalLE.year2.toFixed(2)}`);
+            Logger.warn(`   Difference: ${diff2.toFixed(2)}`);
         }
 
         // Log success if balanced
         if (diff1 <= tolerance && diff2 <= tolerance) {
-            console.log(`✅ Balance Sheet validates: Assets = Liabilities + Equity (both years)`);
+            Logger.info(`✅ Balance Sheet validates: Assets = Liabilities + Equity (both years)`);
         }
     }
 }

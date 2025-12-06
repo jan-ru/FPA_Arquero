@@ -1,3 +1,5 @@
+import Logger from '../../utils/Logger.ts';
+
 /**
  * SpecialRowsFactory - Creates statement-specific special rows handlers
  *
@@ -20,7 +22,7 @@ export class SpecialRowsFactory {
      * @deprecated Use report definitions with calculated and subtotal layout items instead
      */
     static create(statementType) {
-        console.warn('SpecialRowsFactory is deprecated. Use report definitions with calculated and subtotal layout items instead.');
+        Logger.warn('SpecialRowsFactory is deprecated. Use report definitions with calculated and subtotal layout items instead.');
         // Normalize statement type (handle both 'BS' and 'balance-sheet' formats)
         const normalized = this.normalizeStatementType(statementType);
 

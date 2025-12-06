@@ -6,6 +6,7 @@
  */
 
 import { HIERARCHY_CODES } from '../constants.js';
+import Logger from '../utils/Logger.ts';
 
 /**
  * Configuration for special account mappings
@@ -136,7 +137,7 @@ export class AccountMapper {
         for (const [key, config] of Object.entries(ACCOUNT_MAPPINGS)) {
             if (this.matchesPattern(row, config.patterns)) {
                 const remapped = this.applyMapping(row, config, row.statementType);
-                console.log(`📝 ${key} remapped: ${row.accountCode} → Statement: ${remapped.statementType}, code2: ${remapped.level2Code}, name2: ${remapped.level2Label}`);
+                Logger.debug(`📝 ${key} remapped: ${row.accountCode} → Statement: ${remapped.statementType}, code2: ${remapped.level2Code}, name2: ${remapped.level2Label}`);
                 return remapped;
             }
         }

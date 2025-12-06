@@ -1,3 +1,5 @@
+import Logger from '../utils/Logger.ts';
+
 /**
  * ValidationService - Handles data validation operations
  *
@@ -117,7 +119,7 @@ export class ValidationService {
         const warningsContainer = document.getElementById('validation-warnings');
 
         if (!validationContainer || !errorsContainer || !warningsContainer) {
-            console.warn('Validation containers not found in DOM');
+            Logger.warn('Validation containers not found in DOM');
             return false;
         }
 

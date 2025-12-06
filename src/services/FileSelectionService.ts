@@ -1,3 +1,5 @@
+import Logger from '../utils/Logger.ts';
+
 /**
  * FileSelectionService - Handles directory and file selection operations
  *
@@ -125,9 +127,9 @@ export class FileSelectionService {
         for (const filename of requiredFiles) {
             try {
                 await this.dataLoader.inputDirHandle.getFileHandle(filename);
-                console.log(`✓ Found: ${filename}`);
+                Logger.debug(`✓ Found: ${filename}`);
             } catch (error) {
-                console.log(`✗ Missing: ${filename}`);
+                Logger.debug(`✗ Missing: ${filename}`);
                 missingFiles.push(filename);
             }
         }

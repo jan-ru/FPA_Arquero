@@ -1,3 +1,6 @@
+import Logger from '../utils/Logger.ts';
+import { ErrorFactory } from '../errors/index.ts';
+
 /**
  * ExpressionEvaluator - Parses and evaluates calculation expressions
  * 
@@ -42,11 +45,11 @@ export default class ExpressionEvaluator {
      */
     evaluate(expression, context) {
         if (!expression || typeof expression !== 'string') {
-            throw new Error('Expression must be a non-empty string');
+            throw ErrorFactory.invalidValue('expression', expression, 'non-empty string');
         }
 
         if (!context || typeof context !== 'object') {
-            throw new Error('Context must be an object');
+            throw ErrorFactory.invalidValue('context', context, 'object');
         }
 
         try {
@@ -57,11 +60,18 @@ export default class ExpressionEvaluator {
             return this._evaluateNode(ast, context);
         } catch (error) {
             // Return null for evaluation errors (e.g., division by zero)
-            if (error.message.includes('Division by zero')) {
-                console.warn(`Expression evaluation warning: ${error.message}`);
+            if (error.message && error.message.includes('Division by zero')) {
+                Logger.warn(`Expression evaluation warning: ${error.message}`);
                 return null;
             }
-            throw error;
+            
+            // Re-throw custom errors as-is
+            if (error.code) {
+                throw error;
+            }
+            
+            // Wrap other errors
+            throw ErrorFactory.expressionError(expression, error);
         }
     }
 
@@ -154,6 +164,10 @@ export default class ExpressionEvaluator {
             this._collectDependencies(ast, dependencies);
             return Array.from(dependencies);
         } catch (error) {
+            // Re-throw custom errors
+            if (error.code) {
+                throw error;
+            }
             throw new Error(`Failed to get dependencies: ${error.message}`);
         }
     }

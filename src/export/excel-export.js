@@ -1,3 +1,5 @@
+import Logger from '../utils/Logger.ts';
+
 /**
  * excel-export.js - Main Excel export functionality
  *
@@ -180,7 +182,7 @@ class ExcelExporter {
         // Cleanup
         window.URL.revokeObjectURL(url);
 
-        console.log('Exported to Excel:', fullFileName);
+        Logger.info('Exported to Excel:', fullFileName);
     }
 
     /**

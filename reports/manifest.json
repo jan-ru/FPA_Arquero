@@ -1,0 +1,10 @@
+{
+  "reports": [
+    "income_statement_default.json",
+    "balance_sheet_default.json",
+    "cash_flow_default.json",
+    "income_statement_migrated.json",
+    "balance_statement_migrated.json",
+    "cashflow_statement_migrated.json"
+  ]
+}

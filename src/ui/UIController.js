@@ -29,6 +29,7 @@ import ValidationService from '../services/ValidationService.ts';
 import ReportRegistry from '../reports/ReportRegistry.js';
 import ReportLoader from '../reports/ReportLoader.js';
 import ReportValidator from '../reports/ReportValidator.js';
+import Logger from '../utils/Logger.ts';
 
 class UIController {
     constructor() {
@@ -64,8 +65,49 @@ class UIController {
         // Initialize status message service DOM references
         this.statusMessageService.initialize();
 
-        // Load report definitions
-        this.loadReportDefinitions();
+        // Load report definitions (async, will complete in background)
+        this.loadReportDefinitions().then(count => {
+            // Show the count in the dedicated report status area
+            this.updateReportStatus(`✓ Loaded ${count} report definition${count !== 1 ? 's' : ''}`, 'success');
+        }).catch(error => {
+            Logger.error('Failed to load report definitions during initialization:', error);
+            this.updateReportStatus('⚠️ Failed to load report definitions', 'error');
+        });
+    }
+
+    /**
+     * Update the report status display
+     * @param {string} message - Status message to display
+     * @param {string} type - Message type ('success', 'error', 'loading')
+     */
+    updateReportStatus(message, type = 'info') {
+        const reportStatusText = document.getElementById('report-status-text');
+        const reportStatusDiv = document.getElementById('report-status');
+        
+        if (reportStatusText) {
+            reportStatusText.textContent = message;
+        }
+        
+        if (reportStatusDiv) {
+            // Update styling based on type
+            if (type === 'success') {
+                reportStatusDiv.style.background = '#d4edda';
+                reportStatusDiv.style.borderLeftColor = '#28a745';
+                reportStatusDiv.style.color = '#155724';
+            } else if (type === 'error') {
+                reportStatusDiv.style.background = '#f8d7da';
+                reportStatusDiv.style.borderLeftColor = '#dc3545';
+                reportStatusDiv.style.color = '#721c24';
+            } else if (type === 'loading') {
+                reportStatusDiv.style.background = '#d1ecf1';
+                reportStatusDiv.style.borderLeftColor = '#17a2b8';
+                reportStatusDiv.style.color = '#0c5460';
+            } else {
+                reportStatusDiv.style.background = '#f0f4f8';
+                reportStatusDiv.style.borderLeftColor = '#667eea';
+                reportStatusDiv.style.color = '#4a5568';
+            }
+        }
     }
 
     /**
@@ -108,7 +150,7 @@ class UIController {
         const result = await this.fileSelectionService.selectAndValidateDirectory();
 
         if (result.canceled) {
-            console.log('Directory selection was canceled');
+            Logger.debug('Directory selection was canceled');
             return;
         }
 
@@ -118,7 +160,7 @@ class UIController {
         }
 
         this.statusMessageService.updateDirectoryStatus(result.pathDisplay, true);
-        console.log('Required files found, loading...');
+        Logger.debug('Required files found, loading...');
         await this.handleLoadAllFiles();
     }
 
@@ -170,12 +212,12 @@ class UIController {
             // Store both - we'll choose which to use based on view type
             this.dataStore.setCombinedMovements(combinedMovements);
             this.dataStore.setCombinedBalances(combinedBalances);
-            console.log(`Combined movements table created: ${combinedMovements.numRows()} rows`);
-            console.log(`Combined balances table created: ${combinedBalances.numRows()} rows`);
+            Logger.debug(`Combined movements table created: ${combinedMovements.numRows()} rows`);
+            Logger.debug(`Combined balances table created: ${combinedBalances.numRows()} rows`);
 
             // Get loaded years from DataStore
             const loadedYears = this.dataStore.getAllPeriods();
-            console.log(`Loaded trial balance years: ${loadedYears.join(', ')}`);
+            Logger.debug(`Loaded trial balance years: ${loadedYears.join(', ')}`);
 
             // Validate data and show results
             this.validateAndDisplayResults();
@@ -185,7 +227,7 @@ class UIController {
             if (loadingStatus) {
                 loadingStatus.textContent = '';
             }
-            console.log('✅ All files loaded successfully!');
+            Logger.info('✅ All files loaded successfully!');
 
             // Update status to show file names
             const statusText = document.getElementById('input-dir-status');
@@ -220,8 +262,8 @@ class UIController {
             this.generateAndDisplayStatement(this.currentStatementType);
 
         } catch (error) {
-            console.error('File loading error:', error);
-            console.error('Error stack:', error.stack);
+            Logger.error('File loading error:', error);
+            Logger.error('Error stack:', error.stack);
 
             // Provide user-friendly error messages based on error type
             let userMessage = 'Failed to load files: ';
@@ -271,7 +313,7 @@ class UIController {
      */
     generateStatementFromDefinition(reportDef, statementType) {
         try {
-            console.log(`Generating statement from report definition: ${reportDef.name}`);
+            Logger.debug(`Generating statement from report definition: ${reportDef.name}`);
 
             // Build period options (same as hardcoded method)
             const periodOptions = this.buildPeriodOptions();
@@ -294,11 +336,11 @@ class UIController {
             this.currentStatementType = statementType;
             this.currentStatementData = statementData;
 
-            console.log(`${reportDef.name} generated successfully with ${statementData.details.numRows()} detail rows`);
+            Logger.debug(`${reportDef.name} generated successfully with ${statementData.details.numRows()} detail rows`);
 
         } catch (error) {
-            console.error('Error generating statement from definition:', error);
-            console.error('Error stack:', error.stack);
+            Logger.error('Error generating statement from definition:', error);
+            Logger.error('Error stack:', error.stack);
 
             const display = document.getElementById('statement-display');
             if (display) {
@@ -314,18 +356,9 @@ class UIController {
                 `;
             }
 
-            // Fall back to hardcoded report
-            this.statusMessageService.showError('Falling back to default hardcoded report');
-            
-            // Clear report selection
-            const reportSelector = document.getElementById('report-selector');
-            if (reportSelector) {
-                reportSelector.value = '';
-            }
-            this.hideReportInfo();
-
-            // Regenerate with hardcoded method
-            this.generateAndDisplayStatement(statementType);
+            // Don't fall back - just show the error
+            // No hardcoded reports exist anymore
+            throw error; // Re-throw to be caught by outer handler
         }
     }
 
@@ -372,7 +405,7 @@ class UIController {
                     );
                 }
                 
-                console.log(`Using default report: ${report.name} (${report.reportId})`);
+                Logger.debug(`Using default report: ${report.name} (${report.reportId})`);
             }
 
             // Generate statement using report definition
@@ -391,24 +424,28 @@ class UIController {
             this.currentStatementType = statementType;
             this.currentStatementData = statementData;
 
-            console.log(`${statementName} generated successfully with ${statementData.details.numRows()} detail rows`);
+            Logger.debug(`${statementName} generated successfully with ${statementData.details.numRows()} detail rows`);
 
         } catch (error) {
-            console.error('Error generating statement:', error);
-            console.error('Error stack:', error.stack);
+            Logger.error('Error generating statement:', error);
+            Logger.error('Error stack:', error.stack);
 
             const display = document.getElementById('statement-display');
             if (display) {
                 let errorMessage = 'Failed to generate statement: ';
 
                 if (error.message.includes('No data loaded')) {
-                    errorMessage += 'Please load trial balance files first using the "Load Files" button.';
+                    errorMessage += 'Please load trial balance files first using the "Select Directory" button.';
                 } else if (error.message.includes('Required data not loaded')) {
                     errorMessage += 'Trial balance data is incomplete. Please reload the files.';
                 } else if (error.message.includes('Unknown statement type')) {
                     errorMessage += 'Invalid statement type selected.';
                 } else if (error.message.includes('invalid data')) {
                     errorMessage += 'Statement generation produced invalid results. Please check the source data.';
+                } else if (error.message.includes('Invalid movements data')) {
+                    errorMessage += 'Data may not be loaded yet. Please select a directory and load the trial balance files first.';
+                } else if (error.message.includes('Failed to resolve variable')) {
+                    errorMessage += error.message + ' This may indicate that the account codes in your data do not match the report definition, or the data structure is incorrect.';
                 } else {
                     errorMessage += error.message || 'Unknown error occurred.';
                 }
@@ -445,7 +482,7 @@ class UIController {
 
         } catch (error) {
             this.showExportStatus('Export failed: ' + error.message, 'error');
-            console.error('Export error:', error);
+            Logger.error('Export error:', error);
         }
     }
 
@@ -500,12 +537,12 @@ class UIController {
 
         for (const { type, name, reportId } of statementTypes) {
             try {
-                console.log(`Generating ${name} for export...`);
+                Logger.debug(`Generating ${name} for export...`);
 
                 // Get report definition
                 const reportDef = await this.reportRegistry.getReport(reportId);
                 if (!reportDef) {
-                    console.warn(`Report definition not found: ${reportId}`);
+                    Logger.warn(`Report definition not found: ${reportId}`);
                     continue;
                 }
 
@@ -549,7 +586,7 @@ class UIController {
                 // The temp container will be cleaned up after export completes
 
             } catch (error) {
-                console.error(`Failed to generate ${name}:`, error);
+                Logger.error(`Failed to generate ${name}:`, error);
                 // Continue with other statements even if one fails
             }
         }
@@ -720,7 +757,7 @@ class UIController {
                 this.statusMessageService.updateFileStatus('tb2025', 'success', '');
             }
         } catch (error) {
-            console.warn('Error updating file status profit:', error);
+            Logger.warn('Error updating file status profit:', error);
         }
     }
 
@@ -730,12 +767,13 @@ class UIController {
      */
     async loadReportDefinitions() {
         try {
-            console.log('Loading report definitions...');
+            Logger.debug('Loading report definitions...');
+            this.updateReportStatus('Loading report definitions...', 'loading');
             
             // Load all report definitions from the /reports/ directory
             const reports = await this.reportLoader.loadReportsFromDirectory('/reports/');
             
-            console.log(`Loaded ${reports.length} report definitions`);
+            Logger.info(`Loaded ${reports.length} report definitions`);
             
             // Register each report in the registry
             for (const report of reports) {
@@ -743,21 +781,26 @@ class UIController {
                     // Check if this is a default report (ends with _default.json)
                     const isDefault = report.reportId && report.reportId.includes('_default');
                     this.reportRegistry.register(report, isDefault);
-                    console.log(`Registered report: ${report.name} (${report.reportId})`);
+                    Logger.debug(`Registered report: ${report.name} (${report.reportId})`);
                 } catch (error) {
-                    console.error(`Failed to register report ${report.reportId}:`, error);
+                    Logger.error(`Failed to register report ${report.reportId}:`, error);
                 }
             }
             
             // Populate the report selector dropdown
             this.populateReportSelector();
             
-            // Restore last selected report from localStorage
-            this.restoreSelectedReport();
+            // Auto-select appropriate report for current statement type
+            this.autoSelectReport(this.currentStatementType);
+            
+            // Return the count for the caller to display
+            return reports.length;
             
         } catch (error) {
-            console.error('Error loading report definitions:', error);
-            // Don't throw - allow app to continue with hardcoded reports
+            Logger.error('Error loading report definitions:', error);
+            // Don't throw - allow app to continue with error message
+            this.updateReportStatus('⚠️ Failed to load report definitions', 'error');
+            return 0;
         }
     }
 
@@ -768,12 +811,12 @@ class UIController {
     populateReportSelector() {
         const reportSelector = document.getElementById('report-selector');
         if (!reportSelector) {
-            console.warn('Report selector element not found');
+            Logger.warn('Report selector element not found');
             return;
         }
 
-        // Clear existing options except the default
-        reportSelector.innerHTML = '<option value="">Default (Hardcoded)</option>';
+        // Clear all existing options (no hardcoded default)
+        reportSelector.innerHTML = '';
 
         // Get current statement type to filter reports
         const currentType = this.getStatementTypeForRegistry(this.currentStatementType);
@@ -782,9 +825,19 @@ class UIController {
         const reports = this.reportRegistry.getReportsByType(currentType);
         
         if (reports.length === 0) {
-            console.log(`No configurable reports found for ${currentType}`);
+            Logger.warn(`No reports available for ${currentType}`);
+            // Add a placeholder option
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'No reports available';
+            option.disabled = true;
+            reportSelector.appendChild(option);
+            reportSelector.disabled = true;
             return;
         }
+
+        // Enable selector if it was disabled
+        reportSelector.disabled = false;
 
         // Add reports to dropdown
         reports.forEach(report => {
@@ -794,7 +847,7 @@ class UIController {
             reportSelector.appendChild(option);
         });
 
-        console.log(`Populated report selector with ${reports.length} reports for ${currentType}`);
+        Logger.debug(`Populated report selector with ${reports.length} reports for ${currentType}`);
     }
 
     /**
@@ -824,11 +877,11 @@ class UIController {
                 if (this.reportRegistry.hasReport(selectedReportId)) {
                     reportSelector.value = selectedReportId;
                     this.updateReportInfo(selectedReportId);
-                    console.log(`Restored selected report: ${selectedReportId}`);
+                    Logger.debug(`Restored selected report: ${selectedReportId}`);
                 } else {
                     // Report no longer exists, clear selection
                     this.reportRegistry.clearSelectedReport();
-                    console.warn(`Previously selected report ${selectedReportId} not found`);
+                    Logger.warn(`Previously selected report ${selectedReportId} not found`);
                 }
             }
         }
@@ -848,9 +901,9 @@ class UIController {
             // Save selection to localStorage
             try {
                 this.reportRegistry.setSelectedReportId(selectedReportId);
-                console.log(`Selected report: ${selectedReportId}`);
+                Logger.debug(`Selected report: ${selectedReportId}`);
             } catch (error) {
-                console.error('Error saving report selection:', error);
+                Logger.error('Error saving report selection:', error);
             }
 
             // Update report info display
@@ -868,10 +921,63 @@ class UIController {
     }
 
     /**
-     * Update the report info display with report name and version
+     * Auto-select appropriate report after loading definitions or switching statement types
+     * Selects default report if available, otherwise first available report
+     * 
+     * @param {string} statementType - UI statement type constant
+     */
+    autoSelectReport(statementType) {
+        const reportSelector = document.getElementById('report-selector');
+        if (!reportSelector) {
+            Logger.warn('Report selector element not found');
+            return;
+        }
+
+        // Get registry statement type
+        const registryType = this.getStatementTypeForRegistry(statementType);
+        
+        // Try to get default report first
+        let report = this.reportRegistry.getDefaultReport(registryType);
+        
+        if (!report) {
+            // No default, get first available report
+            const reports = this.reportRegistry.getReportsByType(registryType);
+            if (reports.length > 0) {
+                report = reports[0];
+                Logger.debug(`No default report for ${registryType}, using first available: ${report.name}`);
+            } else {
+                Logger.warn(`No reports available for ${registryType}`);
+                this.hideReportInfo();
+                return;
+            }
+        } else {
+            Logger.debug(`Auto-selected default report: ${report.name} (${report.reportId})`);
+        }
+
+        // Update dropdown selection
+        reportSelector.value = report.reportId;
+        
+        // Save selection to localStorage
+        try {
+            this.reportRegistry.setSelectedReportId(report.reportId);
+        } catch (error) {
+            Logger.error('Error saving auto-selected report:', error);
+        }
+        
+        // Show report info
+        this.showReportInfo(report.reportId);
+        
+        // Regenerate statement if data is loaded
+        if (this.dataStore.getCombinedMovements()) {
+            this.generateAndDisplayStatement(statementType);
+        }
+    }
+
+    /**
+     * Show report info banner with current report details
      * @param {string} reportId - Report ID to display
      */
-    updateReportInfo(reportId) {
+    showReportInfo(reportId) {
         const report = this.reportRegistry.getReport(reportId);
         
         if (!report) {
@@ -882,12 +988,32 @@ class UIController {
         const reportInfoDiv = document.getElementById('report-info');
         const reportNameSpan = document.getElementById('report-name');
         const reportVersionSpan = document.getElementById('report-version');
+        const reportDefaultBadge = document.getElementById('report-default-badge');
 
         if (reportInfoDiv && reportNameSpan && reportVersionSpan) {
             reportNameSpan.textContent = report.name;
             reportVersionSpan.textContent = `(v${report.version})`;
+            
+            // Show default badge if this is the default report
+            const registryType = report.statementType;
+            const defaultReport = this.reportRegistry.getDefaultReport(registryType);
+            const isDefault = defaultReport && defaultReport.reportId === report.reportId;
+            
+            if (reportDefaultBadge) {
+                reportDefaultBadge.style.display = isDefault ? 'inline' : 'none';
+            }
+            
             reportInfoDiv.style.display = 'block';
         }
+    }
+
+    /**
+     * Update the report info display with report name and version
+     * @param {string} reportId - Report ID to display
+     * @deprecated Use showReportInfo() instead
+     */
+    updateReportInfo(reportId) {
+        this.showReportInfo(reportId);
     }
 
     /**
@@ -906,30 +1032,30 @@ class UIController {
      */
     async handleReloadReports() {
         try {
-            this.statusMessageService.showLoading('Reloading report definitions...');
+            this.updateReportStatus('🔄 Reloading report definitions...', 'loading');
             
             // Clear existing reports
             this.reportRegistry.clear();
             
             // Reload reports
-            await this.loadReportDefinitions();
+            const count = await this.loadReportDefinitions();
             
-            this.statusMessageService.showSuccess('Report definitions reloaded successfully');
+            this.updateReportStatus(`✓ Reloaded ${count} report definition${count !== 1 ? 's' : ''} successfully`, 'success');
             
             // Regenerate current statement
             if (this.currentStatementType) {
                 this.generateAndDisplayStatement(this.currentStatementType);
             }
         } catch (error) {
-            console.error('Error reloading reports:', error);
-            this.statusMessageService.showError('Failed to reload report definitions: ' + error.message);
+            Logger.error('Error reloading reports:', error);
+            this.updateReportStatus('⚠️ Failed to reload report definitions', 'error');
         }
     }
 
     // Setup event listeners
     setupEventListeners() {
         document.getElementById('select-input-dir').addEventListener('click', () => {
-            console.log('Select Directory button clicked');
+            Logger.debug('Select Directory button clicked');
             this.handleSelectInputDirectory();
         });
 
@@ -954,9 +1080,13 @@ class UIController {
         const statementSelector = document.getElementById('statement-selector');
         if (statementSelector) {
             statementSelector.addEventListener('change', () => {
-                this.handleTabSwitch(statementSelector.value);
+                const newStatementType = statementSelector.value;
+                // Update current statement type
+                this.currentStatementType = newStatementType;
                 // Update report selector options for new statement type
                 this.populateReportSelector();
+                // Auto-select appropriate report
+                this.autoSelectReport(newStatementType);
             });
         }
 
@@ -973,6 +1103,64 @@ class UIController {
         if (reloadReportBtn) {
             reloadReportBtn.addEventListener('click', () => {
                 this.handleReloadReports();
+            });
+        }
+
+        // View report definition button
+        const viewReportBtn = document.getElementById('view-report-btn');
+        if (viewReportBtn) {
+            viewReportBtn.addEventListener('click', () => {
+                this.handleViewReportDefinition();
+            });
+        }
+
+        // Close report modal buttons
+        const closeModalBtn = document.getElementById('close-report-modal');
+        const closeModalBtn2 = document.getElementById('close-report-modal-btn');
+        const reportModal = document.getElementById('report-definition-modal');
+        
+        if (closeModalBtn && reportModal) {
+            closeModalBtn.addEventListener('click', () => {
+                reportModal.style.display = 'none';
+            });
+        }
+        
+        if (closeModalBtn2 && reportModal) {
+            closeModalBtn2.addEventListener('click', () => {
+                reportModal.style.display = 'none';
+            });
+        }
+
+        // Copy report JSON button
+        const copyJsonBtn = document.getElementById('copy-report-json');
+        if (copyJsonBtn) {
+            copyJsonBtn.addEventListener('click', () => {
+                this.handleCopyReportJson();
+            });
+        }
+
+        // Close modal when clicking outside
+        if (reportModal) {
+            reportModal.addEventListener('click', (e) => {
+                if (e.target === reportModal) {
+                    reportModal.style.display = 'none';
+                }
+            });
+        }
+
+        // Debug columns button (only visible in dev mode)
+        const debugColumnsBtn = document.getElementById('debug-columns-btn');
+        if (debugColumnsBtn && devToggle) {
+            // Show/hide based on dev toggle
+            devToggle.addEventListener('change', () => {
+                debugColumnsBtn.style.display = devToggle.checked ? 'inline-block' : 'none';
+            });
+            
+            // Set initial state
+            debugColumnsBtn.style.display = devToggle.checked ? 'inline-block' : 'none';
+            
+            debugColumnsBtn.addEventListener('click', () => {
+                this.handleDebugColumns();
             });
         }
 
@@ -1091,6 +1279,104 @@ class UIController {
     formatNumber(value) {
         if (value === null || value === undefined) return '0';
         return Math.round(value).toLocaleString(APP_CONFIG.display.locale);
+    }
+
+    /**
+     * Handle view report definition button click
+     * Shows a modal with the current report definition in JSON format
+     */
+    handleViewReportDefinition() {
+        const reportSelector = document.getElementById('report-selector');
+        if (!reportSelector || !reportSelector.value) {
+            this.statusMessageService.showError('No report selected');
+            return;
+        }
+
+        const reportId = reportSelector.value;
+        const report = this.reportRegistry.getReport(reportId);
+
+        if (!report) {
+            this.statusMessageService.showError(`Report '${reportId}' not found`);
+            return;
+        }
+
+        // Populate modal with report info
+        document.getElementById('modal-report-name').textContent = report.name || 'Unknown';
+        document.getElementById('modal-report-version').textContent = report.version || '1.0';
+        document.getElementById('modal-report-type').textContent = report.statementType || 'Unknown';
+
+        // Format and display JSON
+        const jsonContent = JSON.stringify(report, null, 2);
+        document.getElementById('report-definition-content').textContent = jsonContent;
+
+        // Show modal
+        document.getElementById('report-definition-modal').style.display = 'block';
+
+        Logger.debug(`Viewing report definition: ${report.name} (${reportId})`);
+    }
+
+    /**
+     * Handle copy report JSON button click
+     * Copies the report definition JSON to clipboard
+     */
+    async handleCopyReportJson() {
+        const jsonContent = document.getElementById('report-definition-content').textContent;
+
+        try {
+            await navigator.clipboard.writeText(jsonContent);
+            
+            // Show success feedback
+            const copyBtn = document.getElementById('copy-report-json');
+            const originalText = copyBtn.textContent;
+            copyBtn.textContent = '✓ Copied!';
+            copyBtn.style.background = '#28a745';
+            
+            setTimeout(() => {
+                copyBtn.textContent = originalText;
+                copyBtn.style.background = '';
+            }, 2000);
+
+            Logger.debug('Report JSON copied to clipboard');
+        } catch (error) {
+            Logger.error('Failed to copy to clipboard:', error);
+            this.statusMessageService.showError('Failed to copy to clipboard');
+        }
+    }
+
+    /**
+     * Handle debug columns button click
+     * Shows available columns in the loaded data to help diagnose filter issues
+     */
+    handleDebugColumns() {
+        const movements = this.dataStore.getCombinedMovements();
+        
+        if (!movements) {
+            alert('No data loaded. Please load trial balance files first.');
+            return;
+        }
+
+        const columns = movements.columnNames();
+        const sampleRow = movements.numRows() > 0 ? movements.object(0) : null;
+
+        let message = '📊 Available Data Columns:\n\n';
+        message += columns.join(', ');
+        message += '\n\n';
+        
+        if (sampleRow) {
+            message += '📝 Sample Row (first row):\n\n';
+            message += JSON.stringify(sampleRow, null, 2);
+        }
+
+        message += '\n\n💡 Tip: Report filters use these column names.\n';
+        message += 'Expected columns: code1, code2, code3, name1, name2, name3, statement_type, account_code';
+
+        console.log(message);
+        alert(message);
+
+        Logger.info('Available columns:', columns);
+        if (sampleRow) {
+            Logger.info('Sample row:', sampleRow);
+        }
     }
 }
 

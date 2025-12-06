@@ -1,3 +1,5 @@
+import Logger from '../utils/Logger.ts';
+
 /**
  * ExportHandler - Legacy Excel export functionality
  *
@@ -317,7 +319,7 @@ class ExportHandler {
             link.click();
             window.URL.revokeObjectURL(url);
 
-            console.log('Exported all statements successfully');
+            Logger.info('Exported all statements successfully');
 
             // Show success message
             if (exportStatus) {
@@ -331,7 +333,7 @@ class ExportHandler {
             }
 
         } catch (error) {
-            console.error('Error exporting all statements:', error);
+            Logger.error('Error exporting all statements:', error);
 
             // Show user-friendly error message
             if (exportStatus) {

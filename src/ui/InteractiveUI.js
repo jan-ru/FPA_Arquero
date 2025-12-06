@@ -1,3 +1,5 @@
+import Logger from '../utils/Logger.ts';
+
 /**
  * InteractiveUI - Legacy HTML table-based statement renderer
  *
@@ -457,13 +459,13 @@ class InteractiveUI {
     enableDrillDown(container) {
         // This would expand/collapse detail rows under subtotals
         // Implementation depends on data structure with hierarchical relationships
-        console.log('Drill-down feature: To be implemented with hierarchical data');
+        Logger.debug('Drill-down feature: To be implemented with hierarchical data');
     }
 
     // Enable filtering (placeholder for future implementation)
     enableFiltering(container) {
         // This would add filter controls and apply filters to the data
-        console.log('Filtering feature: To be implemented');
+        Logger.debug('Filtering feature: To be implemented');
     }
 
     // Enable tooltips on amount cells
