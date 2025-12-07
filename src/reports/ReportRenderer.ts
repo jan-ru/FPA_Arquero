@@ -1,7 +1,7 @@
 import { ErrorFactory } from '../errors/index.ts';
-import type VariableResolver from './VariableResolver.ts';
+import type VariableResolver from './VariableResolverCompat.ts';
 import type ExpressionEvaluator from './ExpressionEvaluatorCompat.ts';
-import FilterEngine from './FilterEngine.ts';
+import FilterEngine from './FilterEngineCompat.ts';
 import type { 
     ReportDefinition, 
     LayoutItem, 

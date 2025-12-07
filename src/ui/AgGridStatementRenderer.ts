@@ -22,19 +22,19 @@ import { YEAR_CONFIG, UI_CONFIG, UI_STATEMENT_TYPES } from '../constants.ts';
 import { exportGridToExcel, exportLTMGridToExcel } from '../export/excel-export.ts';
 
 interface LTMRange {
-    year: number;
-    startPeriod: number;
-    endPeriod: number;
+    readonly year: number;
+    readonly startPeriod: number;
+    readonly endPeriod: number;
 }
 
 interface LTMInfo {
-    ranges: LTMRange[];
-    latest: { year: number; period: number };
-    label: string;
-    filteredData: any;
-    availability: {
-        complete: boolean;
-        message: string;
+    readonly ranges: readonly LTMRange[];
+    readonly latest: { readonly year: number; readonly period: number };
+    readonly label: string;
+    readonly filteredData: any;
+    readonly availability: {
+        readonly complete: boolean;
+        readonly message: string;
     };
 }
 

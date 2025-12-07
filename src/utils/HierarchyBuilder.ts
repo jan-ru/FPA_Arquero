@@ -7,7 +7,7 @@
 
 import HierarchySorter from './HierarchySorter.ts';
 import Logger from './Logger.ts';
-import VarianceCalculator from './VarianceCalculator.ts';
+import { calculateVariancePercent, calculateVarianceAmount } from '../core/calculations/variance.ts';
 
 export type DetailLevel = 'level0' | 'level1' | 'level2' | 'level3' | 'level4' | 'level5';
 
@@ -100,8 +100,8 @@ export class HierarchyBuilder {
 
         // Calculate variance percentages
         result.forEach(node => {
-            node.variance_amount = node.amount_2025 - node.amount_2024;
-            node.variance_percent = VarianceCalculator.calculatePercent(node.amount_2025 || 0, node.amount_2024 || 0);
+            node.variance_amount = calculateVarianceAmount(node.amount_2025 || 0, node.amount_2024 || 0);
+            node.variance_percent = calculateVariancePercent(node.amount_2025 || 0, node.amount_2024 || 0);
         });
 
         Logger.debug('Built hierarchy tree:', {

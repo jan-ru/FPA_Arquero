@@ -1,5 +1,5 @@
 import Logger from '../utils/Logger.ts';
-import FilterEngine, { type FilterSpec, type ValidationResult } from './FilterEngine.ts';
+import FilterEngine, { type FilterSpec, type ValidationResult } from './FilterEngineCompat.ts';
 // Arquero table type (using any since arquero is loaded globally via CDN)
 type ColumnTable = any;
 

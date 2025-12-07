@@ -6,7 +6,7 @@
  */
 
 import { MONTH_MAP, EXCEL_COLUMNS, STATEMENT_TYPES, VALIDATION_CONFIG } from '../constants.ts';
-import { initialize, getMonthNumber, getAllMonthNames } from '../core/transformations/date.ts';
+import { initializeDayJS, getMonthNumber, getAllMonthNames } from '../core/transformations/date.ts';
 import ValidationResult from '../utils/ValidationResult.ts';
 import HierarchyCodeMapper from '../utils/HierarchyCodeMapper.ts';
 import { AccountMapper } from '../config/accountMappings.ts';
@@ -104,7 +104,7 @@ export default class DataLoader {
         this.config = null; // Will be set via setConfig()
 
         // Initialize DateUtils for date/period handling
-        initialize();
+        initializeDayJS();
     }
 
     // Set configuration

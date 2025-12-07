@@ -535,7 +535,7 @@ export const evaluateAST = (
                     }
                     return ok(leftValue / rightValue);
                 default:
-                    return err(new Error(`Unknown operator: ${ast.operator}`));
+                    return err(new Error(`Unknown operator: ${(ast as BinaryNode).operator}`));
             }
 
         default:
@@ -606,16 +606,16 @@ export const validateExpression = (expression: string): ValidationResult => {
     }
 
     const parseResult = parseExpressionMemoized(expression);
-    if (!parseResult.success) {
+    if (parseResult.success) {
         return {
-            isValid: false,
-            errors: [parseResult.error.message]
+            isValid: true,
+            errors: []
         };
     }
 
     return {
-        isValid: true,
-        errors: []
+        isValid: false,
+        errors: [parseResult.error.message]
     };
 };
 

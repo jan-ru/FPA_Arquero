@@ -47,13 +47,16 @@ export default class ExpressionEvaluator {
             return result.value;
         }
         
+        // Result is an error - access the error property
+        const error = result.error;
+        
         // Return null for evaluation errors (division by zero, etc.)
-        if (result.error.message.includes('Division by zero')) {
+        if (error.message.includes('Division by zero')) {
             return null;
         }
         
         // Wrap and throw for other errors (syntax errors, undefined variables)
-        throw ErrorFactory.expressionError(expression, result.error);
+        throw ErrorFactory.expressionError(expression, error);
     }
 
     /**
@@ -100,6 +103,7 @@ export default class ExpressionEvaluator {
             return Array.from(result.value);
         }
         
+        // Result is an error - access the error property
         throw result.error;
     }
 

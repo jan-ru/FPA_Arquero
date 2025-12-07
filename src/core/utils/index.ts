@@ -38,6 +38,7 @@ export {
     unwrapOr,
     isOk,
     isErr,
+    getError,
     sequence as resultSequence,
     tryCatch,
     fromNullable as resultFromNullable

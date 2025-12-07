@@ -6,13 +6,13 @@
  */
 
 interface LTMRange {
-    year: number;
-    startPeriod: number;
-    endPeriod: number;
+    readonly year: number;
+    readonly startPeriod: number;
+    readonly endPeriod: number;
 }
 
 interface LTMInfo {
-    ranges: LTMRange[];
+    readonly ranges: readonly LTMRange[];
 }
 
 interface ReportMetadata {

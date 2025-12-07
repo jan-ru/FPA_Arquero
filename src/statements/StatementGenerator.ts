@@ -32,11 +32,11 @@ import {
     buildLTMModeSpec,
     buildLTMCategoryTotalsSpec,
     buildCategoryTotalsSpec
-} from '../utils/RollupSpecBuilder.ts';
+} from '../utils/RollupSpecBuilderCompat.ts';
 import ReportRenderer from '../reports/ReportRenderer.ts';
-import VariableResolver from '../reports/VariableResolver.ts';
+import VariableResolver from '../reports/VariableResolverCompat.ts';
 import ExpressionEvaluator from '../reports/ExpressionEvaluatorCompat.ts';
-import FilterEngine from '../reports/FilterEngine.ts';
+import FilterEngine from '../reports/FilterEngineCompat.ts';
 import DataStore from '../data/DataStore.ts';
 import type { ReportDefinition } from '../reports/ReportValidator.ts';
 

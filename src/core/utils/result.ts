@@ -110,6 +110,17 @@ export const isErr = <T, E>(result: Result<T, E>): result is { success: false; e
     !result.success;
 
 /**
+ * GetError - Safely extract error from a Result
+ * Throws if the Result is successful
+ */
+export const getError = <T, E>(result: Result<T, E>): E => {
+    if (result.success) {
+        throw new Error('Cannot get error from successful Result');
+    }
+    return result.error;
+};
+
+/**
  * Sequence - Convert an array of Results into a Result of array
  * Fails fast on first error
  * 

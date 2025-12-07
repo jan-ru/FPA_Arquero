@@ -303,7 +303,7 @@ export class IncomeStatementSpecialRows {
      * @returns Row object
      */
     createResultaatNaBelastingenRow(amounts: MetricAmounts, year1: string, year2: string): RowData {
-        const { amount, percent } = calculateForYears(amounts, year1, year2);
+        const { amount, percent } = calculateForYears(year1, year2)(amounts);
 
         return {
             hierarchy: ['Resultaat na belastingen'],
