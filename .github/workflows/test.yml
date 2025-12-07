@@ -18,7 +18,7 @@ jobs:
       - name: Setup Deno
         uses: denoland/setup-deno@v1
         with:
-          deno-version: v1.x
+          deno-version: v2.x
       
       - name: Cache Deno dependencies
         uses: actions/cache@v3
@@ -29,7 +29,7 @@ jobs:
             ${{ runner.os }}-deno-
       
       - name: Type Check
-        run: deno task check
+        run: deno check src/**/*.ts
       
       - name: Run Unit Tests
         run: deno test --allow-read --allow-env --no-check test/unit/
