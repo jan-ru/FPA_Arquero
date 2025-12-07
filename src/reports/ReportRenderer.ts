@@ -1,6 +1,6 @@
 import { ErrorFactory } from '../errors/index.ts';
 import type VariableResolver from './VariableResolver.ts';
-import type ExpressionEvaluator from './ExpressionEvaluator.ts';
+import type ExpressionEvaluator from './ExpressionEvaluatorCompat.ts';
 import FilterEngine from './FilterEngine.ts';
 import type { 
     ReportDefinition, 

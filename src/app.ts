@@ -12,11 +12,13 @@ import DataLoader from './data/DataLoader.ts';
 import DataStore from './data/DataStore.ts';
 import StatementGenerator from './statements/StatementGenerator.ts';
 import AgGridStatementRenderer from './ui/AgGridStatementRenderer.ts';
-import CategoryMatcher from './utils/CategoryMatcher.ts';
 import Logger from './utils/Logger.ts';
-import VarianceCalculator from './utils/VarianceCalculator.ts';
 import ExportHandler from './export/ExportHandler.ts';
 import InteractiveUI from './ui/InteractiveUI.ts';
+
+// FP modules (for re-export compatibility)
+import * as varianceModule from './core/calculations/variance.ts';
+import * as categoryModule from './core/transformations/category.ts';
 
 interface Config {
     inputFiles: {
@@ -188,10 +190,11 @@ export {
     DataStore,
     StatementGenerator,
     AgGridStatementRenderer,
-    CategoryMatcher,
-    VarianceCalculator,
     ExportHandler,
-    InteractiveUI
+    InteractiveUI,
+    // FP modules
+    varianceModule,
+    categoryModule
 };
 
 // Default export

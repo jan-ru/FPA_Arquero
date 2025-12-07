@@ -6,7 +6,7 @@
  */
 
 interface LTMRange {
-    year: string;
+    year: number;
     startPeriod: number;
     endPeriod: number;
 }

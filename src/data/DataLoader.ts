@@ -6,7 +6,7 @@
  */
 
 import { MONTH_MAP, EXCEL_COLUMNS, STATEMENT_TYPES, VALIDATION_CONFIG } from '../constants.ts';
-import DateUtils from '../utils/DateUtils.ts';
+import { initialize, getMonthNumber, getAllMonthNames } from '../core/transformations/date.ts';
 import ValidationResult from '../utils/ValidationResult.ts';
 import HierarchyCodeMapper from '../utils/HierarchyCodeMapper.ts';
 import { AccountMapper } from '../config/accountMappings.ts';
@@ -94,7 +94,7 @@ interface LoadResult {
 }
 
 export default class DataLoader {
-    private inputDirHandle: FileSystemDirectoryHandle | null;
+    public inputDirHandle: FileSystemDirectoryHandle | null;
     private outputDirHandle: FileSystemDirectoryHandle | null;
     private config: Config | null;
 
@@ -104,7 +104,7 @@ export default class DataLoader {
         this.config = null; // Will be set via setConfig()
 
         // Initialize DateUtils for date/period handling
-        DateUtils.initialize();
+        initialize();
     }
 
     // Set configuration
@@ -221,14 +221,14 @@ export default class DataLoader {
 
         // Check for month patterns (e.g., "januari2024", "februari2024")
         // Try all Dutch month names using DateUtils
-        const monthNames = DateUtils.getAllMonthNames();
+        const monthNames = getAllMonthNames();
         for (const monthName of monthNames) {
             const lowerMonth = monthName.toLowerCase();
             if (lowerCol.includes(lowerMonth) && lowerCol.includes(year)) {
-                const periodNum = DateUtils.getMonthNumber(monthName);
-                if (periodNum) {
+                const periodNumOption = getMonthNumber(monthName);
+                if (periodNumOption.some) {
                     return {
-                        period: periodNum,
+                        period: periodNumOption.value,
                         year: parseInt(year),
                         type: 'movement'
                     };

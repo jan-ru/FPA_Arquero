@@ -7,10 +7,10 @@
  * - Totaal passiva (Total Liabilities & Equity)
  */
 
-import CategoryMatcher from '../../utils/CategoryMatcher.ts';
 import Logger from '../../utils/Logger.ts';
-import VarianceCalculator from '../../utils/VarianceCalculator.ts';
 import { YEAR_CONFIG } from '../../constants.ts';
+import { isLiabilityOrEquity } from '../../core/transformations/category.ts';
+import { calculateForYears, calculateForTotals } from '../../core/calculations/variance.ts';
 
 interface MetricAmounts {
     [year: string]: number;
@@ -47,6 +47,7 @@ interface RowData {
 interface YearTotals {
     year1: number;
     year2: number;
+    [key: string]: unknown;
 }
 
 export class BalanceSheetSpecialRows {
@@ -89,8 +90,8 @@ export class BalanceSheetSpecialRows {
 
         // Find insertion point: before first liability/equity category
         const insertIndex = result.findIndex(row =>
-            CategoryMatcher.isLiabilityOrEquity(row.name1) ||
-            CategoryMatcher.isLiabilityOrEquity(row.name0)
+            isLiabilityOrEquity(row.name1) ||
+            isLiabilityOrEquity(row.name0)
         );
 
         if (insertIndex > 0) {
@@ -210,7 +211,7 @@ export class BalanceSheetSpecialRows {
      * @returns Row object
      */
     createResultaatBoekjaarRow(amounts: MetricAmounts, year1: string, year2: string): RowData {
-        const { amount, percent } = VarianceCalculator.calculateForYears(amounts, year1, year2);
+        const { amount, percent } = calculateForYears(amounts, year1, year2);
 
         return {
             hierarchy: ['Passiva', 'eigen vermogen', 'Resultaat boekjaar'],
@@ -240,7 +241,7 @@ export class BalanceSheetSpecialRows {
      * @returns Row object
      */
     createTotalAssetsRow(totals: YearTotals, year1: string, year2: string): RowData {
-        const { amount, percent } = VarianceCalculator.calculateForTotals(totals);
+        const { amount, percent } = calculateForTotals(totals);
 
         return {
             hierarchy: ['Totaal activa'],
@@ -266,7 +267,7 @@ export class BalanceSheetSpecialRows {
      * @returns Row object
      */
     createTotalPassivaRow(totals: YearTotals, year1: string, year2: string): RowData {
-        const { amount, percent } = VarianceCalculator.calculateForTotals(totals);
+        const { amount, percent } = calculateForTotals(totals);
 
         return {
             hierarchy: ['Totaal passiva'],

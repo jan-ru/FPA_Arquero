@@ -42,8 +42,8 @@ export interface SelectionResult {
 
 // DataLoader interface (minimal typing for what we need)
 interface DataLoader {
-    selectInputDirectory(): Promise<void>;
-    inputDirHandle: FileSystemDirectoryHandle;
+    selectInputDirectory(): Promise<FileSystemDirectoryHandle>;
+    inputDirHandle: FileSystemDirectoryHandle | null;
 }
 
 export class FileSelectionService {

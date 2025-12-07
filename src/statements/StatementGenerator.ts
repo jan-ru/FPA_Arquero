@@ -24,10 +24,9 @@ import {
     APP_CONFIG,
     isLTMSelected
 } from '../constants.ts';
-import CategoryMatcher from '../utils/CategoryMatcher.ts';
-import VarianceCalculator from '../utils/VarianceCalculator.ts';
-import AccountSignHandler from '../utils/AccountSignHandler.ts';
-import LTMCalculator from '../utils/LTMCalculator.ts';
+import { calculateVariancePercent } from '../core/calculations/variance.ts';
+import { flipSignForPassiva } from '../core/transformations/sign.ts';
+import { calculateLTMInfo } from '../core/calculations/ltm.ts';
 import {
     buildNormalModeSpec,
     buildLTMModeSpec,
@@ -36,27 +35,28 @@ import {
 } from '../utils/RollupSpecBuilder.ts';
 import ReportRenderer from '../reports/ReportRenderer.ts';
 import VariableResolver from '../reports/VariableResolver.ts';
-import ExpressionEvaluator from '../reports/ExpressionEvaluator.ts';
+import ExpressionEvaluator from '../reports/ExpressionEvaluatorCompat.ts';
 import FilterEngine from '../reports/FilterEngine.ts';
 import DataStore from '../data/DataStore.ts';
+import type { ReportDefinition } from '../reports/ReportValidator.ts';
 
 // Type alias for Arquero table
 type ArqueroTable = any;
 
 interface LTMRange {
-    year: number;
-    startPeriod: number;
-    endPeriod: number;
+    readonly year: number;
+    readonly startPeriod: number;
+    readonly endPeriod: number;
 }
 
 interface LTMInfo {
-    ranges: LTMRange[];
-    latest: { year: number; period: number };
-    label: string;
-    filteredData: ArqueroTable;
-    availability: {
-        complete: boolean;
-        message: string;
+    readonly ranges: readonly LTMRange[];
+    readonly latest: { readonly year: number; readonly period: number };
+    readonly label: string;
+    readonly filteredData: ArqueroTable;
+    readonly availability: {
+        readonly complete: boolean;
+        readonly message: string;
     };
 }
 
@@ -98,14 +98,6 @@ interface GenerationOptions {
     validateBalance?: (totals: ArqueroTable) => { balanced: boolean; imbalance?: number };
 }
 
-interface ReportDefinition {
-    reportId: string;
-    name: string;
-    version: string;
-    statementType: string;
-    [key: string]: any;
-}
-
 interface ValidationResult {
     errors: string[];
     warnings: string[];
@@ -133,7 +125,7 @@ class StatementGenerator {
 
     // Helper: Calculate variance percentage
     calculateVariancePercent(amt2024: number, amt2025: number): number {
-        return VarianceCalculator.calculatePercent(amt2025, amt2024);
+        return calculateVariancePercent(amt2025, amt2024);
     }
 
     // Helper: Validate required data is loaded and return appropriate data based on view type
@@ -351,7 +343,7 @@ class StatementGenerator {
                 }
 
                 // Calculate LTM info
-                ltmInfo = LTMCalculator.calculateLTMInfo(
+                ltmInfo = calculateLTMInfo(
                     filtered,
                     availableYears,
                     YEAR_CONFIG.LTM.MONTHS_COUNT
@@ -492,7 +484,7 @@ class StatementGenerator {
             // For Balance Sheet, flip sign for Passiva accounts to show as positive
             let processedData = aggregated;
             if (statementType === STATEMENT_TYPES.BALANCE_SHEET) {
-                processedData = AccountSignHandler.flipSignForPassiva(aggregated, col1, col2);
+                processedData = flipSignForPassiva(aggregated, col1, col2);
             }
 
             // Add ordering if specified - sort by level codes for proper order (all 3 levels)
@@ -654,7 +646,7 @@ class StatementGenerator {
         const mapping: Record<string, string> = {
             'balance': STATEMENT_TYPES.BALANCE_SHEET,
             'income': STATEMENT_TYPES.INCOME_STATEMENT,
-            'cashflow': STATEMENT_TYPES.CASH_FLOW_STATEMENT
+            'cashflow': STATEMENT_TYPES.CASH_FLOW
         };
 
         const mapped = mapping[reportStatementType];

@@ -16,8 +16,8 @@ import Logger from '../utils/Logger.ts';
  * - YEAR_CONFIG, UI_CONFIG, UI_STATEMENT_TYPES constants
  */
 
-import CategoryMatcher from '../utils/CategoryMatcher.ts';
-import VarianceCalculator from '../utils/VarianceCalculator.ts';
+import { calculateVariance, calculateForMetric } from '../core/calculations/variance.ts';
+import { isLiabilityOrEquity } from '../core/transformations/category.ts';
 import {
     YEAR_CONFIG,
     UI_CONFIG,
@@ -290,11 +290,11 @@ class InteractiveUI {
             if (statementType === UI_STATEMENT_TYPES.BALANCE_SHEET &&
                 !totalAssetsInserted &&
                 row.name1 !== currentCategory) {
-                if (CategoryMatcher.isLiabilityOrEquity(row.name1)) {
+                if (isLiabilityOrEquity(row.name1)) {
 
                     totalAssetsInserted = true;
                     const { amount: assetsVariance, percent: assetsVariancePercent } =
-                        VarianceCalculator.calculate(totalAssetsYear2, totalAssetsYear1);
+                        calculateVariance(totalAssetsYear2, totalAssetsYear1);
 
                     html += `<tr class="spacer-row"><td colspan="${colSpan}"></td></tr>`;
                     html += this.renderTableRow('total', 'TOTAL ASSETS', totalAssetsYear1, totalAssetsYear2, assetsVariance, assetsVariancePercent, showYear1, showYear2, variance1Mode, variance2Mode, { bold: true });
@@ -321,7 +321,7 @@ class InteractiveUI {
 
                     const metrics = statementData.metrics;
                     const { amount: gpVariance, percent: gpVariancePercent } =
-                        VarianceCalculator.calculateForMetric(metrics.grossProfit!, year2, year1);
+                        calculateForMetric(year2, year1)(metrics.grossProfit!);
 
                     html += this.renderTableRow('metric', 'Brutowinst (Gross Profit)', metrics.grossProfit![year1], metrics.grossProfit![year2], gpVariance, gpVariancePercent, showYear1, showYear2, variance1Mode, variance2Mode, { bold: true });
 
@@ -339,7 +339,7 @@ class InteractiveUI {
 
                     const metrics = statementData.metrics;
                     const { amount: oiVariance, percent: oiVariancePercent } =
-                        VarianceCalculator.calculateForMetric(metrics.operatingIncome!, year2, year1);
+                        calculateForMetric(year2, year1)(metrics.operatingIncome!);
 
                     html += this.renderTableRow('metric', 'Operating Income', metrics.operatingIncome![year1], metrics.operatingIncome![year2], oiVariance, oiVariancePercent, showYear1, showYear2, variance1Mode, variance2Mode, { bold: true });
 
@@ -368,7 +368,7 @@ class InteractiveUI {
 
             // Accumulate for Balance Sheet Liabilities & Equity total
             if (statementType === UI_STATEMENT_TYPES.BALANCE_SHEET) {
-                if (CategoryMatcher.isLiabilityOrEquity(row.name1)) {
+                if (isLiabilityOrEquity(row.name1)) {
                     totalLiabilitiesEquityYear1 += row[col1] || 0;
                     totalLiabilitiesEquityYear2 += row[col2] || 0;
                 }
@@ -378,7 +378,7 @@ class InteractiveUI {
         // Add Balance Sheet Liabilities & Equity total at the end
         if (statementType === UI_STATEMENT_TYPES.BALANCE_SHEET && (totalLiabilitiesEquityYear1 !== 0 || totalLiabilitiesEquityYear2 !== 0)) {
             const { amount: leVariance, percent: leVariancePercent } =
-                VarianceCalculator.calculate(totalLiabilitiesEquityYear2, totalLiabilitiesEquityYear1);
+                calculateVariance(totalLiabilitiesEquityYear2, totalLiabilitiesEquityYear1);
 
             html += `<tr class="spacer-row"><td colspan="${colSpan}"></td></tr>`;
 
@@ -390,7 +390,7 @@ class InteractiveUI {
         if (statementType === UI_STATEMENT_TYPES.INCOME_STATEMENT && statementData.metrics) {
             const metrics = statementData.metrics;
             const { amount: niVariance, percent: niVariancePercent } =
-                VarianceCalculator.calculateForMetric(metrics.netIncome!, year2, year1);
+                calculateForMetric(year2, year1)(metrics.netIncome!);
 
             html += `<tr class="spacer-row"><td colspan="${colSpan}"></td></tr>`;
             html += this.renderTableRow('total', 'Net Income', metrics.netIncome![year1], metrics.netIncome![year2], niVariance, niVariancePercent, showYear1, showYear2, variance1Mode, variance2Mode, { bold: true });
@@ -406,7 +406,7 @@ class InteractiveUI {
             // Starting Cash
             if (metrics.startingCash) {
                 const { amount: scVariance, percent: scVariancePercent } =
-                    VarianceCalculator.calculateForMetric(metrics.startingCash, year2, year1);
+                    calculateForMetric(year2, year1)(metrics.startingCash);
 
                 html += this.renderTableRow('detail', 'Starting Cash', metrics.startingCash[year1], metrics.startingCash[year2], scVariance, scVariancePercent, showYear1, showYear2, variance1Mode, variance2Mode);
             }
@@ -423,7 +423,7 @@ class InteractiveUI {
             // Ending Cash
             if (metrics.endingCash) {
                 const { amount: ecVariance, percent: ecVariancePercent } =
-                    VarianceCalculator.calculateForMetric(metrics.endingCash, year2, year1);
+                    calculateForMetric(year2, year1)(metrics.endingCash);
 
                 html += this.renderTableRow('total', 'Ending Cash', metrics.endingCash[year1], metrics.endingCash[year2], ecVariance, ecVariancePercent, showYear1, showYear2, variance1Mode, variance2Mode, { bold: true });
             }

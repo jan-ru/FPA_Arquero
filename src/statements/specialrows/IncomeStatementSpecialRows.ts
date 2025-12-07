@@ -7,9 +7,9 @@
  * - NET INCOME at the end
  */
 
-import VarianceCalculator from '../../utils/VarianceCalculator.ts';
 import { YEAR_CONFIG } from '../../constants.ts';
 import Logger from '../../utils/Logger.ts';
+import { calculateForYears } from '../../core/calculations/variance.ts';
 
 interface MetricAmounts {
     [year: string]: number;
@@ -173,7 +173,7 @@ export class IncomeStatementSpecialRows {
      * @returns Row object
      */
     createBrutoMargeRow(amounts: MetricAmounts, year1: string, year2: string): RowData {
-        const { amount, percent } = VarianceCalculator.calculateForYears(amounts, year1, year2);
+        const { amount, percent } = calculateForYears(amounts, year1, year2);
 
         return {
             hierarchy: ['Bruto marge'],
@@ -199,7 +199,7 @@ export class IncomeStatementSpecialRows {
      * @returns Row object
      */
     createTotaalBedrijfskostenRow(amounts: MetricAmounts, year1: string, year2: string): RowData {
-        const { amount, percent } = VarianceCalculator.calculateForYears(amounts, year1, year2);
+        const { amount, percent } = calculateForYears(amounts, year1, year2);
 
         return {
             hierarchy: ['Totaal bedrijfskosten'],
@@ -225,7 +225,7 @@ export class IncomeStatementSpecialRows {
      * @returns Row object
      */
     createBedrijfsresultaatRow(amounts: MetricAmounts, year1: string, year2: string): RowData {
-        const { amount, percent } = VarianceCalculator.calculateForYears(amounts, year1, year2);
+        const { amount, percent } = calculateForYears(amounts, year1, year2);
 
         return {
             hierarchy: ['Bedrijfsresultaat'],
@@ -251,7 +251,7 @@ export class IncomeStatementSpecialRows {
      * @returns Row object
      */
     createResultaatVoorBelastingenRow(amounts: MetricAmounts, year1: string, year2: string): RowData {
-        const { amount, percent } = VarianceCalculator.calculateForYears(amounts, year1, year2);
+        const { amount, percent } = calculateForYears(amounts, year1, year2);
 
         return {
             hierarchy: ['Resultaat voor belastingen'],
@@ -277,7 +277,7 @@ export class IncomeStatementSpecialRows {
      * @returns Row object
      */
     createOperatingIncomeRow(amounts: MetricAmounts, year1: string, year2: string): RowData {
-        const { amount, percent } = VarianceCalculator.calculateForYears(amounts, year1, year2);
+        const { amount, percent } = calculateForYears(amounts, year1, year2);
 
         return {
             hierarchy: ['Operating Income'],
@@ -303,7 +303,7 @@ export class IncomeStatementSpecialRows {
      * @returns Row object
      */
     createResultaatNaBelastingenRow(amounts: MetricAmounts, year1: string, year2: string): RowData {
-        const { amount, percent } = VarianceCalculator.calculateForYears(amounts, year1, year2);
+        const { amount, percent } = calculateForYears(amounts, year1, year2);
 
         return {
             hierarchy: ['Resultaat na belastingen'],

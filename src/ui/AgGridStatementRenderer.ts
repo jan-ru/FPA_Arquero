@@ -12,8 +12,8 @@
  */
 
 // CategoryMatcher removed - no longer needed with configurable report system
-import VarianceCalculator from '../utils/VarianceCalculator.ts';
 import Logger from '../utils/Logger.ts';
+import { calculateVariancePercent } from '../core/calculations/variance.ts';
 import HierarchyBuilder from '../utils/HierarchyBuilder.ts';
 import HierarchyTreeBuilder from '../utils/HierarchyTreeBuilder.ts';
 // SpecialRowsFactory removed - all statements now use configurable report system with calculated/subtotal rows
@@ -103,7 +103,7 @@ interface CellParams {
 
 class AgGridStatementRenderer {
     private gridDiv: HTMLElement | null;
-    private gridApi: any;
+    public gridApi: any;
     private columnApi: any;
     private currentStatementType: string | null;
     private currentStatementData: StatementData | null;
@@ -118,6 +118,20 @@ class AgGridStatementRenderer {
         this.currentStatementData = null;
         this.hierarchyTreeBuilder = new HierarchyTreeBuilder();
         this.expansionState = new Map(); // Store node expansion state
+    }
+
+    /**
+     * Map UI statement type to registry statement type
+     * @param uiType - UI_STATEMENT_TYPES constant
+     * @returns Registry statement type (balance, income, cashflow)
+     */
+    private mapStatementType(uiType: string): 'balance' | 'income' | 'cashflow' {
+        const mapping: Record<string, 'balance' | 'income' | 'cashflow'> = {
+            [UI_STATEMENT_TYPES.INCOME_STATEMENT]: 'income',
+            [UI_STATEMENT_TYPES.BALANCE_SHEET]: 'balance',
+            [UI_STATEMENT_TYPES.CASH_FLOW]: 'cashflow'
+        };
+        return mapping[uiType] || 'income';
     }
 
     // Initialize grid with data
@@ -222,7 +236,7 @@ class AgGridStatementRenderer {
             const treeNodes = this.hierarchyTreeBuilder.buildTree(
                 statementData.movements,
                 {
-                    statementType: statementType,
+                    statementType: this.mapStatementType(statementType),
                     calculatedRows: statementData.calculatedRows || [],
                     formattingRules: statementData.formattingRules || {}
                 }
@@ -467,7 +481,7 @@ class AgGridStatementRenderer {
         // Calculate variances
         hierarchyMap.forEach(node => {
             node.variance_amount = node.amount_2025! - node.amount_2024!;
-            node.variance_percent = VarianceCalculator.calculatePercent(node.amount_2025 || 0, node.amount_2024 || 0);
+            node.variance_percent = calculateVariancePercent(node.amount_2025 || 0, node.amount_2024 || 0);
         });
 
         // Convert to array and sort by code hierarchy (code0, code1, code2, then hierarchy path)
@@ -697,7 +711,7 @@ class AgGridStatementRenderer {
             return sum + (row.data.amount_2025 || 0);
         }, 0);
 
-        return VarianceCalculator.calculatePercent(total2, total1);
+        return calculateVariancePercent(total2, total1);
     }
 
     // Get row class for styling (not used with rowClassRules)

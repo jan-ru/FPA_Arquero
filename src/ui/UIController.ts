@@ -28,7 +28,7 @@ import FileMetricsService from '../services/FileMetricsService.ts';
 import ValidationService from '../services/ValidationService.ts';
 import ReportRegistry from '../reports/ReportRegistry.ts';
 import ReportLoader from '../reports/ReportLoader.ts';
-import ReportValidator from '../reports/ReportValidator.ts';
+import ReportValidator, { type ReportDefinition } from '../reports/ReportValidator.ts';
 import Logger from '../utils/Logger.ts';
 
 interface FileMetadata {
@@ -36,14 +36,6 @@ interface FileMetadata {
     originalColumns: number;
     longRows: number;
     longColumns: number;
-}
-
-interface ReportDefinition {
-    reportId: string;
-    name: string;
-    version: string;
-    statementType: string;
-    [key: string]: any;
 }
 
 interface PeriodOptions {
@@ -96,7 +88,7 @@ class UIController {
 
         // Initialize report registry and loader
         this.reportRegistry = ReportRegistry.getInstance();
-        this.reportValidator = new ReportValidator();
+        this.reportValidator = new ReportValidator({} as any); // Schema loaded by ReportLoader
         this.reportLoader = new ReportLoader(this.reportValidator);
 
         // Initialize UI with filenames from config
@@ -180,7 +172,7 @@ class UIController {
 
     // Update file status indicator - delegate to service
     updateFileStatus(fileId: string, status: string, message?: string): void {
-        this.statusMessageService.updateFileStatus(fileId, status, message);
+        this.statusMessageService.updateFileStatus(fileId, status as 'success' | 'error' | 'loading', message);
     }
 
     // Status message methods removed - use this.statusMessageService directly
@@ -760,7 +752,7 @@ class UIController {
 
     // Calculate profit for a specific period - delegate to service
     calculateProfitForPeriod(year: string, periodValue: string): number {
-        return this.fileMetricsService.calculateProfitForPeriod(year, periodValue);
+        return this.fileMetricsService.calculateProfitForPeriod(year as '2024' | '2025', periodValue);
     }
 
     /**
@@ -783,17 +775,12 @@ class UIController {
             const year1 = YEAR_CONFIG.getYear(0);
             const year2 = YEAR_CONFIG.getYear(1);
 
-            // Check if dev mode is enabled
-            const devToggle = document.getElementById('dev-toggle') as HTMLInputElement | null;
-            const showDetails = devToggle ? devToggle.checked : true;
-
             // Update 2024 metrics
             if (this.fileMetadata['2024']) {
                 this.fileMetricsService.updateFileMetrics(
-                    'tb2024', year1, periodValue,
+                    'tb2024', year1 as '2024' | '2025', periodValue,
                     this.fileMetadata['2024']!,
-                    this.formatNumber.bind(this),
-                    showDetails
+                    this.formatNumber.bind(this)
                 );
                 this.statusMessageService.updateFileStatus('tb2024', 'success', '');
             }
@@ -801,10 +788,9 @@ class UIController {
             // Update 2025 metrics
             if (this.fileMetadata['2025']) {
                 this.fileMetricsService.updateFileMetrics(
-                    'tb2025', year2, periodValue,
+                    'tb2025', year2 as '2024' | '2025', periodValue,
                     this.fileMetadata['2025']!,
-                    this.formatNumber.bind(this),
-                    showDetails
+                    this.formatNumber.bind(this)
                 );
                 this.statusMessageService.updateFileStatus('tb2025', 'success', '');
             }
@@ -907,8 +893,8 @@ class UIController {
      * @param uiType - UI_STATEMENT_TYPES constant
      * @returns Registry statement type (balance, income, cashflow)
      */
-    getStatementTypeForRegistry(uiType: string): string {
-        const mapping: Record<string, string> = {
+    getStatementTypeForRegistry(uiType: string): 'balance' | 'income' | 'cashflow' {
+        const mapping: Record<string, 'balance' | 'income' | 'cashflow'> = {
             [UI_STATEMENT_TYPES.INCOME_STATEMENT]: 'income',
             [UI_STATEMENT_TYPES.BALANCE_SHEET]: 'balance',
             [UI_STATEMENT_TYPES.CASH_FLOW]: 'cashflow'

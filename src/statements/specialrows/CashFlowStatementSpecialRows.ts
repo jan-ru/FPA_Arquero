@@ -8,7 +8,7 @@
  */
 
 import { YEAR_CONFIG } from '../../constants.ts';
-import VarianceCalculator from '../../utils/VarianceCalculator.ts';
+import { calculateForYears } from '../../core/calculations/variance.ts';
 
 interface MetricAmounts {
     [year: string]: number;
@@ -83,7 +83,7 @@ export class CashFlowStatementSpecialRows {
      * @returns Row object
      */
     createStartingCashRow(amounts: MetricAmounts, year1: string, year2: string): RowData {
-        const { amount, percent } = VarianceCalculator.calculateForYears(amounts, year1, year2);
+        const { amount, percent } = calculateForYears(amounts, year1, year2);
 
         return {
             hierarchy: ['Starting Cash (Σ)'],
@@ -109,7 +109,7 @@ export class CashFlowStatementSpecialRows {
      * @returns Row object
      */
     createChangeInCashRow(amounts: MetricAmounts, year1: string, year2: string): RowData {
-        const { amount, percent } = VarianceCalculator.calculateForYears(amounts, year1, year2);
+        const { amount, percent } = calculateForYears(amounts, year1, year2);
 
         return {
             hierarchy: ['Change in Cash (Δ)'],
@@ -135,7 +135,7 @@ export class CashFlowStatementSpecialRows {
      * @returns Row object
      */
     createEndingCashRow(amounts: MetricAmounts, year1: string, year2: string): RowData {
-        const { amount, percent } = VarianceCalculator.calculateForYears(amounts, year1, year2);
+        const { amount, percent } = calculateForYears(amounts, year1, year2);
 
         return {
             hierarchy: ['Ending Cash (Σ)'],

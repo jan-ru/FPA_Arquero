@@ -12,7 +12,7 @@ import Logger from '../utils/Logger.ts';
  * Extracted from UIController to improve separation of concerns
  */
 
-import PeriodParser from '../utils/PeriodParser.ts';
+import { getMaxPeriod } from '../core/transformations/period.ts';
 
 // Access arquero from global window object (loaded via CDN in index.html)
 declare global {
@@ -150,9 +150,8 @@ export class FileMetricsService {
      * @returns Maximum period number
      */
     parsePeriodValue(periodValue: PeriodValue): number {
-        // Delegate to PeriodParser utility
-        const result = PeriodParser.parse(periodValue);
-        return typeof result === 'number' ? result : 12;
+        // Delegate to period parsing utility
+        return getMaxPeriod(periodValue);
     }
 
     /**
