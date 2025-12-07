@@ -361,11 +361,6 @@
             color: white;
         }
 
-        .detail-level-dropdown {
-            width: auto;
-            min-width: 120px;
-        }
-
         /* Dev toggle (CSS-only): if the checkbox is unchecked hide the data controls */
         #dev-toggle:not(:checked) ~ #data-controls {
             display: none !important;
@@ -469,33 +464,9 @@
             padding-bottom: 4px;
         }
 
-        /* Hierarchy level styling - uniform font size and weight */
-        .ag-row.level-0-row,
-        .ag-row.level-1-row,
-        .ag-row.level-2-row,
-        .ag-row.level-3-row {
-            font-weight: 400;
-            font-size: 12px;
-        }
 
-        /* Optional: subtle background for level 0 only */
-        .ag-row.level-0-row {
-            background-color: #fafbfc !important;
-        }
 
-        /* Indent level styling (from report definitions) */
-        .ag-row.indent-0,
-        .ag-row.indent-1,
-        .ag-row.indent-2,
-        .ag-row.indent-3 {
-            font-weight: 400;
-            font-size: 12px;
-        }
 
-        /* Optional: subtle background for indent 0 only */
-        .ag-row.indent-0 {
-            background-color: #fafbfc !important;
-        }
 
         /* Cell styling */
         .ag-cell.number-cell {
@@ -567,6 +538,153 @@
                 height: 500px;
                 max-height: 500px;
             }
+        }
+
+        /* ===== Tree View Specific Styles ===== */
+        
+        /* Tree expand/collapse indicators */
+        .ag-theme-alpine .ag-group-expanded,
+        .ag-theme-alpine .ag-group-contracted {
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .ag-theme-alpine .ag-group-expanded:hover,
+        .ag-theme-alpine .ag-group-contracted:hover {
+            transform: scale(1.2);
+        }
+
+        /* Ensure expand/collapse icons are visible and styled */
+        .ag-theme-alpine .ag-icon-tree-open,
+        .ag-theme-alpine .ag-icon-tree-closed {
+            color: #2c5282;
+            font-weight: bold;
+        }
+
+        /* Always visible rows - highlighted background */
+        .ag-row.always-visible {
+            background-color: #fffef0 !important;
+            position: relative;
+        }
+
+        /* Add a subtle left border to always-visible rows for emphasis */
+        .ag-row.always-visible::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background-color: #f59e0b;
+        }
+
+        /* Level-based font sizing for tree hierarchy */
+        .ag-row.level-0 {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .ag-row.level-1 {
+            font-size: 12.5px;
+            font-weight: 500;
+        }
+
+        .ag-row.level-2 {
+            font-size: 12px;
+            font-weight: 400;
+        }
+
+        .ag-row.level-3 {
+            font-size: 11.5px;
+            font-weight: 400;
+        }
+
+        .ag-row.level-4 {
+            font-size: 11px;
+            font-weight: 400;
+            color: #4a5568;
+        }
+
+        .ag-row.level-5 {
+            font-size: 11px;
+            font-weight: 400;
+            color: #666;
+        }
+
+        /* Tree node styling - account type rows */
+        .ag-row.account-row {
+            font-weight: 400;
+        }
+
+        /* Tree node styling - category type rows */
+        .ag-row.category-row {
+            font-weight: 500;
+        }
+
+        /* Tree node styling - calculated type rows */
+        .ag-row.calculated-row {
+            font-weight: 600;
+            font-style: italic;
+            background-color: #f0f4f8 !important;
+        }
+
+        /* Ensure tree indentation is visible */
+        .ag-theme-alpine .ag-row-group-indent {
+            width: 20px;
+        }
+
+        /* Style the auto-group column (account names) */
+        .ag-theme-alpine .ag-cell.ag-group-cell {
+            font-weight: inherit;
+        }
+
+        /* Hover effect for tree nodes */
+        .ag-theme-alpine .ag-row.ag-row-level-0:hover,
+        .ag-theme-alpine .ag-row.ag-row-level-1:hover,
+        .ag-theme-alpine .ag-row.ag-row-level-2:hover,
+        .ag-theme-alpine .ag-row.ag-row-level-3:hover,
+        .ag-theme-alpine .ag-row.ag-row-level-4:hover,
+        .ag-theme-alpine .ag-row.ag-row-level-5:hover {
+            background-color: #e6f2ff !important;
+            transition: background-color 0.15s ease;
+        }
+
+        /* Preserve existing total-row styling in tree context */
+        .ag-row.total-row.level-0 {
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        /* Preserve existing metric-row styling in tree context */
+        .ag-row.metric-row.calculated-row {
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        /* Preserve existing subtotal-row styling in tree context */
+        .ag-row.subtotal-row.category-row {
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        /* Tree group cell padding adjustment */
+        .ag-theme-alpine .ag-group-cell-entire-row {
+            padding-left: 8px;
+        }
+
+        /* Ensure calculated metrics stand out in tree */
+        .ag-row.calculated-row.always-visible {
+            background-color: #fef3c7 !important;
+        }
+
+        /* Tree expand/collapse animation */
+        .ag-theme-alpine .ag-row {
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+
+        /* Smooth tree expansion */
+        .ag-theme-alpine .ag-row-animation {
+            transition: height 0.3s ease, opacity 0.3s ease;
         }
     </style>
 </head>
@@ -651,7 +769,7 @@
         <!-- Statement Display Section -->
         <div id="statement-section" class="section" style="display: none;">
             <h2>Statements</h2>
-            <!-- First row: Financials, Report, Comparisons, Performance -->
+            <!-- First row: Financials, Report, Buttons, Comparisons -->
             <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
                 <label style="font-size: 13px; color: #4a5568; font-weight: 500;">Financials:</label>
                 <select id="statement-selector" style="padding: 8px 16px; border-radius: 4px; border: 1px solid #e2e8f0; background: white; color: #4a5568; cursor: pointer; font-size: 13px; font-weight: 500;">
@@ -665,16 +783,16 @@
                     <!-- Report options will be populated dynamically -->
                 </select>
                 
-                <button id="reload-report-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px; margin-left: 5px;" title="Reload report definitions from files">
-                    🔄 Reload
+                <button id="reload-report-btn" class="btn btn-secondary" style="padding: 8px 16px; font-size: 13px; margin-left: 5px; border-radius: 4px; border: 1px solid #e2e8f0; background: white; color: #4a5568; cursor: pointer; font-weight: 500;" title="Reload report definitions from files">
+                    Reload
                 </button>
 
-                <button id="view-report-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px; margin-left: 5px;" title="View current report definition">
-                    👁️ View Definition
+                <button id="view-report-btn" class="btn btn-secondary" style="padding: 8px 16px; font-size: 13px; margin-left: 5px; border-radius: 4px; border: 1px solid #e2e8f0; background: white; color: #4a5568; cursor: pointer; font-weight: 500;" title="View current report definition">
+                    View Definition
                 </button>
 
-                <button id="debug-columns-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px; margin-left: 5px; display: none;" title="Show available data columns">
-                    🔍 Debug Columns
+                <button id="debug-columns-btn" class="btn btn-secondary" style="padding: 8px 16px; font-size: 13px; margin-left: 5px; border-radius: 4px; border: 1px solid #e2e8f0; background: white; color: #4a5568; cursor: pointer; font-weight: 500; display: none;" title="Show available data columns">
+                    Debug Columns
                 </button>
 
                 <label style="font-size: 13px; color: #4a5568; font-weight: 500; margin-left: 10px;">Comparisons:</label>
@@ -683,8 +801,11 @@
                     <option value="ltm">LTM (Last Twelve Months)</option>
                     <option value="mom">MoM (Month-over-Month)</option>
                 </select>
+            </div>
 
-                <label style="font-size: 13px; color: #4a5568; font-weight: 500; margin-left: 10px;">Performance:</label>
+            <!-- Performance row -->
+            <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+                <label style="font-size: 13px; color: #4a5568; font-weight: 500;">Performance:</label>
                 <select id="performance-selector" style="padding: 8px 16px; border-radius: 4px; border: 1px solid #e2e8f0; background: white; color: #4a5568; cursor: pointer; font-size: 13px; font-weight: 500;">
                     <option value="none">None</option>
                     <option value="budget-actual">Budget vs Actual</option>
@@ -693,7 +814,7 @@
                 </select>
             </div>
 
-            <!-- Second row: View and Detail controls -->
+            <!-- Second row: View and Tree controls -->
             <div style="display: flex; gap: 15px; align-items: center; margin-bottom: 15px;">
                 <!-- View type control -->
                 <label style="font-size: 13px; color: #4a5568; font-weight: 500;">View:</label>
@@ -702,16 +823,14 @@
                     <option value="period">Period</option>
                 </select>
 
-                <!-- Detail level control -->
-                <label style="font-size: 13px; color: #4a5568; font-weight: 500;">Detail:</label>
-                <select id="detail-level" style="padding: 8px 12px; border-radius: 4px; border: 1px solid #e2e8f0; background: white; color: #4a5568; cursor: pointer; font-size: 13px; font-weight: 500;">
-                    <option value="level0">Level 0 (Activa/Passiva)</option>
-                    <option value="level1">Level 1 (Vaste/Vlottende activa)</option>
-                    <option value="level2">Level 2 (Main categories)</option>
-                    <option value="level3" selected>Level 3 (Sub-categories)</option>
-                    <option value="level4">Level 4 (Detail categories)</option>
-                    <option value="level5">Level 5 (All accounts)</option>
-                </select>
+                <!-- Tree controls -->
+                <label style="font-size: 13px; color: #4a5568; font-weight: 500; margin-left: 10px;">Tree:</label>
+                <button id="expand-all-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 13px;" title="Expand all tree nodes">
+                    Expand All
+                </button>
+                <button id="collapse-all-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 13px;" title="Collapse all tree nodes">
+                    Collapse All
+                </button>
             </div>
 
             <!-- Period and Variance Controls -->

@@ -58,11 +58,12 @@ Requires File System Access API support:
 
 ## Technology Stack
 
+- **TypeScript**: 100% TypeScript codebase (63 .ts files)
 - **ag-Grid Community**: Professional data grid
 - **Arquero**: Data manipulation and transformation
-- **TypeScript + JavaScript**: Gradual TypeScript migration
 - **Deno**: Native TypeScript runtime for testing
 - **HTML5/CSS3**: Modern web standards
+- **Development Server**: On-the-fly TypeScript transpilation with esbuild
 
 ## Configuration
 
@@ -89,11 +90,13 @@ financial-statement-generator/
 ├── index.html                  # Main HTML file
 ├── config.json                 # Configuration
 ├── package.json                # Version and metadata
-├── src/                        # Application modules
-│   ├── app.js                  # Main entry point
+├── server.ts                   # Development server with TypeScript support
+├── src/                        # Application modules (TypeScript)
+│   ├── app.ts                  # Main entry point
 │   ├── data/                   # Data management
 │   ├── utils/                  # Utility classes
-│   ├── services/               # Service layer (TypeScript)
+│   ├── services/               # Service layer
+│   ├── errors/                 # Error system
 │   ├── reports/                # Configurable report system
 │   ├── statements/             # Statement generation
 │   ├── export/                 # Export functionality
@@ -132,14 +135,17 @@ See [docs/REPORT_DEFINITIONS.md](docs/REPORT_DEFINITIONS.md) for complete guide.
 
 ```bash
 # Run all unit tests
-deno test --allow-read test/unit/
+deno test --allow-read --allow-env test/unit/
 
 # Run with coverage
-deno test --allow-read --coverage=coverage test/unit/
+deno test --allow-read --allow-env --coverage=coverage test/unit/
 deno coverage coverage
 
 # Run in watch mode
-deno test --allow-read --watch test/unit/
+deno test --allow-read --allow-env --watch test/unit/
+
+# Start development server
+deno task dev
 ```
 
 ### Test Coverage
@@ -194,7 +200,7 @@ See [docs/USER_GUIDE.md](docs/USER_GUIDE.md) for more troubleshooting tips.
 
 ## Version
 
-**Current Version:** 0.13.0
+**Current Version:** 0.15.0
 
 See [docs/CHANGELOG.md](docs/CHANGELOG.md) for detailed version history and release notes.
 

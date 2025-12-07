@@ -5,7 +5,7 @@
  */
 
 import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
-import { YEAR_CONFIG, APP_CONFIG } from "../../src/constants.js";
+import { YEAR_CONFIG, APP_CONFIG } from "../../src/constants.ts";
 
 Deno.test("YEAR_CONFIG.years - returns years from APP_CONFIG", () => {
     const years = YEAR_CONFIG.years;

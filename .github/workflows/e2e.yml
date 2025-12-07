@@ -1,0 +1,82 @@
+name: E2E Tests
+
+on:
+  # Run on releases
+  push:
+    tags:
+      - 'v*'
+  
+  # Run on main branch
+  push:
+    branches: [ main ]
+  
+  # Allow manual trigger
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    name: E2E Tests with Puppeteer
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+      
+      - name: Install Chrome
+        run: |
+          wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+          sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list'
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
+      
+      - name: Cache Puppeteer
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/deno
+          key: ${{ runner.os }}-deno-puppeteer-${{ hashFiles('**/deno.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-deno-puppeteer-
+      
+      - name: Download Puppeteer
+        run: deno cache https://deno.land/x/puppeteer@16.2.0/mod.ts
+      
+      - name: Start Dev Server
+        run: |
+          deno task dev &
+          echo "DEV_SERVER_PID=$!" >> $GITHUB_ENV
+      
+      - name: Wait for Server
+        run: |
+          echo "Waiting for dev server to start..."
+          timeout 60 bash -c 'until curl -s http://localhost:8000 > /dev/null; do sleep 2; done'
+          echo "Dev server is ready!"
+      
+      - name: Run E2E Tests
+        run: deno test --allow-all test/e2e/
+      
+      - name: Upload Screenshots on Failure
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: e2e-screenshots
+          path: test-results/*.png
+          retention-days: 7
+      
+      - name: Stop Dev Server
+        if: always()
+        run: |
+          if [ ! -z "$DEV_SERVER_PID" ]; then
+            kill $DEV_SERVER_PID || true
+          fi
+      
+      - name: E2E Summary
+        if: always()
+        run: |
+          echo "## E2E Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "✅ E2E tests completed" >> $GITHUB_STEP_SUMMARY
+          echo "Browser: Chrome (headless)" >> $GITHUB_STEP_SUMMARY

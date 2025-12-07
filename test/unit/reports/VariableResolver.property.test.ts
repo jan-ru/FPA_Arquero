@@ -9,8 +9,8 @@
 import { describe, it } from "https://deno.land/std@0.208.0/testing/bdd.ts";
 import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import * as fc from "npm:fast-check@3.15.0";
-import VariableResolver from "../../../src/reports/VariableResolver.js";
-import FilterEngine from "../../../src/reports/FilterEngine.js";
+import VariableResolver from "../../../src/reports/VariableResolver.ts";
+import FilterEngine from "../../../src/reports/FilterEngine.ts";
 
 // Mock Arquero for testing
 const mockAq = {

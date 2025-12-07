@@ -12,7 +12,7 @@ import Logger from '../utils/Logger.ts';
  * Extracted from UIController to improve separation of concerns
  */
 
-import { UI_CONFIG } from '../constants.js';
+import { UI_CONFIG } from '../constants.ts';
 
 // Type definitions
 export type MessageType = 'info' | 'error' | 'success' | 'warning';

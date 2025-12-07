@@ -7,7 +7,7 @@
 
 import { describe, it, beforeEach } from "https://deno.land/std@0.208.0/testing/bdd.ts";
 import { assertEquals, assertThrows } from "https://deno.land/std@0.208.0/assert/mod.ts";
-import ExpressionEvaluator from "../../../src/reports/ExpressionEvaluator.js";
+import ExpressionEvaluator from "../../../src/reports/ExpressionEvaluator.ts";
 
 let evaluator: ExpressionEvaluator;
 
@@ -495,17 +495,25 @@ describe("ExpressionEvaluator - Unit Tests", () => {
         it("should parse simple addition", () => {
             const ast = evaluator.parse("10 + 20");
             assertEquals(ast.type, "binary");
-            assertEquals(ast.operator, "+");
-            assertEquals(ast.left.type, "number");
-            assertEquals(ast.left.value, 10);
-            assertEquals(ast.right.type, "number");
-            assertEquals(ast.right.value, 20);
+            if (ast.type === "binary") {
+                assertEquals(ast.operator, "+");
+                assertEquals(ast.left.type, "number");
+                if (ast.left.type === "number") {
+                    assertEquals(ast.left.value, 10);
+                }
+                assertEquals(ast.right.type, "number");
+                if (ast.right.type === "number") {
+                    assertEquals(ast.right.value, 20);
+                }
+            }
         });
 
         it("should parse variable reference", () => {
             const ast = evaluator.parse("revenue");
             assertEquals(ast.type, "variable");
-            assertEquals(ast.name, "revenue");
+            if (ast.type === "variable") {
+                assertEquals(ast.name, "revenue");
+            }
         });
 
         it("should parse order reference", () => {

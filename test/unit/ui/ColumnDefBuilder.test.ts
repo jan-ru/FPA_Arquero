@@ -4,7 +4,7 @@
 
 // @ts-nocheck - Test file with DOM mocking
 import { assertEquals, assertExists } from "https://deno.land/std@0.208.0/assert/mod.ts";
-import ColumnDefBuilder from "../../../src/ui/columns/ColumnDefBuilder.js";
+import ColumnDefBuilder from "../../../src/ui/columns/ColumnDefBuilder.ts";
 
 Deno.test("ColumnDefBuilder - constructor sets properties", () => {
     const builder = new ColumnDefBuilder('BS', '2024', '2025');

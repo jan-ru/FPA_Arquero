@@ -58,7 +58,7 @@ const mockAq = {
 (globalThis as any).aq = mockAq;
 
 // Now import the module
-import StatementGenerator from "../../../src/statements/StatementGenerator.js";
+import StatementGenerator from "../../../src/statements/StatementGenerator.ts";
 
 // Mock DataStore
 class MockDataStore {

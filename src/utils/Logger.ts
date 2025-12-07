@@ -44,13 +44,15 @@ const isDevelopment =
     typeof window !== 'undefined' &&
     (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
-// Set default log level based on environment
-const defaultLevel = isDevelopment ? 'debug' : 'warn';
-log.setDefaultLevel(defaultLevel as any);
+// Set default log level based on environment (only if log is available)
+if (log && log.setDefaultLevel) {
+    const defaultLevel = isDevelopment ? 'debug' : 'warn';
+    log.setDefaultLevel(defaultLevel as any);
 
-// Log initialization
-if (isDevelopment) {
-    log.info(`Logger initialized with level: ${defaultLevel} (development mode)`);
+    // Log initialization
+    if (isDevelopment) {
+        log.info(`Logger initialized with level: ${defaultLevel} (development mode)`);
+    }
 }
 
 /**
@@ -70,6 +72,7 @@ export class Logger {
      * Logger.setLevel('silent'); // Disable all logging
      */
     static setLevel(level: 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'silent'): void {
+        if (!log || !log.setLevel) return;
         try {
             log.setLevel(level as any);
             log.info(`Log level changed to: ${level}`);
@@ -88,6 +91,7 @@ export class Logger {
      * console.log('Current level:', level);
      */
     static getLevel(): number {
+        if (!log || !log.getLevel) return 3; // Default to WARN
         return log.getLevel();
     }
 
@@ -101,6 +105,7 @@ export class Logger {
      * console.log('Current level:', levelName); // 'DEBUG', 'INFO', etc.
      */
     static getLevelName(): string {
+        if (!log || !log.getLevel) return 'WARN';
         const level = log.getLevel();
         const levels = ['TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'SILENT'];
         return levels[level] || 'UNKNOWN';
@@ -118,6 +123,7 @@ export class Logger {
      * Logger.trace('Function called', { params });
      */
     static trace(...args: unknown[]): void {
+        if (!log || !log.trace) return;
         log.trace(...args);
     }
 
@@ -133,6 +139,7 @@ export class Logger {
      * Logger.debug('Processing data', { count: 100 });
      */
     static debug(...args: unknown[]): void {
+        if (!log || !log.debug) return;
         log.debug(...args);
     }
 
@@ -148,6 +155,7 @@ export class Logger {
      * Logger.info('User logged in', { userId: 123 });
      */
     static info(...args: unknown[]): void {
+        if (!log || !log.info) return;
         log.info(...args);
     }
 
@@ -163,6 +171,7 @@ export class Logger {
      * Logger.warn('Deprecated function used', { function: 'oldMethod' });
      */
     static warn(...args: unknown[]): void {
+        if (!log || !log.warn) return;
         log.warn(...args);
     }
 
@@ -178,6 +187,7 @@ export class Logger {
      * Logger.error('Failed to load data', error);
      */
     static error(...args: unknown[]): void {
+        if (!log || !log.error) return;
         log.error(...args);
     }
     

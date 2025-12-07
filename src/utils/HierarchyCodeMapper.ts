@@ -5,7 +5,7 @@
  * Uses predefined ranges from constants to categorize accounts.
  */
 
-import { HIERARCHY_CODES } from '../constants.js';
+import { HIERARCHY_CODES } from '../constants.ts';
 
 export interface Code0Result {
     code0: string;

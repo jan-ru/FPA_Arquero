@@ -12,7 +12,7 @@ import {
     buildLTMCategoryTotalsSpec,
     buildCategoryTotalsSpec
 } from "../../../src/utils/RollupSpecBuilder.ts";
-import { STATEMENT_TYPES } from "../../../src/constants.js";
+import { STATEMENT_TYPES } from "../../../src/constants.ts";
 
 Deno.test("RollupSpecBuilder - constructor creates empty spec", () => {
     const builder = new RollupSpecBuilder();

@@ -7,10 +7,10 @@
 
 import { describe, it, beforeEach } from "https://deno.land/std@0.208.0/testing/bdd.ts";
 import { assertEquals, assertThrows } from "https://deno.land/std@0.208.0/assert/mod.ts";
-import ReportRenderer from '../../../src/reports/ReportRenderer.js';
-import VariableResolver from '../../../src/reports/VariableResolver.js';
-import ExpressionEvaluator from '../../../src/reports/ExpressionEvaluator.js';
-import FilterEngine from '../../../src/reports/FilterEngine.js';
+import ReportRenderer from '../../../src/reports/ReportRenderer.ts';
+import VariableResolver from '../../../src/reports/VariableResolver.ts';
+import ExpressionEvaluator from '../../../src/reports/ExpressionEvaluator.ts';
+import FilterEngine from '../../../src/reports/FilterEngine.ts';
 
 // Mock Arquero for testing
 const mockAq = {

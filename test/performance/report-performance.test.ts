@@ -3,14 +3,14 @@
  * Requirements: 11.10
  */
 
-import { assert } from "https://deno.land/std@0.208.0/assert/mod.ts"\;
-import ReportValidator from '../../src/reports/ReportValidator.js';
-import ReportRenderer from '../../src/reports/ReportRenderer.js';
-import VariableResolver from '../../src/reports/VariableResolver.js';
-import ExpressionEvaluator from '../../src/reports/ExpressionEvaluator.js';
-import FilterEngine from '../../src/reports/FilterEngine.js';
-import StatementGenerator from '../../src/statements/StatementGenerator.js';
-import DataStore from '../../src/data/DataStore.js';
+import { assert } from "https://deno.land/std@0.208.0/assert/mod.ts";
+import ReportValidator from '../../src/reports/ReportValidator.ts';
+import ReportRenderer from '../../src/reports/ReportRenderer.ts';
+import VariableResolver from '../../src/reports/VariableResolver.ts';
+import ExpressionEvaluator from '../../src/reports/ExpressionEvaluator.ts';
+import FilterEngine from '../../src/reports/FilterEngine.ts';
+import StatementGenerator from '../../src/statements/StatementGenerator.ts';
+import DataStore from '../../src/data/DataStore.ts';
 import * as mockAq from '../../src/utils/MockArquero.js';
 
 function measurePerf(name: string, fn: () => void, iterations = 100) {
@@ -24,7 +24,7 @@ function measurePerf(name: string, fn: () => void, iterations = 100) {
     const avg = times.reduce((a, b) => a + b, 0) / iterations;
     const min = Math.min(...times);
     const max = Math.max(...times);
-    console.log(\`\${name}: avg=\${avg.toFixed(3)}ms, min=\${min.toFixed(3)}ms, max=\${max.toFixed(3)}ms\`);
+    console.log(`${name}: avg=${avg.toFixed(3)}ms, min=${min.toFixed(3)}ms, max=${max.toFixed(3)}ms`);
     return { avg, min, max };
 }
 
@@ -37,8 +37,8 @@ function createTestData(rows = 100) {
             code1: String(700 + (i % 10)),
             code2: String(i),
             code3: '0000',
-            name1: \`Cat \${i}\`,
-            name2: \`Acc \${i}\`,
+            name1: `Cat ${i}`,
+            name2: `Acc ${i}`,
             name3: 'Detail',
             statement_type: i % 2 === 0 ? 'Winst & verlies' : 'Balans',
             movement_amount: Math.random() * 10000 - 5000
@@ -67,14 +67,14 @@ const simpleReport = {
 Deno.test("Performance: Report Validation", () => {
     const validator = new ReportValidator();
     const result = measurePerf("Report Validation", () => validator.validate(simpleReport), 100);
-    assert(result.avg < 10, \`Validation too slow: \${result.avg}ms\`);
+    assert(result.avg < 10, `Validation too slow: ${result.avg}ms`);
 });
 
 Deno.test("Performance: Expression Evaluation", () => {
     const evaluator = new ExpressionEvaluator();
     const context = { revenue: 100000, expenses: -60000 };
     const result = measurePerf("Expression Eval", () => evaluator.evaluate('revenue + expenses', context), 1000);
-    assert(result.avg < 1, \`Expression eval too slow: \${result.avg}ms\`);
+    assert(result.avg < 1, `Expression eval too slow: ${result.avg}ms`);
 });
 
 Deno.test("Performance: Variable Resolution", () => {
@@ -84,7 +84,7 @@ Deno.test("Performance: Variable Resolution", () => {
     const varDef = { filter: { code1: '700' }, aggregate: 'sum' };
     const periodOpts = { years: [2024, 2025], periods: 'all' };
     const result = measurePerf("Variable Resolution", () => resolver.resolveVariable(varDef, data, periodOpts), 50);
-    assert(result.avg < 20, \`Variable resolution too slow: \${result.avg}ms\`);
+    assert(result.avg < 20, `Variable resolution too slow: ${result.avg}ms`);
 });
 
 Deno.test("Performance: Filter Application", () => {
@@ -92,7 +92,7 @@ Deno.test("Performance: Filter Application", () => {
     const data = mockAq.from(createTestData(1000));
     const filterSpec = { code1: '700' };
     const result = measurePerf("Filter Application", () => filterEngine.applyFilter(data, filterSpec), 100);
-    assert(result.avg < 10, \`Filter too slow: \${result.avg}ms\`);
+    assert(result.avg < 10, `Filter too slow: ${result.avg}ms`);
 });
 
 Deno.test("Performance: Report Rendering", () => {
@@ -103,14 +103,14 @@ Deno.test("Performance: Report Rendering", () => {
     const data = mockAq.from(createTestData(1000));
     const periodOpts = { years: [2024, 2025], periods: 'all' };
     const result = measurePerf("Report Rendering", () => renderer.renderStatement(simpleReport, data, periodOpts), 20);
-    assert(result.avg < 100, \`Rendering too slow: \${result.avg}ms\`);
+    assert(result.avg < 100, `Rendering too slow: ${result.avg}ms`);
 });
 
 // REMOVED: Hardcoded vs Configurable comparison test - hardcoded methods no longer exist
 // All reports now use the configurable report system
 
 Deno.test("Performance: Summary", () => {
-    console.log(\`
+    console.log(`
 PERFORMANCE CHARACTERISTICS SUMMARY
 ====================================
 - Report Validation: < 10ms
@@ -121,6 +121,6 @@ PERFORMANCE CHARACTERISTICS SUMMARY
 - Configurable vs Hardcoded: < 3x
 
 All performance targets met.
-\`);
+`);
     assert(true);
 });

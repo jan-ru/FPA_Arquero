@@ -4,7 +4,7 @@
 
 // @ts-nocheck - Test file with DOM mocking
 import { assertEquals, assertExists } from "https://deno.land/std@0.208.0/assert/mod.ts";
-import AgGridStatementRenderer from "../../../src/ui/AgGridStatementRenderer.js";
+import AgGridStatementRenderer from "../../../src/ui/AgGridStatementRenderer.ts";
 
 Deno.test("AgGridStatementRenderer._prepareConfigurableReportData - transforms report rows to grid format", () => {
     // Mock DOM

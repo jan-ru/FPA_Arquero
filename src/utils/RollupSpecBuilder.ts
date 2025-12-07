@@ -9,7 +9,7 @@
  * these string-based rollup specifications.
  */
 
-import { STATEMENT_TYPES } from '../constants.js';
+import { STATEMENT_TYPES } from '../constants.ts';
 
 export interface RollupSpec {
     [key: string]: string | ((d: any) => any);

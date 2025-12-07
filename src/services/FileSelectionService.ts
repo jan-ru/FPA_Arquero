@@ -12,7 +12,7 @@ import Logger from '../utils/Logger.ts';
  * Extracted from UIController to improve separation of concerns
  */
 
-import APP_CONFIG from '../config/appConfig.js';
+import APP_CONFIG from '../config/appConfig.ts';
 
 // Interface definitions
 export interface DirectorySelection {

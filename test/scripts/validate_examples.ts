@@ -3,7 +3,7 @@
  * Tests that all example reports are valid according to the schema
  */
 
-import ReportValidator from '../../src/reports/ReportValidator.js';
+import ReportValidator from '../../src/reports/ReportValidator.ts';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 

@@ -48,13 +48,13 @@ const mockAq = {
 (globalThis as any).aq = mockAq;
 
 // Import components
-const ReportLoader = (await import("../../src/reports/ReportLoader.js")).default;
-const ReportRegistry = (await import("../../src/reports/ReportRegistry.js")).default;
-const ReportValidator = (await import("../../src/reports/ReportValidator.js")).default;
-const ReportRenderer = (await import("../../src/reports/ReportRenderer.js")).default;
-const VariableResolver = (await import("../../src/reports/VariableResolver.js")).default;
-const ExpressionEvaluator = (await import("../../src/reports/ExpressionEvaluator.js")).default;
-const FilterEngine = (await import("../../src/reports/FilterEngine.js")).default;
+const ReportLoader = (await import("../../src/reports/ReportLoader.ts")).default;
+const ReportRegistry = (await import("../../src/reports/ReportRegistry.ts")).default;
+const ReportValidator = (await import("../../src/reports/ReportValidator.ts")).default;
+const ReportRenderer = (await import("../../src/reports/ReportRenderer.ts")).default;
+const VariableResolver = (await import("../../src/reports/VariableResolver.ts")).default;
+const ExpressionEvaluator = (await import("../../src/reports/ExpressionEvaluator.ts")).default;
+const FilterEngine = (await import("../../src/reports/FilterEngine.ts")).default;
 
 
 // =============================================================================

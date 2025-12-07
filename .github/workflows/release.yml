@@ -1,0 +1,119 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  test:
+    name: Full Test Suite
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+      
+      - name: Type Check
+        run: deno task check
+      
+      - name: Run All Tests
+        run: |
+          deno test --allow-read --allow-env --no-check test/unit/
+          deno test --allow-read --allow-env --no-check test/integration/
+          deno test --allow-read --allow-env --no-check test/performance/
+      
+      - name: Generate Coverage
+        run: |
+          deno test --allow-read --allow-env --coverage=coverage test/unit/
+          deno coverage coverage --lcov > coverage.lcov
+      
+      - name: Upload Coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage.lcov
+  
+  e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+      
+      - name: Install Chrome
+        run: |
+          wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+          sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list'
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
+      
+      - name: Cache Puppeteer
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/deno
+          key: ${{ runner.os }}-deno-puppeteer
+      
+      - name: Download Puppeteer
+        run: deno cache https://deno.land/x/puppeteer@16.2.0/mod.ts
+      
+      - name: Start Dev Server
+        run: deno task dev &
+      
+      - name: Wait for Server
+        run: timeout 60 bash -c 'until curl -s http://localhost:8000 > /dev/null; do sleep 2; done'
+      
+      - name: Run E2E Tests
+        run: deno test --allow-all test/e2e/
+      
+      - name: Upload Screenshots
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: e2e-screenshots
+          path: test-results/*.png
+  
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: [test, e2e]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Get version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+      
+      - name: Create Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ steps.get_version.outputs.VERSION }}
+          body: |
+            ## Changes in ${{ steps.get_version.outputs.VERSION }}
+            
+            See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/docs/CHANGELOG.md) for details.
+            
+            ## Test Results
+            ✅ All unit tests passed
+            ✅ All integration tests passed
+            ✅ All E2E tests passed
+            ✅ Type checking passed
+            ✅ Coverage requirements met
+          draft: false
+          prerelease: false

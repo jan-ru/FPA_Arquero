@@ -4,9 +4,9 @@
 
 // @ts-nocheck - Test file with dynamic mock objects
 import { assertEquals, assertExists } from "https://deno.land/std@0.208.0/assert/mod.ts";
-import SpecialRowsFactory from "../../../src/statements/specialrows/SpecialRowsFactory.js";
-import BalanceSheetSpecialRows from "../../../src/statements/specialrows/BalanceSheetSpecialRows.js";
-import IncomeStatementSpecialRows from "../../../src/statements/specialrows/IncomeStatementSpecialRows.js";
+import SpecialRowsFactory from "../../../src/statements/specialrows/SpecialRowsFactory.ts";
+import BalanceSheetSpecialRows from "../../../src/statements/specialrows/BalanceSheetSpecialRows.ts";
+import IncomeStatementSpecialRows from "../../../src/statements/specialrows/IncomeStatementSpecialRows.ts";
 
 // Mock Arquero table for testing
 const createMockTable = (data) => ({

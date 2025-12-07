@@ -1,6 +1,6 @@
 import { describe, it, beforeEach, afterEach } from "https://deno.land/std@0.208.0/testing/bdd.ts";
 import { assertEquals, assertExists, assertThrows } from "https://deno.land/std@0.208.0/assert/mod.ts";
-import ReportRegistry from "../../../src/reports/ReportRegistry.js";
+import ReportRegistry from "../../../src/reports/ReportRegistry.ts";
 
 // Mock localStorage for testing
 class MockLocalStorage {

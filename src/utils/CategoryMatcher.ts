@@ -3,7 +3,7 @@
  * Used for identifying financial statement categories (Assets, Liabilities, Revenue, etc.)
  */
 
-import { CATEGORY_DEFINITIONS } from '../constants.js';
+import { CATEGORY_DEFINITIONS } from '../constants.ts';
 
 export default class CategoryMatcher {
     /**

@@ -6,7 +6,7 @@
  * financial statements. This utility handles the sign conversion.
  */
 
-import { HIERARCHY_CODES } from '../constants.js';
+import { HIERARCHY_CODES } from '../constants.ts';
 
 // Type for Arquero table (minimal typing)
 type ArqueroTable = any;

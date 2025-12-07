@@ -53,6 +53,7 @@ export type FileId = 'tb2024' | 'tb2025';
 interface MovementsTable {
     params(params: Record<string, number>): MovementsTable;
     filter(predicate: string | ((row: MovementRow) => boolean)): MovementsTable;
+    derive(ops: Record<string, (d: any) => any>): MovementsTable;
     rollup(ops: Record<string, unknown>): {
         objects(): DebitCreditTotals[];
         numRows(): number;

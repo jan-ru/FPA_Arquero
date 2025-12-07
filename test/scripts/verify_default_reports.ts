@@ -3,9 +3,9 @@
  * Tests that all default reports can be loaded and validated
  */
 
-import ReportLoader from '../../src/reports/ReportLoader.js';
-import ReportValidator from '../../src/reports/ReportValidator.js';
-import ReportRegistry from '../../src/reports/ReportRegistry.js';
+import ReportLoader from '../../src/reports/ReportLoader.ts';
+import ReportValidator from '../../src/reports/ReportValidator.ts';
+import ReportRegistry from '../../src/reports/ReportRegistry.ts';
 
 console.log('🔍 Verifying Default Report Definitions...\n');
 

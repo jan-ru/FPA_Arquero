@@ -1,7 +1,7 @@
 import { describe, it, beforeAll } from "https://deno.land/std@0.208.0/testing/bdd.ts";
 import { assertEquals, assertExists } from "https://deno.land/std@0.208.0/assert/mod.ts";
-import ReportLoader from "../../../src/reports/ReportLoader.js";
-import ReportValidator from "../../../src/reports/ReportValidator.js";
+import ReportLoader from "../../../src/reports/ReportLoader.ts";
+import ReportValidator from "../../../src/reports/ReportValidator.ts";
 
 // Load the schema
 let schema: any;

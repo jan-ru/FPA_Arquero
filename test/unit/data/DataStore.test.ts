@@ -5,7 +5,7 @@
  */
 
 import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
-import DataStore from "../../../src/data/DataStore.js";
+import DataStore from "../../../src/data/DataStore.ts";
 
 // Mock Arquero table
 class MockTable {

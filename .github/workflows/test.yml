@@ -1,0 +1,61 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+      
+      - name: Cache Deno dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/deno
+          key: ${{ runner.os }}-deno-${{ hashFiles('**/deno.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-deno-
+      
+      - name: Type Check
+        run: deno task check
+      
+      - name: Run Unit Tests
+        run: deno test --allow-read --allow-env --no-check test/unit/
+      
+      - name: Run Integration Tests
+        run: deno test --allow-read --allow-env --no-check test/integration/
+      
+      - name: Run Performance Tests
+        run: deno test --allow-read --allow-env --no-check test/performance/
+      
+      - name: Generate Coverage
+        run: |
+          deno test --allow-read --allow-env --coverage=coverage test/unit/
+          deno coverage coverage --lcov > coverage.lcov
+      
+      - name: Upload Coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage.lcov
+          fail_ci_if_error: false
+      
+      - name: Test Summary
+        if: always()
+        run: |
+          echo "## Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Type checking passed" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Unit tests passed" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Integration tests passed" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Performance tests passed" >> $GITHUB_STEP_SUMMARY

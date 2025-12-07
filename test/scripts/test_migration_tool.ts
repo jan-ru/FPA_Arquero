@@ -8,8 +8,8 @@
  * 4. Comparing structure with existing default reports
  */
 
-import ReportMigrationTool from '../../src/reports/ReportMigrationTool.js';
-import ReportValidator from '../../src/reports/ReportValidator.js';
+import ReportMigrationTool from '../../src/reports/ReportMigrationTool.ts';
+import ReportValidator from '../../src/reports/ReportValidator.ts';
 
 // Load JSON Schema
 const schemaPath = new URL("../../src/reports/schema/report-definition.schema.json", import.meta.url);

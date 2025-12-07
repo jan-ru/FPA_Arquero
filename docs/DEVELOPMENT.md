@@ -80,9 +80,12 @@ Guide for developers working on the Financial Statement Generator.
 
 ## Code Standards
 
-### JavaScript Style Guide
+### TypeScript Style Guide
 
-**ES6+ Features:**
+**TypeScript Features:**
+- Use explicit types for function parameters and return values
+- Use interfaces for object shapes
+- Use type aliases for complex types
 - Use `const` and `let` instead of `var`
 - Arrow functions for callbacks
 - Template literals for strings
@@ -91,52 +94,63 @@ Guide for developers working on the Financial Statement Generator.
 - Async/await for asynchronous code
 
 **Example:**
-```javascript
-// Good
-const calculateTotal = (items) => {
+```typescript
+// Good - TypeScript with types
+interface Item {
+  amount: number;
+}
+
+const calculateTotal = (items: Item[]): number => {
   return items.reduce((sum, item) => sum + item.amount, 0);
 };
 
-// Avoid
-var calculateTotal = function(items) {
-  var sum = 0;
-  for (var i = 0; i < items.length; i++) {
-    sum += items[i].amount;
-  }
-  return sum;
+// Avoid - No types
+const calculateTotal = (items) => {
+  return items.reduce((sum, item) => sum + item.amount, 0);
 };
 ```
 
 ### File Organization
 
 **Naming Conventions:**
-- Files: PascalCase for classes (`DataProcessor.js`)
+- Files: PascalCase for classes (`DataProcessor.ts`)
 - Functions: camelCase (`calculateBalance`)
 - Constants: UPPER_SNAKE_CASE (`MAX_FILE_SIZE`)
 - CSS classes: kebab-case (`report-header`)
+- Interfaces: PascalCase with 'I' prefix optional (`ReportDefinition` or `IReportDefinition`)
+- Type aliases: PascalCase (`StatementType`)
 
 **Module Structure:**
-```javascript
+```typescript
 // Module template
+interface ModuleOptions {
+  setting1?: string;
+  setting2?: number;
+}
+
 class ModuleName {
-  constructor(options = {}) {
+  private setting1: string;
+  private setting2: number;
+
+  constructor(options: ModuleOptions = {}) {
     this.validateOptions(options);
     this.initialize(options);
   }
 
   // Public methods
-  publicMethod() {
+  public publicMethod(): void {
     // Implementation
   }
 
-  // Private methods (prefix with _)
-  _privateMethod() {
+  // Private methods
+  private privateMethod(): void {
     // Implementation
   }
 
   // Static methods
-  static utilityMethod() {
+  static utilityMethod(): string {
     // Implementation
+    return "result";
   }
 }
 
@@ -145,19 +159,25 @@ export default ModuleName;
 
 ### Documentation Standards
 
-**JSDoc Comments:**
-```javascript
+**TSDoc Comments:**
+```typescript
 /**
  * Calculate financial statement totals
- * @param {Object[]} transactions - Array of transaction objects
- * @param {string} accountType - Type of account to filter
- * @param {Date} startDate - Start date for calculation
- * @param {Date} endDate - End date for calculation
- * @returns {number} Total amount for the account type
- * @throws {Error} When invalid date range provided
+ * @param transactions - Array of transaction objects
+ * @param accountType - Type of account to filter
+ * @param startDate - Start date for calculation
+ * @param endDate - End date for calculation
+ * @returns Total amount for the account type
+ * @throws Error when invalid date range provided
  */
-function calculateAccountTotal(transactions, accountType, startDate, endDate) {
+function calculateAccountTotal(
+  transactions: Transaction[],
+  accountType: string,
+  startDate: Date,
+  endDate: Date
+): number {
   // Implementation
+  return 0;
 }
 ```
 
@@ -169,10 +189,12 @@ function calculateAccountTotal(transactions, accountType, startDate, endDate) {
 ### Error Handling
 
 **Error Types:**
-```javascript
-// Custom error classes
+```typescript
+// Custom error classes with TypeScript
 class ValidationError extends Error {
-  constructor(message, field) {
+  public readonly field: string;
+
+  constructor(message: string, field: string) {
     super(message);
     this.name = 'ValidationError';
     this.field = field;
@@ -180,7 +202,9 @@ class ValidationError extends Error {
 }
 
 class DataProcessingError extends Error {
-  constructor(message, data) {
+  public readonly data: unknown;
+
+  constructor(message: string, data: unknown) {
     super(message);
     this.name = 'DataProcessingError';
     this.data = data;
@@ -189,7 +213,7 @@ class DataProcessingError extends Error {
 ```
 
 **Error Handling Pattern:**
-```javascript
+```typescript
 try {
   const result = await processData(data);
   return result;
@@ -200,9 +224,13 @@ try {
   } else if (error instanceof DataProcessingError) {
     // Handle processing errors
     showProcessingError(error.message);
-  } else {
+  } else if (error instanceof Error) {
     // Handle unexpected errors
     console.error('Unexpected error:', error);
+    showGenericError();
+  } else {
+    // Handle non-Error throws
+    console.error('Unknown error:', error);
     showGenericError();
   }
   throw error; // Re-throw if needed
@@ -218,6 +246,8 @@ try {
 - Property tests: `ModuleName.property.test.ts`
 - Integration tests: `ModuleName.integration.test.ts`
 - Performance tests: `ModuleName.performance.test.ts`
+
+**Note:** All source files are now TypeScript (.ts), so all imports in tests use .ts extensions.
 
 **Test Organization:**
 ```typescript
@@ -285,7 +315,7 @@ open coverage/html/index.html
 ```typescript
 import { describe, it, beforeEach } from "https://deno.land/std@0.208.0/testing/bdd.ts";
 import { assertEquals, assertExists } from "https://deno.land/std@0.208.0/assert/mod.ts";
-import DataProcessor from "../../../src/data/DataProcessor.js";
+import DataProcessor from "../../../src/data/DataProcessor.ts";
 
 describe('DataProcessor', () => {
   let processor;

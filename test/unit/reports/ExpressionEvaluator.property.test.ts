@@ -11,7 +11,7 @@
 import { describe, it, beforeEach } from "https://deno.land/std@0.208.0/testing/bdd.ts";
 import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import fc from "fast-check";
-import ExpressionEvaluator from "../../../src/reports/ExpressionEvaluator.js";
+import ExpressionEvaluator from "../../../src/reports/ExpressionEvaluator.ts";
 
 let evaluator: ExpressionEvaluator;
 

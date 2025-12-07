@@ -5,8 +5,8 @@
  */
 
 import { assertEquals, assertExists } from "https://deno.land/std@0.208.0/assert/mod.ts";
-import StatementGenerator from "../../src/statements/StatementGenerator.js";
-import DataStore from "../../src/data/DataStore.js";
+import StatementGenerator from "../../src/statements/StatementGenerator.ts";
+import DataStore from "../../src/data/DataStore.ts";
 
 // Mock Arquero
 const mockAq = {

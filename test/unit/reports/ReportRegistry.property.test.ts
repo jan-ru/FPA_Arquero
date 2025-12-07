@@ -11,7 +11,7 @@
 import { describe, it, beforeEach, afterEach } from "https://deno.land/std@0.208.0/testing/bdd.ts";
 import { assertEquals, assertThrows } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import fc from "fast-check";
-import ReportRegistry from "../../../src/reports/ReportRegistry.js";
+import ReportRegistry from "../../../src/reports/ReportRegistry.ts";
 
 describe("ReportRegistry - Property-Based Tests", () => {
     let registry: ReportRegistry;

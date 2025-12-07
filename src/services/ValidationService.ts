@@ -24,9 +24,9 @@ export interface ValidationDisplayItem {
 }
 
 export interface ValidationDisplayData {
-    readonly errors: ValidationDisplayItem[];
-    readonly warnings: ValidationDisplayItem[];
-    readonly info: ValidationDisplayItem[];
+    errors: ValidationDisplayItem[];
+    warnings: ValidationDisplayItem[];
+    info: ValidationDisplayItem[];
 }
 
 export interface ValidationSummary {

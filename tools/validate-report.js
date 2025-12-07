@@ -21,7 +21,7 @@ import { resolve, basename, dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
 // Import validation components
-import ReportValidator from '../src/reports/ReportValidator.js';
+import ReportValidator from '../src/reports/ReportValidator.ts';
 
 // Get current directory
 const __filename = fileURLToPath(import.meta.url);

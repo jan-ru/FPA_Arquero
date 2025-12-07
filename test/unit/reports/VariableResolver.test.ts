@@ -7,8 +7,8 @@
 
 import { describe, it, beforeAll } from "https://deno.land/std@0.208.0/testing/bdd.ts";
 import { assertEquals, assertThrows } from "https://deno.land/std@0.208.0/assert/mod.ts";
-import VariableResolver from "../../../src/reports/VariableResolver.js";
-import FilterEngine from "../../../src/reports/FilterEngine.js";
+import VariableResolver from "../../../src/reports/VariableResolver.ts";
+import FilterEngine from "../../../src/reports/FilterEngine.ts";
 
 // Mock Arquero for testing
 const mockAq = {

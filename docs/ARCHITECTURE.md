@@ -22,7 +22,7 @@ The Financial Statement Generator is a client-side web application that transfor
 1. **Client-Side Processing**: All data processing happens in the browser
 2. **Modular Design**: Clear separation between data, business logic, and UI
 3. **Configuration-Driven**: Reports defined via JSON, not hardcoded
-4. **Type Safety**: Gradual migration to TypeScript for better maintainability
+4. **Type Safety**: Full TypeScript implementation for better maintainability
 5. **Performance First**: Optimized for large datasets (5,000+ accounts)
 
 ### Architecture Pattern
@@ -56,8 +56,8 @@ The Financial Statement Generator is a client-side web application that transfor
 
 ### Core Technologies
 
-- **JavaScript (ES6+)**: Main application language
-- **TypeScript**: Gradual migration for type safety
+- **TypeScript**: Main application language (100% TypeScript codebase)
+- **JavaScript (ES6+)**: Runtime target (transpiled from TypeScript)
 - **HTML5/CSS3**: Modern web standards
 - **Deno**: Test runtime with native TypeScript support
 
@@ -88,11 +88,11 @@ The Financial Statement Generator is a client-side web application that transfor
 
 ```
 src/
-├── app.js                      # Application entry point
+├── app.ts                      # Application entry point
 ├── data/                       # Data management layer
-│   ├── DataLoader.js          # Excel file loading
-│   ├── DataStore.js           # Centralized data storage
-│   └── DataProcessor.js       # Data transformation
+│   ├── DataLoader.ts          # Excel file loading
+│   ├── DataStore.ts           # Centralized data storage
+│   └── DataProcessor.ts       # Data transformation
 ├── utils/                      # Utility modules (TypeScript)
 │   ├── DateUtils.ts           # Date manipulation
 │   ├── HierarchyBuilder.ts    # Account hierarchy
@@ -118,38 +118,51 @@ src/
 │   ├── ErrorMetrics.ts        # Error tracking
 │   └── ErrorCodes.ts          # Error code constants
 ├── reports/                    # Configurable report system
-│   ├── ReportLoader.js        # Load JSON definitions
-│   ├── ReportRegistry.js      # Manage available reports
-│   ├── ReportValidator.js     # Validate definitions
-│   ├── ReportRenderer.js      # Generate statements
-│   ├── ExpressionEvaluator.js # Calculate expressions
-│   ├── VariableResolver.js    # Resolve variables
-│   └── FilterEngine.js        # Apply data filters
+│   ├── ReportLoader.ts        # Load JSON definitions
+│   ├── ReportRegistry.ts      # Manage available reports
+│   ├── ReportValidator.ts     # Validate definitions
+│   ├── ReportRenderer.ts      # Generate statements
+│   ├── ExpressionEvaluator.ts # Calculate expressions
+│   ├── VariableResolver.ts    # Resolve variables
+│   └── FilterEngine.ts        # Apply data filters
 ├── statements/                 # Statement generation
-│   └── StatementGenerator.js  # Main generator
+│   ├── StatementGenerator.ts  # Main generator
+│   └── specialrows/           # Special row handlers
+│       ├── SpecialRowsFactory.ts
+│       ├── BalanceSheetSpecialRows.ts
+│       ├── IncomeStatementSpecialRows.ts
+│       └── CashFlowStatementSpecialRows.ts
 ├── export/                     # Export functionality
-│   └── CSVExporter.js         # CSV export
+│   ├── ExportHandler.ts       # Export coordination
+│   ├── excel-export.ts        # Excel export
+│   ├── excel-format.ts        # Excel formatting
+│   └── ag-grid-format.ts      # ag-Grid formatting
 └── ui/                         # UI components
-    ├── UIController.js        # Main UI controller
-    ├── AgGridStatementRenderer.js  # Grid rendering
-    └── ColumnDefBuilder.js    # Column definitions
+    ├── UIController.ts        # Main UI controller
+    ├── AgGridStatementRenderer.ts  # Grid rendering
+    └── columns/
+        └── ColumnDefBuilder.ts    # Column definitions
 ```
 
 ### Module Dependencies
 
 ```mermaid
 graph TD
-    A[app.js] --> B[UIController]
+    A[app.ts] --> B[UIController]
     B --> C[StatementGenerator]
     B --> D[AgGridStatementRenderer]
     C --> E[ReportRenderer]
     C --> F[DataStore]
-    E --> G[VariableResolver]
-    E --> H[ExpressionEvaluator]
-    G --> I[FilterEngine]
-    F --> J[DataLoader]
-    J --> K[ExcelParserService]
-    D --> L[ColumnDefBuilder]
+    C --> G[SpecialRowsFactory]
+    E --> H[VariableResolver]
+    E --> I[ExpressionEvaluator]
+    H --> J[FilterEngine]
+    F --> K[DataLoader]
+    K --> L[ExcelParserService]
+    D --> M[ColumnDefBuilder]
+    G --> N[BalanceSheetSpecialRows]
+    G --> O[IncomeStatementSpecialRows]
+    G --> P[CashFlowStatementSpecialRows]
 ```
 
 ## Data Flow

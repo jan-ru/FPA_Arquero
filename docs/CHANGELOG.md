@@ -7,6 +7,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.15.0] - 2024-12-07
+
+### Added
+- **GitHub Actions CI/CD Workflows**:
+  - `test.yml` - Runs on every push/PR (type check, unit tests, integration tests, coverage)
+  - `e2e.yml` - Runs E2E tests with Puppeteer on main branch and releases
+  - `release.yml` - Full test suite + automated release creation on version tags
+  - Comprehensive workflow documentation in `.github/workflows/README.md`
+
+- **Browser Testing Infrastructure**:
+  - Created `test/setup/browser-mocks.ts` - Mock implementations of browser globals
+  - Created `test/setup/test-setup.ts` - Global test environment setup
+  - Added `setupBrowserEnvironment()` and `cleanupBrowserEnvironment()` helpers
+  - Mocks for: loglevel, Logger, document, window, ag-Grid
+
+- **Testing Documentation**:
+  - Created `test/docs/BROWSER_TESTING.md` - Complete guide for browser-dependent tests
+  - Created `test/docs/PUPPETEER_GUIDE.md` - Comprehensive Puppeteer/E2E testing guide
+  - Updated `test/docs/TESTING_GUIDE.md` - Clear distinction between unit, CI/CD, and E2E tests
+  - Added comparison tables, workflow diagrams, and best practices
+
+### Changed
+- **Logger.ts Safety Improvements**:
+  - Added null checks to all Logger methods to handle missing `log` global
+  - Logger now gracefully degrades when browser globals are unavailable
+  - Safe initialization that doesn't crash in Deno test environment
+
+- **Documentation Updates**:
+  - Updated all docs to reflect 100% TypeScript migration completion
+  - Removed references to "gradual migration"
+  - Updated code examples from JavaScript to TypeScript
+  - Enhanced TESTING_GUIDE.md with clear test type distinctions
+
+### Fixed
+- Logger initialization no longer crashes in Deno test environment
+- All test imports updated from `.js` to `.ts` extensions
+- Fixed syntax errors in performance test files
+
+## [0.14.0] - 2024-12-07
+
+### Changed
+- **Complete TypeScript Migration**:
+  - All JavaScript source files migrated to TypeScript (100% complete)
+  - 63 TypeScript files in src/ directory
+  - 0 remaining JavaScript files
+  - All test imports updated to use .ts extensions
+  - Full type safety across entire codebase
+
+### Fixed
+- Updated all test file imports from .js to .ts extensions
+- Fixed syntax errors in performance test files (escaped template literals)
+- All 273+ tests passing with TypeScript
+
 ## [0.13.0] - 2024-12-06
 
 ### Added
