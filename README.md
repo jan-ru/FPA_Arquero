@@ -200,7 +200,7 @@ See [docs/USER_GUIDE.md](docs/USER_GUIDE.md) for more troubleshooting tips.
 
 ## Version
 
-**Current Version:** 0.15.0
+**Current Version:** 0.15.1
 
 See [docs/CHANGELOG.md](docs/CHANGELOG.md) for detailed version history and release notes.
 
